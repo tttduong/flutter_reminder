@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_to_do_app/service/theme_services.dart';
+import 'package:get/get.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -26,17 +28,19 @@ class _HomePageState extends State<HomePage> {
 
   _appBar() {
     return AppBar(
+      // backgroundColor: context.theme.scaffoldBackgroundColor,
       leading: GestureDetector(
-        onTap: () {},
+        onTap: () {
+          ThemeService().switchTheme();
+        },
         child: Icon(
           Icons.nightlight_round,
           size: 20,
         ),
       ),
       actions: [
-        Icon(
-          Icons.person,
-          size: 20,
+        CircleAvatar(
+          backgroundImage: AssetImage("images/profile.jpg"),
         ),
         SizedBox(
           width: 20,

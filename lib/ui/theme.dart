@@ -10,6 +10,7 @@ Color darkHeaderClr = Color(0xFF424242);
 
 class Themes {
   static final light = ThemeData(
+    scaffoldBackgroundColor: white,
     brightness: Brightness.light,
     colorScheme: ColorScheme.light(
       primary: bluishClr, // Dùng màu custom
@@ -20,14 +21,16 @@ class Themes {
       foregroundColor: white, // Màu chữ/icon trên AppBar
     ),
   );
+
   static final dark = ThemeData(
+    scaffoldBackgroundColor: darkGreyClr,
     brightness: Brightness.dark,
     colorScheme: ColorScheme.light(
-      primary: darkGreyClr, // Dùng màu custom
+      primary: darkHeaderClr, // Dùng màu custom
       brightness: Brightness.dark,
     ),
     appBarTheme: AppBarTheme(
-      backgroundColor: darkGreyClr, // Dùng màu của primarySwatch
+      backgroundColor: darkHeaderClr, // Dùng màu của primarySwatch
       foregroundColor: white, // Màu chữ/icon trên AppBar
     ),
   );
