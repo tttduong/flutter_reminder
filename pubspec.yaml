@@ -3,14 +3,23 @@ description: "A new Flutter project."
 publish_to: 'none'
 version: 0.1.0
 
+# environment:
+#   sdk: ^3.6.1
+
 environment:
-  sdk: ^3.6.1
+  sdk: ">=2.16.0 <3.0.0"
 
 dependencies:
   flutter:
     sdk: flutter
+  flutter_web_plugins:
+    sdk: flutter
   get_storage: 
   get: 
+  intl:
+  google_fonts:
+  date_picker_timeline: 
+  sqflite: ^2.4.1
   
 
 dev_dependencies:
