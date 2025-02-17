@@ -19,8 +19,8 @@ dependencies:
   intl:
   google_fonts:
   date_picker_timeline: 
-  sqflite: ^2.4.1
-  
+  sqflite: 
+  flutter_staggered_animations:
 
 dev_dependencies:
   flutter_test:

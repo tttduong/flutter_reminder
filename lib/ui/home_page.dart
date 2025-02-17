@@ -1,9 +1,12 @@
 import 'package:date_picker_timeline/date_picker_timeline.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_to_do_app/controller/task_controller.dart';
+import 'package:flutter_to_do_app/model/task.dart';
 import 'package:flutter_to_do_app/service/theme_services.dart';
 import 'package:flutter_to_do_app/ui/add_task_bar.dart';
 import 'package:flutter_to_do_app/ui/theme.dart';
 import 'package:flutter_to_do_app/ui/widgets/button.dart';
+import 'package:flutter_to_do_app/ui/widgets/task_tile.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -17,8 +20,11 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   DateTime _selectedDate = DateTime.now();
+  final _taskController = Get.put(TaskController());
   @override
   Widget build(BuildContext context) {
+    _taskController.getTasks(); // Gọi hàm để lấy danh sách task
+
     return Scaffold(
       // backgroundColor: Colors.green,
       appBar: _appBar(),
@@ -26,7 +32,62 @@ class _HomePageState extends State<HomePage> {
         children: [
           _addTaskBar(),
           _addDateBar(),
+          _showTasks(),
         ],
+      ),
+    );
+  }
+
+  _showTasks() {
+    List<Task> fakeTasks = [
+      Task(
+        title: "Meeting with team",
+        note: "Discuss project progress",
+        date: "2025-02-17",
+        startTime: "10:00 AM",
+        endTime: "11:00 AM",
+        remind: 10,
+        repeat: "None",
+        color: 1,
+        isCompleted: 0,
+      ),
+      Task(
+        title: "Doctor Appointment",
+        note: "Routine check-up",
+        date: "2025-02-18",
+        startTime: "03:00 PM",
+        endTime: "04:00 PM",
+        remind: 30,
+        repeat: "None",
+        color: 2,
+        isCompleted: 0,
+      ),
+      Task(
+        title: "Gym Session",
+        note: "Leg day workout",
+        date: "2025-02-19",
+        startTime: "07:00 AM",
+        endTime: "08:00 AM",
+        remind: 15,
+        repeat: "Daily",
+        color: 3,
+        isCompleted: 1,
+      ),
+    ];
+
+    return Expanded(
+      child: ListView.builder(
+        itemCount: fakeTasks.length,
+        itemBuilder: (context, index) {
+          Task task = fakeTasks[index]; // Lấy task từ danh sách giả lập
+          return Card(
+            margin: EdgeInsets.all(8.0),
+            child: TaskTile(
+              task: task,
+              onTap: () => {},
+            ),
+          );
+        },
       ),
     );
   }
@@ -34,23 +95,26 @@ class _HomePageState extends State<HomePage> {
   _addDateBar() {
     return Container(
       margin: EdgeInsets.only(top: 20, left: 20),
-      child: DatePicker(
-        DateTime.now(),
-        height: 100,
-        width: 80,
-        initialSelectedDate: DateTime.now(),
-        selectionColor: primaryClr,
-        selectedTextColor: Colors.white,
-        dateTextStyle: GoogleFonts.lato(
-            fontSize: 20, fontWeight: FontWeight.w600, color: Colors.grey),
-        dayTextStyle: GoogleFonts.lato(
-            fontSize: 16, fontWeight: FontWeight.w600, color: Colors.grey),
-        monthTextStyle: GoogleFonts.lato(
-            fontSize: 14, fontWeight: FontWeight.w600, color: Colors.grey),
-        onDateChange: (date) {
+      child: DatePicker(DateTime.now(),
+          height: 100,
+          width: 80,
+          initialSelectedDate: DateTime.now(),
+          selectionColor: primaryClr,
+          selectedTextColor: Colors.white,
+          dateTextStyle: GoogleFonts.lato(
+              fontSize: 20, fontWeight: FontWeight.w600, color: Colors.grey),
+          dayTextStyle: GoogleFonts.lato(
+              fontSize: 16, fontWeight: FontWeight.w600, color: Colors.grey),
+          monthTextStyle: GoogleFonts.lato(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey), onDateChange: (date) {
+        setState(() {
           _selectedDate = date;
-        },
-      ),
+        });
+        // _taskController
+        //     .getTasks(); // Lấy lại danh sách task sau khi chọn ngày mới
+      }),
     );
   }
 
@@ -74,7 +138,12 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
           ),
-          MyButton(label: "+ Add Task", onTap: () => Get.to(AddTaskPage()))
+          MyButton(
+              label: "+ Add Task",
+              onTap: () async {
+                await Get.to(() => AddTaskPage());
+                // _taskController.getTasks();
+              })
         ],
       ),
     );
