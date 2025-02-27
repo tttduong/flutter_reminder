@@ -6,7 +6,7 @@ download and extract zip
 
 python -m venv venv              # Tạo môi trường ảo mới
 
-source venv/bin/activate         # (Trên macOS/Linux)
+# source venv/bin/activate         # (Trên macOS/Linux)
 venv\Scripts\activate            # Trên Windows
 
 pip install -r requirements.txt  # Cài đặt toàn bộ thư viện
