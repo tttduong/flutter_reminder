@@ -50,6 +50,11 @@ pubspec.lock
 .env.development
 .env.production
 
+venv/
+
+
 # Bỏ qua file tạm hệ điều hành
 .DS_Store
 Thumbs.db
+
+
