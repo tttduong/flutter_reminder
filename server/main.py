@@ -1,0 +1,69 @@
+from fastapi import FastAPI, APIRouter, HTTPException, Depends
+from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
+from database.database import SessionLocal
+from database import models, schemas
+
+app = FastAPI()
+
+# Dependency: Lấy database session
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+# Cấu hình CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Cho phép tất cả domain truy cập
+    allow_credentials=True,
+    allow_methods=["*"],  # Cho phép tất cả method (GET, POST, PUT, DELETE, ...)
+    allow_headers=["*"],  # Cho phép tất cả headers
+)
+
+router = APIRouter()
+
+@router.get("/", response_model=list[schemas.TodoResponse])
+def get_all_todos(db: Session = Depends(get_db)):
+    todos = db.query(models.Todo).filter(models.Todo.is_deleted == False).all()
+    return [schemas.TodoResponse.from_orm(todo) for todo in todos]
+
+@router.post("/", response_model=schemas.TodoResponse)
+def create_task(new_task: schemas.TodoCreate, db: Session = Depends(get_db)):
+    try:
+        todo = models.Todo(**new_task.dict())  # Tạo object từ dữ liệu gửi lên
+        db.add(todo)
+        db.commit()
+        db.refresh(todo)  # Lấy dữ liệu mới từ DB sau khi commit
+        return schemas.TodoResponse.from_orm(todo)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Some error occurred: {e}")
+
+
+
+@router.put("/{task_id}", response_model=schemas.TodoResponse)
+def update_task(task_id: str, updated_task: schemas.TodoCreate, db: Session = Depends(get_db)):
+    todo = db.query(models.Todo).filter(models.Todo.id == task_id, models.Todo.is_deleted == False).first()
+    if not todo:
+        raise HTTPException(status_code=404, detail="Task does not exist")
+
+    for key, value in updated_task.dict().items():
+        setattr(todo, key, value)  # Cập nhật từng thuộc tính
+    
+    db.commit()
+    db.refresh(todo)
+    return schemas.TodoResponse.from_orm(todo)
+
+@router.delete("/{task_id}")
+def delete_task(task_id: str, db: Session = Depends(get_db)):
+    todo = db.query(models.Todo).filter(models.Todo.id == task_id, models.Todo.is_deleted == False).first()
+    if not todo:
+        raise HTTPException(status_code=404, detail="Task does not exist")
+
+    todo.is_deleted = True  # Đánh dấu là đã xóa
+    db.commit()
+    return {"status_code": 200, "message": "Task Deleted Successfully"}
+
+app.include_router(router)

@@ -1,0 +1,55 @@
+**/build/
+**/gradle-wrapper.jar
+**/.gradle
+**/captures/
+**/gradlew
+**/gradlew.bat
+**/local.properties
+**/GeneratedPluginRegistrant.java
+
+# Remember to never publicly share your keystore.
+# See https://flutter.dev/to/reference-keystore
+key.properties
+**/*.keystore
+**/*.jks
+
+#Bỏ qua word document
+/Erd & Class Diagram.docx
+/Software Requirement Specification.docx
+
+# Bỏ qua thư mục môi trường và cache
+**/.env
+**/.gradle
+**/local.properties
+
+# Bỏ qua dependency lock file (nếu không muốn khoá version)
+package-lock.json
+yarn.lock
+pipenv.lock
+poetry.lock
+
+# Bỏ qua file build
+**/build/
+**/target/
+**/captures/
+
+# Bỏ qua các file tạm
+.DS_Store
+Thumbs.db
+
+
+# Bỏ qua thư mục node_modules và các file build
+node_modules/
+dist/
+build/
+pubspec.lock
+
+# Bỏ qua file môi trường
+.env
+.env.local
+.env.development
+.env.production
+
+# Bỏ qua file tạm hệ điều hành
+.DS_Store
+Thumbs.db
