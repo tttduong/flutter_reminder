@@ -1,47 +1,41 @@
-# def individual_data(todo):
-#     return {
-#         "id": str(todo.get("_id", "")),  # Ép kiểu _id thành string
-#         "title": todo.get("title", "Unnamed Task"),
-#         "note": todo.get("note", ""),
-#         "isCompleted": todo.get("isCompleted", 0),
-#         "date": todo.get("date", ""),
-#         "startTime": todo.get("startTime", ""),
-#         "endTime": todo.get("endTime", ""),
-#         "color": todo.get("color", 0),
-#         "remind": todo.get("remind", 0),
-#         "repeat": todo.get("repeat", ""),
-#         "is_deleted": todo.get("is_deleted", False)
-#     }
-
-# def all_tasks(todos):
-#     return [individual_data(todo) for todo in todos]
-
 from pydantic import BaseModel
 from typing import Optional
-from datetime import date, time
-from uuid import UUID  # Nếu id đang là UUID
+from datetime import datetime
+import uuid
+from database.database import Base
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime
+from sqlalchemy.dialects.postgresql import UUID as SA_UUID
 
+class Task(Base):
+    __tablename__ = "tasks"
+    __table_args__ = {"extend_existing": True} 
+    
+    id = Column(SA_UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, index=True)
+    user_id = Column(SA_UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    category_id = Column(SA_UUID(as_uuid=True), ForeignKey("categories.id"), nullable=True)
+    title = Column(String, nullable=False)
+    description = Column(String, nullable=True)
+    status = Column(Integer, default=0)  # 0: Chưa hoàn thành, 1: Đã hoàn thành
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    is_deleted = Column(Boolean, default=False)
 
-class TodoBase(BaseModel):
+class TaskBase(BaseModel):
     title: str
-    note: Optional[str] = None
-    date: date
-    start_time: time
-    end_time: time
-    is_completed: int = 0
-    color: Optional[int] = None
-    repeat: Optional[int] = None
-    remind: Optional[int] = None
+    description: Optional[str] = None
+    status: int = 0
+    created_at: datetime
+    updated_at: datetime
     is_deleted: bool = False
 
-
-class TodoCreate(TodoBase):
+class TaskCreate(TaskBase):
     pass  # Dùng khi tạo task, không cần ID
 
-
-class TodoResponse(TodoBase):
-    id: UUID    # Thêm ID cho response
+class TaskResponse(TaskBase):
+    id: uuid.UUID  # Chỉnh sửa để sử dụng uuid.UUID
+    user_id: uuid.UUID
+    category_id: Optional[uuid.UUID] = None
 
     class Config:
-        from_attributes = True  # Dùng thay cho `orm_mode`
-
+        arbitrary_types_allowed = True  # Cho phép sử dụng kiểu dữ liệu không chuẩn
+        from_attributes = True

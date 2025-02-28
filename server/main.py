@@ -25,44 +25,44 @@ app.add_middleware(
 
 router = APIRouter()
 
-@router.get("/", response_model=list[schemas.TodoResponse])
-def get_all_todos(db: Session = Depends(get_db)):
-    todos = db.query(models.Todo).filter(models.Todo.is_deleted == False).all()
-    return [schemas.TodoResponse.from_orm(todo) for todo in todos]
+@router.get("/", response_model=list[schemas.TaskResponse])
+def get_all_tasks(db: Session = Depends(get_db)):
+    tasks = db.query(models.Task).filter(models.Task.is_deleted == False).all()
+    return [schemas.TaskResponse.from_orm(task) for task in tasks]
 
-@router.post("/", response_model=schemas.TodoResponse)
-def create_task(new_task: schemas.TodoCreate, db: Session = Depends(get_db)):
+@router.post("/", response_model=schemas.TaskResponse)
+def create_task(new_task: schemas.TaskCreate, db: Session = Depends(get_db)):
     try:
-        todo = models.Todo(**new_task.dict())  # Tạo object từ dữ liệu gửi lên
-        db.add(todo)
+        task = models.Task(**new_task.dict())  # Tạo object từ dữ liệu gửi lên
+        db.add(task)
         db.commit()
-        db.refresh(todo)  # Lấy dữ liệu mới từ DB sau khi commit
-        return schemas.TodoResponse.from_orm(todo)
+        db.refresh(task)  # Lấy dữ liệu mới từ DB sau khi commit
+        return schemas.TaskResponse.from_orm(task)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Some error occurred: {e}")
 
 
 
-@router.put("/{task_id}", response_model=schemas.TodoResponse)
-def update_task(task_id: str, updated_task: schemas.TodoCreate, db: Session = Depends(get_db)):
-    todo = db.query(models.Todo).filter(models.Todo.id == task_id, models.Todo.is_deleted == False).first()
-    if not todo:
+@router.put("/{task_id}", response_model=schemas.TaskResponse)
+def update_task(task_id: str, updated_task: schemas.TaskCreate, db: Session = Depends(get_db)):
+    task = db.query(models.Task).filter(models.Task.id == task_id, models.Task.is_deleted == False).first()
+    if not task:
         raise HTTPException(status_code=404, detail="Task does not exist")
 
     for key, value in updated_task.dict().items():
-        setattr(todo, key, value)  # Cập nhật từng thuộc tính
+        setattr(task, key, value)  # Cập nhật từng thuộc tính
     
     db.commit()
-    db.refresh(todo)
-    return schemas.TodoResponse.from_orm(todo)
+    db.refresh(task)
+    return schemas.TaskResponse.from_orm(task)
 
 @router.delete("/{task_id}")
 def delete_task(task_id: str, db: Session = Depends(get_db)):
-    todo = db.query(models.Todo).filter(models.Todo.id == task_id, models.Todo.is_deleted == False).first()
-    if not todo:
+    task = db.query(models.Task).filter(models.Task.id == task_id, models.Task.is_deleted == False).first()
+    if not task:
         raise HTTPException(status_code=404, detail="Task does not exist")
 
-    todo.is_deleted = True  # Đánh dấu là đã xóa
+    task.is_deleted = True  # Đánh dấu là đã xóa
     db.commit()
     return {"status_code": 200, "message": "Task Deleted Successfully"}
 

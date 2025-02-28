@@ -1,21 +1,19 @@
-from pydantic import BaseModel
-from datetime import datetime
-from database.database import Base
-from sqlalchemy import Column, Integer, String, Boolean
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
+from database.database import Base
+from datetime import datetime
 
-class Todo(Base):
+class Task(Base):
     __tablename__ = "tasks"
+    __table_args__ = {"extend_existing": True}  # Thêm dòng này
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, index=True)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    category_id = Column(UUID(as_uuid=True), ForeignKey("categories.id"), nullable=True)
     title = Column(String, nullable=False)
-    note = Column(String, nullable=True)
-    date = Column(String, nullable=False)
-    start_time = Column(String, nullable=False)
-    end_time = Column(String, nullable=False)
-    is_completed = Column(Integer, default=0)  # 0: chưa hoàn thành, 1: đã hoàn thành
-    color = Column(Integer, nullable=True)  # Mã màu (ví dụ: RGB, HEX lưu dưới dạng số)
-    repeat = Column(Integer, nullable=True)  # Tần suất lặp lại (ví dụ: số ngày, tuần)
-    remind = Column(Integer, nullable=True)  # Nhắc nhở trước bao nhiêu phút
+    description = Column(String, nullable=True)
+    status = Column(Integer, default=0)  # 0: Chưa hoàn thành, 1: Đã hoàn thành
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     is_deleted = Column(Boolean, default=False)
