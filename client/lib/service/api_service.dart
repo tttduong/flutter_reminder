@@ -4,10 +4,12 @@ import 'package:flutter_to_do_app/model/test.dart';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  static const String baseUrl = "http://127.0.0.1:8000";
+  // static const String baseUrl = "http://127.0.0.1:8000";
+  static const String baseUrl = "http://localhost:8000";
+
   late Test testModule;
   Future<List<Task>> fetchTasks() async {
-    final response = await http.get(Uri.parse('$baseUrl/'));
+    final response = await http.get(Uri.parse('$baseUrl/tasks/'));
     print("loading in loading tasks");
 
     if (response.statusCode == 200) {
@@ -21,15 +23,15 @@ class ApiService {
     }
   }
 
-  Future<Test> fetch() async {
-    final response = await http.get(Uri.parse('$baseUrl/test'));
+  // Future<Test> fetch() async {
+  //   final response = await http.get(Uri.parse('$baseUrl/test'));
 
-    if (response.statusCode == 200) {
-      return Test.fromJson(json.decode(response.body));
-    } else {
-      throw Exception('Failed to load test');
-    }
-  }
+  //   if (response.statusCode == 200) {
+  //     return Test.fromJson(json.decode(response.body));
+  //   } else {
+  //     throw Exception('Failed to load test');
+  //   }
+  // }
 
   // Future<Test> fetch() async {
   //   final response = await http.get(Uri.parse('$baseUrl/test'));

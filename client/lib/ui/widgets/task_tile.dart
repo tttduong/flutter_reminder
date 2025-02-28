@@ -37,14 +37,14 @@ class TaskTile extends StatelessWidget {
                         ),
                       ),
                       SizedBox(height: 4), // Khoảng cách giữa các dòng
-                      Text(
-                        "${task?.startTime ?? 'N/A'} - ${task?.endTime ?? 'N/A'}",
-                        style: GoogleFonts.lato(
-                            fontSize: 14, color: Colors.grey[700]),
-                      ),
+                      // Text(
+                      //   "${task?.startTime ?? 'N/A'} - ${task?.endTime ?? 'N/A'}",
+                      //   style: GoogleFonts.lato(
+                      //       fontSize: 14, color: Colors.grey[700]),
+                      // ),
                       SizedBox(height: 4),
                       Text(
-                        task?.note ?? "No notes",
+                        task?.description ?? "",
                         style: GoogleFonts.lato(
                             fontSize: 14, color: Colors.grey[600]),
                       ),
