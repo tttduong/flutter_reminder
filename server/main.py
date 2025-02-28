@@ -3,8 +3,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from database.database import SessionLocal
 from database import models, schemas
+from routers import user
 
 app = FastAPI()
+
 
 # Dependency: Lấy database session
 def get_db():
@@ -66,4 +68,10 @@ def delete_task(task_id: str, db: Session = Depends(get_db)):
     db.commit()
     return {"status_code": 200, "message": "Task Deleted Successfully"}
 
+
+
+
+# Đăng ký router vào app
+# app.include_router(task_router)
 app.include_router(router)
+app.include_router(user.router) 
