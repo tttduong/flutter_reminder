@@ -175,7 +175,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
     await _taskController.addTask(
       task: Task(
         title: _titleController.text,
-        // note: _noteController.text,
+        description: _noteController.text,
         // isCompleted: "0", // Chuyển thành string "0" hoặc "1"
         // date: DateFormat.yMd().format(_selectedDate),
         // startTime: _startTime,
@@ -185,6 +185,10 @@ class _AddTaskPageState extends State<AddTaskPage> {
         // repeat: _selectedRepeat,
       ),
     );
+    await Future.delayed(Duration(milliseconds: 500)); // Chờ API cập nhật
+    // Cập nhật danh sách task ngay sau khi tạo thành công
+    _taskController.getTasks();
+
     // print("My id is $value");
   }
 

@@ -23,10 +23,11 @@ class Task(Base):
 class TaskBase(BaseModel):
     title: str
     description: Optional[str] = None
-    status: int = 0
-    created_at: datetime
-    updated_at: datetime
-    is_deleted: bool = False
+    category_id: Optional[uuid.UUID] = None
+    # status: int = 0
+    # created_at: datetime
+    # updated_at: datetime
+    # is_deleted: bool = False
 
 class TaskCreate(TaskBase):
     pass  # Dùng khi tạo task, không cần ID
@@ -35,6 +36,7 @@ class TaskResponse(TaskBase):
     id: uuid.UUID  # Chỉnh sửa để sử dụng uuid.UUID
     user_id: uuid.UUID
     category_id: Optional[uuid.UUID] = None
+    description: Optional[str] = None
 
     class Config:
         arbitrary_types_allowed = True  # Cho phép sử dụng kiểu dữ liệu không chuẩn

@@ -21,20 +21,25 @@ def get_db():
         db.close()
 
 # Xác thực token
-def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id = payload.get("sub")
-        if user_id is None:
-            raise HTTPException(status_code=401, detail="Invalid token")
-        return db.query(UserModel).filter(UserModel.id == user_id).first()
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Token expired")
-    except jwt.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Invalid token")
+# def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    # try:
+    #     payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    #     user_id = payload.get("sub")
+    #     if user_id is None:
+    #         raise HTTPException(status_code=401, detail="Invalid token")
+    #     return db.query(UserModel).filter(UserModel.id == user_id).first()
+    # except jwt.ExpiredSignatureError:
+    #     raise HTTPException(status_code=401, detail="Token expired")
+    # except jwt.InvalidTokenError:
+    #     raise HTTPException(status_code=401, detail="Invalid token")
+def get_current_user(token: str = None, db: Session = Depends(get_db)):
+     return UserModel(id="33432faf-ddbd-4b50-bd38-33bdb7d6d990", email="test@example.com", 
+     hashed_password="123456", name="tduong", is_active=True,created_at="2025-02-28T09:25:49.164693")
 
 # 1. API tạo Task
-@router.post("/", response_model=TaskResponse)
+# @router.post("/", response_model=TaskResponse)
+@router.post("/")
+
 def create_task(task: TaskCreate, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
     if not current_user:
         raise HTTPException(status_code=401, detail="Unauthorized")
@@ -44,6 +49,7 @@ def create_task(task: TaskCreate, db: Session = Depends(get_db), current_user=De
         title=task.title,
         description=task.description,
         user_id=current_user.id
+        # user_id="33432faf-ddbd-4b50-bd38-33bdb7d6d990"
     )
     db.add(new_task)
     db.commit()

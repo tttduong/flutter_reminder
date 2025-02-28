@@ -18,8 +18,7 @@ class ApiService {
 
       return jsonData.map((task) => Task.fromJson(task)).toList();
     } else {
-      // print("Failing in loading tasks");
-      throw Exception('Failed to load users');
+      throw Exception('Failed to load tasks');
     }
   }
 
