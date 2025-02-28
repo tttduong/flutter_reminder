@@ -1,9 +1,12 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import create_engine
+# from sqlalchemy import create_engine
+# from sqlalchemy.orm import sessionmaker
+# from sqlalchemy.ext.declarative import declarative_base
+# from sqlalchemy import create_engine
 from configuration import URL_DATABASE
+# from models.category_model import CategoryModel
 
+from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy import create_engine
 engine = create_engine (URL_DATABASE)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -19,3 +22,4 @@ def init_db():
 #         Base.metadata.create_all(bind=engine)
 #     except Exception as e:
 #         print(f"Error initializing database: {e}")
+

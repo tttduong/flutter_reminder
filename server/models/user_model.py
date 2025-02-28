@@ -5,7 +5,7 @@ from database.database import Base
 from sqlalchemy import Column, String, Boolean, DateTime  # Thêm DateTime vào đây
 from datetime import datetime  # Import datetime để dùng datetime.utcnow
 
-class User(Base):
+class UserModel(Base):
     __tablename__ = "users"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, index=True)
