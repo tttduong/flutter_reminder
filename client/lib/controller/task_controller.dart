@@ -29,45 +29,15 @@ class TaskController extends GetxController {
       return;
     }
 
-    try {
-      final response = await http.post(
-        Uri.parse("http://127.0.0.1:8000/tasks/"),
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer your_access_token", // Nếu API cần token
-        },
-        body: jsonEncode({
-          "title": title,
-          "description": description,
-        }),
-      );
-
-      if (response.statusCode == 201 || response.statusCode == 200) {
-        print("Task created successfully!");
-      } else {
-        print("Failed to create task: ${response.body}");
-      }
-    } catch (e) {
-      print("Error: $e");
+    bool success = await TaskService.createTask(task: task);
+    if (success) {
+      getTasks(); // Refresh danh sách task sau khi thêm
     }
   }
 
   //get all the data from table
   void getTasks() async {
-    try {
-      final response = await http.get(
-        Uri.parse("http://127.0.0.1:8000/tasks/"),
-        headers: {"Content-Type": "application/json"},
-      );
-
-      if (response.statusCode == 200) {
-        List<dynamic> jsonData = jsonDecode(response.body);
-        taskList
-            .assignAll(jsonData.map((item) => Task.fromJson(item)).toList());
-      }
-    } catch (e) {
-      print("Error loading tasks: $e");
-    }
+    taskList.value = await TaskService.fetchTasks();
   }
 
   Future<void> deleteTask(String taskId) async {
@@ -76,4 +46,6 @@ class TaskController extends GetxController {
         (task) => task.id == taskId); // Cập nhật danh sách sau khi xoá
     update(); // Cập nhật UI
   }
+
+  Future<void> updateTaskStatus(int status) async {}
 }

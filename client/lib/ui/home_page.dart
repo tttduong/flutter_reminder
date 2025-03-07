@@ -37,91 +37,35 @@ class _HomePageState extends State<HomePage> {
         children: [
           _addTaskBar(),
           _addDateBar(),
-          Obx(() {
-            if (_taskController.taskList.isEmpty) {
-              return Center(child: Text("Không có task nào!"));
-            }
-            return Column(
-              children: [
-                SizedBox(
-                  height: 300,
-                  child: ListView.builder(
-                    itemCount: _taskController.taskList.length,
-                    itemBuilder: (context, index) {
-                      return TaskTile(
-                        task: _taskController.taskList[index],
-                        onTap: () => null,
-                      );
-                    },
-                  ),
-                ),
-              ],
-            );
-          })
+          _showTasks(),
         ],
       ),
     );
   }
 
-  // _showTasks() {
-  //   List<Task> fakeTasks = [
-  //     Task(
-  //       title: "Meeting with team",
-  //       note: "Discuss project progress",
-  //       date: "2025-02-17",
-  //       startTime: "10:00 AM",
-  //       endTime: "11:00 AM",
-  //       remind: 10,
-  //       repeat: "None",
-  //       color: 1,
-  //       isCompleted: 0,
-  //     ),
-  //     Task(
-  //       title: "Doctor Appointment",
-  //       note: "Routine check-up",
-  //       date: "2025-02-18",
-  //       startTime: "03:00 PM",
-  //       endTime: "04:00 PM",
-  //       remind: 30,
-  //       repeat: "None",
-  //       color: 2,
-  //       isCompleted: 0,
-  //     ),
-  //     Task(
-  //       title: "Gym Session",
-  //       note: "Leg day workout",
-  //       date: "2025-02-19",
-  //       startTime: "07:00 AM",
-  //       endTime: "08:00 AM",
-  //       remind: 15,
-  //       repeat: "Daily",
-  //       color: 3,
-  //       isCompleted: 1,
-  //     ),
-  //   ];
-
-  //   return Row(
-  //     children: [
-  //       Expanded(
-  //         child: ListView.builder(
-  //           shrinkWrap: true, // ✅ Giúp ListView có kích thước vừa đủ
-  //           physics: NeverScrollableScrollPhysics(), // ✅ Ngăn ListView tự cuộn
-  //           itemCount: fakeTasks.length,
-  //           itemBuilder: (context, index) {
-  //             Task task = fakeTasks[index]; // Lấy task từ danh sách giả lập
-  //             return Card(
-  //               margin: EdgeInsets.all(8.0),
-  //               child: TaskTile(
-  //                 task: task,
-  //                 onTap: () => {},
-  //               ),
-  //             );
-  //           },
-  //         ),
-  //       ),
-  //     ],
-  //   );
-  // }
+  _showTasks() {
+    return Obx(() {
+      if (_taskController.taskList.isEmpty) {
+        return Center(child: Text("Không có task nào!"));
+      }
+      return Column(
+        children: [
+          SizedBox(
+            height: 300,
+            child: ListView.builder(
+              itemCount: _taskController.taskList.length,
+              itemBuilder: (context, index) {
+                return TaskTile(
+                  task: _taskController.taskList[index],
+                  onTap: () => null,
+                );
+              },
+            ),
+          ),
+        ],
+      );
+    });
+  }
 
   _addDateBar() {
     return Container(

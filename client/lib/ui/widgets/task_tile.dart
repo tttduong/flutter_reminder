@@ -30,6 +30,13 @@ class TaskTile extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start, // Căn trái
                     children: [
+                      // Checkbox(
+                      //   value: task.status,
+                      //   onChanged: (int? newValue) {
+                      //     _taskController.updateTaskStatus(
+                      //         task.id, newValue ?? 0);
+                      //   },
+                      // ),
                       Text(
                         task?.title ?? "No title",
                         style: GoogleFonts.lato(

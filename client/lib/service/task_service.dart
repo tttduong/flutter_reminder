@@ -6,7 +6,8 @@ import 'package:http/http.dart' as http;
 class TaskService {
   static const String baseUrl = "http://localhost:8000";
 
-  Future<List<Task>> fetchTasks() async {
+//get all tasks
+  static Future<List<Task>> fetchTasks() async {
     final response = await http.get(Uri.parse('$baseUrl/tasks/'));
     print("loading in loading tasks");
 
@@ -20,6 +21,7 @@ class TaskService {
     }
   }
 
+//delete tasks
   static Future<void> deleteTask(String taskId) async {
     final url = Uri.parse('$baseUrl/tasks/$taskId');
     try {
@@ -31,6 +33,36 @@ class TaskService {
       }
     } catch (e) {
       print("Error: $e");
+    }
+  }
+
+// Create task
+  static Future<bool> createTask({Task? task}) async {
+    if (task == null) return false;
+
+    try {
+      final response = await http.post(
+        Uri.parse("$baseUrl/tasks/"),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer your_access_token", // Nếu API cần token
+        },
+        body: jsonEncode({
+          "title": task.title,
+          "description": task.description,
+        }),
+      );
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        print("Task created successfully!");
+        return true;
+      } else {
+        print("Failed to create task: ${response.body}");
+        return false;
+      }
+    } catch (e) {
+      print("Error: $e");
+      return false;
     }
   }
 }
