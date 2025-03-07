@@ -2,8 +2,6 @@ import 'package:date_picker_timeline/date_picker_timeline.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_to_do_app/controller/task_controller.dart';
 import 'package:flutter_to_do_app/model/task.dart';
-import 'package:flutter_to_do_app/model/test.dart';
-import 'package:flutter_to_do_app/service/api_service.dart';
 import 'package:flutter_to_do_app/service/theme_services.dart';
 import 'package:flutter_to_do_app/ui/add_task_bar.dart';
 import 'package:flutter_to_do_app/ui/theme.dart';
@@ -22,21 +20,16 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   late Future<List<Task>> futureTasks;
-  late Future<Test> futureTest;
   DateTime _selectedDate = DateTime.now();
   final _taskController = Get.put(TaskController());
 
   @override
   void initState() {
     super.initState();
-    futureTasks = ApiService().fetchTasks();
-    // futureTest = ApiService().fetch();
   }
 
   @override
   Widget build(BuildContext context) {
-    // _taskController.getTasks(); // Gọi hàm để lấy danh sách task
-
     return Scaffold(
       // backgroundColor: Colors.green,
       appBar: _appBar(),
@@ -44,57 +37,27 @@ class _HomePageState extends State<HomePage> {
         children: [
           _addTaskBar(),
           _addDateBar(),
-          // _showTasks(),
-          FutureBuilder<List<Task>>(
-            // FutureBuilder<Test>(
-            future: futureTasks,
-            // future: futureTest,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return Center(child: CircularProgressIndicator());
-              } else if (snapshot.hasError) {
-                return Center(
-                    child: Text(
-                        "ko co Tasks: ${!snapshot.hasData || snapshot.data!.isEmpty} Lỗi: ${snapshot.error}\n ${snapshot.hasData}\n ${snapshot.hasError}"));
-              } else {
-                List<Task> tasks = snapshot.data!;
-                // Test test = snapshot.data!;
-                return Column(
-                  children: [
-                    SizedBox(
-                      height: 300,
-                      child: ListView.builder(
-                        itemCount: tasks.length,
-                        itemBuilder: (context, index) {
-                          return TaskTile(
-                              task: tasks[index], onTap: () => null);
-                        },
-                      ),
-                    ),
-                  ],
-                );
-              }
-            },
-          ),
-          // FutureBuilder<Test>(
-          //   future: futureTest,
-          //   builder: (context, snapshot) {
-          //     if (snapshot.connectionState == ConnectionState.waiting) {
-          //       return Center(child: CircularProgressIndicator());
-          //     } else if (snapshot.hasError) {
-          //       return Center(child: Text("Lỗi: ${snapshot.error}"));
-          //     } else if (!snapshot.hasData || snapshot.data!.title == null) {
-          //       return Center(child: Text("Không có dữ liệu"));
-          //     } else {
-          //       return Center(
-          //         child: Text(
-          //           "Test Title: ${snapshot.data!.title}",
-          //           style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          //         ),
-          //       );
-          //     }
-          //   },
-          // ),
+          Obx(() {
+            if (_taskController.taskList.isEmpty) {
+              return Center(child: Text("Không có task nào!"));
+            }
+            return Column(
+              children: [
+                SizedBox(
+                  height: 300,
+                  child: ListView.builder(
+                    itemCount: _taskController.taskList.length,
+                    itemBuilder: (context, index) {
+                      return TaskTile(
+                        task: _taskController.taskList[index],
+                        onTap: () => null,
+                      );
+                    },
+                  ),
+                ),
+              ],
+            );
+          })
         ],
       ),
     );
@@ -180,8 +143,6 @@ class _HomePageState extends State<HomePage> {
         setState(() {
           _selectedDate = date;
         });
-        // _taskController
-        //     .getTasks(); // Lấy lại danh sách task sau khi chọn ngày mới
       }),
     );
   }
@@ -210,7 +171,6 @@ class _HomePageState extends State<HomePage> {
               label: "+ Add Task",
               onTap: () async {
                 await Get.to(() => AddTaskPage());
-                // _taskController.getTasks();
               })
         ],
       ),

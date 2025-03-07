@@ -42,6 +42,10 @@ class Task {
     );
   }
 
+  // set is_deleted(bool is_deleted) {
+  //   return is_deleted = 'true';
+  // }
+
   /// Chuyển đổi từ `Task` object sang JSON
   Map<String, dynamic> toJson() {
     return {

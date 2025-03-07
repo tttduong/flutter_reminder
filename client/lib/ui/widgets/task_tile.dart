@@ -1,8 +1,8 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_to_do_app/controller/task_controller.dart';
 import 'package:flutter_to_do_app/model/task.dart';
+import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../theme.dart';
 
 class TaskTile extends StatelessWidget {
   final Task? task;
@@ -12,6 +12,7 @@ class TaskTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final TaskController taskController = Get.find();
     return Column(
       children: [
         GestureDetector(
@@ -50,6 +51,16 @@ class TaskTile extends StatelessWidget {
                       ),
                     ],
                   ),
+                ),
+                IconButton(
+                  icon: Icon(Icons.delete, color: Colors.red),
+                  onPressed: () async {
+                    if (task?.id != null) {
+                      await taskController.deleteTask(task!.id!);
+                    } else {
+                      print("Task ID is null");
+                    }
+                  },
                 ),
               ],
             ),
