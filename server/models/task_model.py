@@ -15,7 +15,7 @@ class TaskModel(Base):
     category_id = Column(UUID(as_uuid=True), ForeignKey("categories.id"), nullable=True)
     title = Column(String, nullable=False)
     description = Column(String, nullable=True)
-    status = Column(Integer, default=0)  # 0: Chưa hoàn thành, 1: Đã hoàn thành
+    is_completed = Column(Integer, default=0)  # 0: Chưa hoàn thành, 1: Đã hoàn thành
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     is_deleted = Column(Boolean, default=False)

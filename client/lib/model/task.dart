@@ -6,7 +6,7 @@ class Task {
   String? categoryId;
   String title;
   String? description;
-  int status; // 0: Chưa hoàn thành, 1: Đã hoàn thành
+  bool isCompleted;
   DateTime? createdAt;
   DateTime? updatedAt;
   bool isDeleted;
@@ -17,7 +17,7 @@ class Task {
     this.userId,
     this.categoryId,
     this.description,
-    this.status = 0,
+    this.isCompleted = false,
     this.createdAt,
     this.updatedAt,
     this.isDeleted = false,
@@ -31,7 +31,7 @@ class Task {
       categoryId: json['category_id'],
       title: json['title'],
       description: json['description'],
-      status: json['status'] ?? 0,
+      isCompleted: json['is_completed'] ?? 0,
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'])
           : null,
@@ -54,7 +54,7 @@ class Task {
       'category_id': categoryId,
       'title': title,
       'description': description,
-      'status': status,
+      'is_complete': isCompleted,
       'created_at': createdAt?.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
       'is_deleted': isDeleted,
