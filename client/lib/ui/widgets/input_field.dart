@@ -31,6 +31,7 @@ class MyInputField extends StatelessWidget {
               margin: EdgeInsets.only(top: 8.0),
               padding: EdgeInsets.only(left: 14),
               decoration: BoxDecoration(
+                color: Colors.white,
                 border: Border.all(color: Colors.grey, width: 1.0),
                 borderRadius: BorderRadius.circular(12),
               ),

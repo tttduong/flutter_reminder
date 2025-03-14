@@ -11,14 +11,14 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
-class HomePage extends StatefulWidget {
-  const HomePage({Key? key}) : super(key: key);
+class Scheme extends StatefulWidget {
+  const Scheme({Key? key}) : super(key: key);
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  State<Scheme> createState() => _SchemeState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _SchemeState extends State<Scheme> {
   late Future<List<Task>> futureTasks;
   DateTime _selectedDate = DateTime.now();
   final _taskController = Get.put(TaskController());
