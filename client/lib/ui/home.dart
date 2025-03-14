@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_to_do_app/ui/add_task_bar.dart';
+import 'package:flutter_to_do_app/ui/add_task.dart';
+import 'package:flutter_to_do_app/ui/chat.dart';
 import 'package:flutter_to_do_app/ui/scheme.dart';
 import 'package:flutter_to_do_app/ui/widgets/list_card.dart';
 import 'package:flutter_to_do_app/ui/widgets/menu_card.dart';
@@ -87,7 +88,9 @@ class Home extends StatelessWidget {
                     icon: Icons.chat_bubble_outline,
                     title: 'Chatbot',
                     color: Colors.blue,
-                    onTap: () {},
+                    onTap: () {
+                      Get.to(() => ChatPage());
+                    },
                   ),
                 ),
               ],

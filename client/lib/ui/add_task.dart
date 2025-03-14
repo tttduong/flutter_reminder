@@ -27,6 +27,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
   List<String> remindList = ["5", "10", "15", "20"];
   String _selectedRepeat = "None";
   List<String> repeatList = ["None", "Daily", "Weekly", "Monthly"];
+  List<String> listsList = ["Project", "Study", "Health"];
   String _selectedColor = "0";
   @override
   Widget build(BuildContext context) {
@@ -46,10 +47,38 @@ class _AddTaskPageState extends State<AddTaskPage> {
                     controller: _titleController,
                   ),
                   MyInputField(
-                    title: "Note",
-                    hint: "Enter your note",
+                    title: "Description",
+                    hint: "Enter your description",
                     controller: _noteController,
                   ),
+                  MyInputField(
+                      title: "Task's List",
+                      hint: "$_selectedRepeat",
+                      widget: DropdownButton(
+                          icon: Icon(
+                            Icons.keyboard_arrow_down,
+                            color: Colors.grey,
+                          ),
+                          iconSize: 32,
+                          elevation: 4,
+                          style: subTitleStyle,
+                          items: listsList
+                              .map<DropdownMenuItem<String>>((String? value) {
+                            return DropdownMenuItem<String>(
+                                value: value.toString(),
+                                child: Text(
+                                  value!,
+                                  style: TextStyle(color: Colors.grey),
+                                ));
+                          }).toList(),
+                          underline: Container(
+                            height: 0,
+                          ),
+                          onChanged: (String? newValue) {
+                            setState(() {
+                              _selectedRepeat = newValue!;
+                            });
+                          })),
                   MyInputField(
                       title: "Date",
                       hint: DateFormat.yMd().format(_selectedDate),
