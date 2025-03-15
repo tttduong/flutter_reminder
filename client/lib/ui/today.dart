@@ -44,7 +44,7 @@ class _TodayPageState extends State<TodayPage> {
     Task(title: 'sleep 3', isCompleted: true),
   ];
 
-  bool showCompletedTasks = true;
+  bool showCompletedTasks = false;
 
   @override
   Widget build(BuildContext context) {

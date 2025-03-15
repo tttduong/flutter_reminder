@@ -1,9 +1,11 @@
 import 'package:date_picker_timeline/date_picker_timeline.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_to_do_app/consts.dart';
 import 'package:flutter_to_do_app/controller/task_controller.dart';
 import 'package:flutter_to_do_app/model/task.dart';
 import 'package:flutter_to_do_app/service/theme_services.dart';
 import 'package:flutter_to_do_app/ui/add_task.dart';
+import 'package:flutter_to_do_app/ui/button_add_task.dart';
 import 'package:flutter_to_do_app/ui/theme.dart';
 import 'package:flutter_to_do_app/ui/widgets/button.dart';
 import 'package:flutter_to_do_app/ui/widgets/task_tile.dart';
@@ -40,6 +42,7 @@ class _SchemeState extends State<Scheme> {
           _showTasks(),
         ],
       ),
+      floatingActionButton: const ButtonAddTask(),
     );
   }
 
@@ -69,12 +72,12 @@ class _SchemeState extends State<Scheme> {
 
   _addDateBar() {
     return Container(
-      margin: EdgeInsets.only(top: 20, left: 20),
+      margin: EdgeInsets.only(top: 5, left: 20),
       child: DatePicker(DateTime.now(),
           height: 100,
-          width: 80,
+          width: 60,
           initialSelectedDate: DateTime.now(),
-          selectionColor: primaryClr,
+          selectionColor: AppColors.primary,
           selectedTextColor: Colors.white,
           dateTextStyle: GoogleFonts.lato(
               fontSize: 20, fontWeight: FontWeight.w600, color: Colors.grey),
@@ -93,29 +96,24 @@ class _SchemeState extends State<Scheme> {
 
   _addTaskBar() {
     return Container(
-      margin: const EdgeInsets.only(left: 20, right: 20, top: 10),
+      margin: const EdgeInsets.only(left: 20, right: 20, top: 0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Container(
-            margin: const EdgeInsets.only(left: 20, right: 20, top: 10),
+            margin: const EdgeInsets.only(left: 0, right: 0, top: 5),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(DateFormat.yMMMMd().format(DateTime.now()),
-                    style: subHeadingStyle),
                 Text(
                   "Today",
                   style: headingStyle,
-                )
+                ),
+                Text(DateFormat.yMMMMd().format(DateTime.now()),
+                    style: subHeadingStyle),
               ],
             ),
           ),
-          MyButton(
-              label: "+ Add Task",
-              onTap: () async {
-                await Get.to(() => AddTaskPage());
-              })
         ],
       ),
     );
@@ -125,24 +123,34 @@ class _SchemeState extends State<Scheme> {
     return AppBar(
       elevation: 0,
       backgroundColor: context.theme.scaffoldBackgroundColor,
-      leading: GestureDetector(
-        onTap: () {
-          ThemeService().switchTheme();
-        },
-        child: Icon(
-          Get.isDarkMode ? Icons.wb_sunny_outlined : Icons.nightlight_round,
+      leading: IconButton(
+        icon: Icon(
+          Icons.arrow_back_ios,
           size: 20,
           color: Get.isDarkMode ? Colors.white : Colors.black,
         ),
+        onPressed: () {
+          Get.back();
+        },
       ),
-      actions: [
-        CircleAvatar(
-          backgroundImage: AssetImage("images/profile.jpg"),
-        ),
-        SizedBox(
-          width: 20,
-        )
-      ],
+      // leading: GestureDetector(
+      //   onTap: () {
+      //     ThemeService().switchTheme();
+      //   },
+      //   child: Icon(
+      //     Get.isDarkMode ? Icons.wb_sunny_outlined : Icons.nightlight_round,
+      //     size: 20,
+      //     color: Get.isDarkMode ? Colors.white : Colors.black,
+      //   ),
+      // ),
+      // actions: [
+      //   CircleAvatar(
+      //     backgroundImage: AssetImage("images/profile.jpg"),
+      //   ),
+      //   SizedBox(
+      //     width: 20,
+      //   )
+      // ],
     );
   }
 }

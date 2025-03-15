@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_to_do_app/db/db_helper.dart';
 import 'package:flutter_to_do_app/service/theme_services.dart';
 import 'package:flutter_to_do_app/ui/home.dart';
-import 'package:flutter_to_do_app/ui/scheme.dart';
+import 'package:flutter_to_do_app/ui/schedule.dart';
 import 'package:flutter_to_do_app/ui/theme.dart';
 import 'package:get/get_navigation/src/root/get_material_app.dart';
 import 'package:get_storage/get_storage.dart';

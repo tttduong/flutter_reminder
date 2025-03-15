@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_to_do_app/consts.dart';
 import 'package:flutter_to_do_app/ui/add_list.dart';
 import 'package:flutter_to_do_app/ui/add_task.dart';
+import 'package:flutter_to_do_app/ui/all_task.dart';
+import 'package:flutter_to_do_app/ui/button_add_task.dart';
 import 'package:flutter_to_do_app/ui/chat.dart';
-import 'package:flutter_to_do_app/ui/scheme.dart';
+import 'package:flutter_to_do_app/ui/schedule.dart';
 import 'package:flutter_to_do_app/ui/today.dart';
 import 'package:flutter_to_do_app/ui/widgets/list_card.dart';
 import 'package:flutter_to_do_app/ui/widgets/menu_card.dart';
@@ -98,7 +100,9 @@ class _HomeState extends State<Home> {
                     icon: Icons.list_alt,
                     title: 'All Tasks',
                     color: Colors.green,
-                    onTap: () {},
+                    onTap: () {
+                      Get.to(() => AllTasksPage());
+                    },
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -150,17 +154,7 @@ class _HomeState extends State<Home> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          await Get.to(() => AddTaskPage());
-        },
-        shape: const CircleBorder(),
-        backgroundColor: AppColors.primary,
-        child: const Icon(
-          Icons.add,
-          color: AppColors.buttonWhiteText,
-        ),
-      ),
+      floatingActionButton: const ButtonAddTask(),
     );
   }
 }
