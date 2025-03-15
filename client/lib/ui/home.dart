@@ -1,14 +1,31 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_to_do_app/consts.dart';
+import 'package:flutter_to_do_app/ui/add_list.dart';
 import 'package:flutter_to_do_app/ui/add_task.dart';
 import 'package:flutter_to_do_app/ui/chat.dart';
 import 'package:flutter_to_do_app/ui/scheme.dart';
+import 'package:flutter_to_do_app/ui/today.dart';
 import 'package:flutter_to_do_app/ui/widgets/list_card.dart';
 import 'package:flutter_to_do_app/ui/widgets/menu_card.dart';
 import 'package:get/get.dart';
 import 'package:get/get_core/src/get_main.dart';
 
-class Home extends StatelessWidget {
+class Home extends StatefulWidget {
   const Home({Key? key}) : super(key: key);
+
+  @override
+  State<Home> createState() => _HomeState();
+}
+
+class _HomeState extends State<Home> {
+  void _showNewListBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => const NewListBottomSheet(),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,7 +72,9 @@ class Home extends StatelessWidget {
                     icon: Icons.today,
                     title: 'Today',
                     color: Colors.red,
-                    onTap: () {},
+                    onTap: () {
+                      Get.to(() => TodayPage());
+                    },
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -96,12 +115,30 @@ class Home extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 32),
-            const Text(
-              'My Lists',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'My Lists',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                IconButton(
+                  onPressed: _showNewListBottomSheet,
+                  style: IconButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8), // Nút vuông
+                    ),
+                  ),
+                  icon: const Icon(
+                    Icons.add,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 16),
             ListCard(
@@ -118,10 +155,10 @@ class Home extends StatelessWidget {
           await Get.to(() => AddTaskPage());
         },
         shape: const CircleBorder(),
-        backgroundColor: Colors.black,
+        backgroundColor: AppColors.primary,
         child: const Icon(
           Icons.add,
-          color: Colors.white,
+          color: AppColors.buttonWhiteText,
         ),
       ),
     );
