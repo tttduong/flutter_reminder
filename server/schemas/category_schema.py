@@ -2,7 +2,9 @@ from pydantic import BaseModel
 from uuid import UUID 
 
 class CategoryBase(BaseModel):
-    name: str
+    title: str
+    color: str  # Lưu màu dạng chuỗi hex, ví dụ: "#FF5733"
+    icon: str  # Lưu tên icon, ví dụ: "material-icons:work"
 
 class CategoryCreate(CategoryBase):
     pass

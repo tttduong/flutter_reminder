@@ -19,11 +19,15 @@ def get_db():
 # Tạo category
 @router.post("/", response_model=CategoryResponse)
 def create_category(category: CategoryCreate, db: Session = Depends(get_db)):
-    db_category = db.query(CategoryModel).filter(CategoryModel.name == category.name).first()
+    db_category = db.query(CategoryModel).filter(CategoryModel.title == category.title).first()
     if db_category:
         raise HTTPException(status_code=400, detail="Category already exists")
 
-    new_category = CategoryModel(name=category.name)
+    new_category = CategoryModel(
+        title=category.title,
+        color=category.color,
+        icon=category.icon
+    )
     db.add(new_category)
     db.commit()
     db.refresh(new_category)
@@ -42,7 +46,6 @@ def get_category_by_id(category_id: UUID, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Category not found")
     return category
 
-
 # Cập nhật category theo ID
 @router.put("/{category_id}", response_model=CategoryResponse)
 def update_category(category_id: UUID, updated_category: CategoryCreate, db: Session = Depends(get_db)):
@@ -51,6 +54,9 @@ def update_category(category_id: UUID, updated_category: CategoryCreate, db: Ses
         raise HTTPException(status_code=404, detail="Category not found")
 
     category.name = updated_category.name
+    category.color = updated_category.color
+    category.icon = updated_category.icon
+
     db.commit()
     db.refresh(category)
     return category

@@ -1,4 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_to_do_app/controller/category_controller.dart';
+import 'package:flutter_to_do_app/model/category.dart' as model;
+import 'package:flutter_to_do_app/service/category_service.dart';
+import 'package:flutter_to_do_app/ui/theme.dart';
+import 'package:flutter_to_do_app/ui/widgets/input_field.dart';
+import 'package:get/get.dart';
 
 class NewListBottomSheet extends StatefulWidget {
   const NewListBottomSheet({Key? key}) : super(key: key);
@@ -8,6 +14,8 @@ class NewListBottomSheet extends StatefulWidget {
 }
 
 class _NewListBottomSheetState extends State<NewListBottomSheet> {
+  final CategoryController _categoryController = Get.put(CategoryController());
+  final TextEditingController _titleController = TextEditingController();
   // Danh sách màu sắc (12 màu)
   final List<Color> colors = [
     Colors.red,
@@ -85,7 +93,7 @@ class _NewListBottomSheetState extends State<NewListBottomSheet> {
                             style: TextStyle(
                                 fontWeight: FontWeight.bold, fontSize: 18)),
                         TextButton(
-                          onPressed: () {},
+                          onPressed: () => _validateList(),
                           child: const Text('Create',
                               style:
                                   TextStyle(color: Colors.blue, fontSize: 16)),
@@ -96,28 +104,18 @@ class _NewListBottomSheetState extends State<NewListBottomSheet> {
                     Container(
                       width: 60,
                       height: 60,
-                      margin: const EdgeInsets.symmetric(vertical: 16),
+                      margin: const EdgeInsets.symmetric(vertical: 5),
                       decoration: BoxDecoration(
                         color: selectedColor.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Icon(selectedIcon, color: selectedColor, size: 28),
                     ),
-                    // TextField cho tên danh sách
-                    Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 16),
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade200,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const TextField(
-                        decoration: InputDecoration(
-                          border: InputBorder.none,
-                          hintText: 'List Name',
-                        ),
-                      ),
+
+                    MyInputField(
+                      title: "",
+                      hint: "Enter title here",
+                      controller: _titleController,
                     ),
                   ],
                 ),
@@ -212,5 +210,49 @@ class _NewListBottomSheetState extends State<NewListBottomSheet> {
         );
       },
     );
+  }
+
+  _validateList() {
+    if (_titleController.text.isNotEmpty) {
+      _addListToDb();
+      // Get.back();
+    } else if (_titleController.text.isEmpty) {
+      Get.snackbar("Required", "All fields are required!",
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.white,
+          colorText: pinkClr,
+          icon: Icon(Icons.warning_amber_rounded, color: Colors.red));
+    }
+  }
+
+  _addListToDb() async {
+    if (_titleController.text.isEmpty) return;
+
+    final category = model.Category(
+      // id: UniqueKey().toString(), // Tạo ID ngẫu nhiên nếu cần
+      title: _titleController.text,
+      color: Color(selectedColor.value), // Lưu mã màu dưới dạng int
+      icon: IconData(selectedIcon.codePoint,
+          fontFamily: 'MaterialIcons'), // Lưu mã Unicode của icon
+    );
+
+    bool success = await CategoryService.createCategory(category: category);
+    if (success) {
+      Get.back(); // Đóng bottom sheet sau khi thêm thành công
+      Get.snackbar("Success", "Category added successfully!",
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+          icon: const Icon(Icons.check_circle, color: Colors.white));
+
+      // Cập nhật danh sách category trong UI
+      _categoryController.getCategories();
+    } else {
+      Get.snackbar("Error", "Failed to add category!",
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          icon: const Icon(Icons.error, color: Colors.white));
+    }
   }
 }

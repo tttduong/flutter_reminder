@@ -22,10 +22,12 @@ class MyInputField extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              title,
-              style: titleStyle,
-            ),
+            if (title
+                .isNotEmpty) // Kiểm tra nếu title không rỗng thì mới hiển thị
+              Text(
+                title,
+                style: titleStyle,
+              ),
             Container(
               height: 52,
               margin: EdgeInsets.only(top: 8.0),

@@ -89,11 +89,11 @@ class _AllTasksPageState extends State<AllTasksPage> {
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 children: [
                   // Hiển thị danh sách công việc theo danh mục
-                  for (var category in categories) ...[
-                    _buildCategoryHeader(category),
-                    ...category.tasks.map((task) => _buildTaskItem(task)),
-                    const SizedBox(height: 16),
-                  ],
+                  // for (var category in categories) ...[
+                  //   _buildCategoryHeader(category),
+                  //   ...category.tasks.map((task) => _buildTaskItem(task)),
+                  //   const SizedBox(height: 16),
+                  // ],
 
                   // Nút ẩn/hiện công việc đã hoàn thành
                   TextButton.icon(

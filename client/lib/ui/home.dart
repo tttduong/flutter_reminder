@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_to_do_app/consts.dart';
+import 'package:flutter_to_do_app/controller/category_controller.dart';
 import 'package:flutter_to_do_app/ui/add_list.dart';
 import 'package:flutter_to_do_app/ui/add_task.dart';
 import 'package:flutter_to_do_app/ui/all_task.dart';
@@ -20,6 +21,7 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
+  final _categoryController = Get.put(CategoryController());
   void _showNewListBottomSheet() {
     showModalBottomSheet(
       context: context,
@@ -151,10 +153,43 @@ class _HomeState extends State<Home> {
               progress: 0.7,
               onTap: () {},
             ),
+            _showCategories()
           ],
         ),
       ),
       floatingActionButton: const ButtonAddTask(),
     );
+  }
+
+  _showCategories() {
+    return Obx(() {
+      if (_categoryController.categoryList.isEmpty) {
+        return const Center(child: Text("Không có danh mục nào!"));
+      }
+      return Column(
+        children: [
+          SizedBox(
+            height: 300,
+            child: ListView.builder(
+              itemCount: _categoryController.categoryList.length,
+              itemBuilder: (context, index) {
+                var category = _categoryController.categoryList[index];
+                return ListCard(
+                  title: category.title,
+                  taskCount: category.tasks!.length, // Số task trong category
+                  progress: category.tasks!.isEmpty
+                      ? 0
+                      : category.tasks!.where((t) => t.isCompleted).length /
+                          category.tasks!.length.toDouble(), // Tính progress
+                  onTap: () {
+                    // Chuyển sang màn hình chi tiết category (nếu có)
+                  },
+                );
+              },
+            ),
+          ),
+        ],
+      );
+    });
   }
 }
