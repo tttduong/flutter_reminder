@@ -3,11 +3,6 @@ import 'package:flutter_to_do_app/service/category_service.dart';
 import 'package:get/get.dart';
 
 class CategoryController extends GetxController {
-  @override
-  void onReady() {
-    super.onReady();
-  }
-
   var categoryList = <Category>[].obs;
 
   @override
