@@ -8,7 +8,7 @@ import 'package:flutter_to_do_app/ui/button_add_task.dart';
 import 'package:flutter_to_do_app/ui/chat.dart';
 import 'package:flutter_to_do_app/ui/schedule.dart';
 import 'package:flutter_to_do_app/ui/today.dart';
-import 'package:flutter_to_do_app/ui/widgets/list_card.dart';
+import 'package:flutter_to_do_app/ui/widgets/category_card.dart';
 import 'package:flutter_to_do_app/ui/widgets/menu_card.dart';
 import 'package:get/get.dart';
 import 'package:get/get_core/src/get_main.dart';
@@ -147,12 +147,6 @@ class _HomeState extends State<Home> {
               ],
             ),
             const SizedBox(height: 16),
-            ListCard(
-              title: 'Personal Project',
-              taskCount: 23,
-              progress: 0.7,
-              onTap: () {},
-            ),
             _showCategories()
           ],
         ),
@@ -166,29 +160,27 @@ class _HomeState extends State<Home> {
       if (_categoryController.categoryList.isEmpty) {
         return const Center(child: Text("Không có danh mục nào!"));
       }
-      return Column(
-        children: [
-          SizedBox(
-            height: 300,
-            child: ListView.builder(
-              itemCount: _categoryController.categoryList.length,
-              itemBuilder: (context, index) {
-                var category = _categoryController.categoryList[index];
-                return ListCard(
-                  title: category.title,
-                  taskCount: category.tasks!.length, // Số task trong category
-                  progress: category.tasks!.isEmpty
-                      ? 0
-                      : category.tasks!.where((t) => t.isCompleted).length /
-                          category.tasks!.length.toDouble(), // Tính progress
-                  onTap: () {
-                    // Chuyển sang màn hình chi tiết category (nếu có)
-                  },
-                );
-              },
-            ),
+      return Expanded(
+        // Để chiếm phần còn lại của màn hình
+        child: SingleChildScrollView(
+          child: Column(
+            children: _categoryController.categoryList.map((category) {
+              return ListCard(
+                title: category.title,
+                color: category.color,
+                icon: category.icon,
+                taskCount: category.tasks!.length,
+                progress: category.tasks!.isEmpty
+                    ? 0
+                    : category.tasks!.where((t) => t.isCompleted).length /
+                        category.tasks!.length.toDouble(),
+                onTap: () {
+                  // Chuyển sang màn hình chi tiết category (nếu có)
+                },
+              );
+            }).toList(),
           ),
-        ],
+        ),
       );
     });
   }
