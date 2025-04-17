@@ -39,7 +39,6 @@ def get_current_user(token: str = None, db: Session = Depends(get_db)):
 # 1. API tạo Task
 # @router.post("/", response_model=TaskResponse)
 @router.post("/")
-
 def create_task(task: TaskCreate, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
     if not current_user:
         raise HTTPException(status_code=401, detail="Unauthorized")

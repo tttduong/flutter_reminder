@@ -1,9 +1,9 @@
 from pydantic import BaseModel
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, date, time
 import uuid
 from database.database import Base
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime
+from sqlalchemy import Column,Date, Time, Integer, String, Boolean, ForeignKey, DateTime
 from sqlalchemy.dialects.postgresql import UUID as SA_UUID
 
 class Task(Base):
@@ -12,9 +12,12 @@ class Task(Base):
     
     id = Column(SA_UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, index=True)
     user_id = Column(SA_UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
-    category_id = Column(SA_UUID(as_uuid=True), ForeignKey("categories.id"), nullable=True)
+    category_id = Column(SA_UUID(as_uuid=True), ForeignKey("categories.id"), nullable=False)
+    # remind_id = Column(SA_UUID(as_uuid=True), ForeignKey("reminds.id"), nullable=True)
     title = Column(String, nullable=False)
     description = Column(String, nullable=True)
+    date = Column(Date, nullable=True)
+    time = Column(Time, nullable=True)
     is_completed = Column(Boolean, default=False)  
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -24,9 +27,12 @@ class TaskBase(BaseModel):
     title: str
     description: Optional[str] = None
     category_id: Optional[uuid.UUID] = None
+    # remind_id: Optional[uuid.UUID] = None  # New
     is_completed: bool = False
     # created_at: datetime
     # updated_at: datetime
+    date: Optional[date] = None       # New
+    time: Optional[time] = None       # New
     # is_deleted: bool = False
 
 class TaskCreate(TaskBase):

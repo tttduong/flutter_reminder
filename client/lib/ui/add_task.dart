@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_to_do_app/controller/task_controller.dart';
 import 'package:flutter_to_do_app/model/task.dart';
+import 'package:flutter_to_do_app/service/category_service.dart';
 import 'package:flutter_to_do_app/service/theme_services.dart';
 import 'package:flutter_to_do_app/ui/theme.dart';
 import 'package:flutter_to_do_app/ui/widgets/button.dart';
@@ -27,8 +28,15 @@ class _AddTaskPageState extends State<AddTaskPage> {
   List<String> remindList = ["5", "10", "15", "20"];
   String _selectedRepeat = "None";
   List<String> repeatList = ["None", "Daily", "Weekly", "Monthly"];
-  List<String> listsList = ["Project", "Study", "Health"];
+  List<String> listsList = [];
   String _selectedColor = "0";
+
+  @override
+  void initState() {
+    super.initState();
+    loadCategories();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -52,7 +60,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
                     controller: _noteController,
                   ),
                   MyInputField(
-                      title: "Task's List",
+                      title: "Category",
                       hint: "$_selectedRepeat",
                       widget: DropdownButton(
                           icon: Icon(
@@ -92,7 +100,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
                     children: [
                       Expanded(
                           child: MyInputField(
-                              title: "Start Time",
+                              title: "Time",
                               hint: _startTime,
                               widget: IconButton(
                                 onPressed: () {
@@ -101,18 +109,18 @@ class _AddTaskPageState extends State<AddTaskPage> {
                                 icon: Icon(Icons.access_time_rounded),
                                 color: Colors.grey,
                               ))),
-                      SizedBox(width: 20),
-                      Expanded(
-                          child: MyInputField(
-                              title: "EndTime",
-                              hint: _endTime,
-                              widget: IconButton(
-                                onPressed: () {
-                                  _getTimeFromUser(isStartTime: false);
-                                },
-                                icon: Icon(Icons.access_time_rounded),
-                                color: Colors.grey,
-                              ))),
+                      // SizedBox(width: 20),
+                      // Expanded(
+                      //     child: MyInputField(
+                      //         title: "EndTime",
+                      //         hint: _endTime,
+                      //         widget: IconButton(
+                      //           onPressed: () {
+                      //             _getTimeFromUser(isStartTime: false);
+                      //           },
+                      //           icon: Icon(Icons.access_time_rounded),
+                      //           color: Colors.grey,
+                      //         ))),
                     ],
                   ),
                   MyInputField(
@@ -174,10 +182,10 @@ class _AddTaskPageState extends State<AddTaskPage> {
                     height: 18,
                   ),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    mainAxisAlignment: MainAxisAlignment.end,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      _colorPallete(),
+                      // _colorPallete(),
                       MyButton(
                           label: "Create Task", onTap: () => _validateDate()),
                     ],
@@ -185,6 +193,17 @@ class _AddTaskPageState extends State<AddTaskPage> {
                 ],
               ),
             )));
+  }
+
+  Future<void> loadCategories() async {
+    try {
+      final categories = await CategoryService.fetchCategories();
+      setState(() {
+        listsList = categories.map((cat) => cat.title).toList();
+      });
+    } catch (e) {
+      print("Error loading categories: $e");
+    }
   }
 
   _validateDate() {
@@ -221,42 +240,42 @@ class _AddTaskPageState extends State<AddTaskPage> {
     // print("My id is $value");
   }
 
-  _colorPallete() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          "Color",
-          style: titleStyle,
-        ),
-        SizedBox(height: 8.0),
-        Wrap(
-          children: List<Widget>.generate(3, (int index) {
-            return GestureDetector(
-              onTap: () {
-                setState(() {
-                  _selectedColor = index.toString();
-                });
-              },
-              child: Padding(
-                padding: EdgeInsets.only(right: 8.0),
-                child: CircleAvatar(
-                    radius: 14,
-                    backgroundColor: index == 0
-                        ? primaryClr
-                        : index == 1
-                            ? pinkClr
-                            : yellowClr,
-                    child: _selectedColor == index
-                        ? Icon(Icons.done, color: Colors.white, size: 16)
-                        : Container()),
-              ),
-            );
-          }),
-        )
-      ],
-    );
-  }
+  // _colorPallete() {
+  //   return Column(
+  //     crossAxisAlignment: CrossAxisAlignment.start,
+  //     children: [
+  //       Text(
+  //         "Color",
+  //         style: titleStyle,
+  //       ),
+  //       SizedBox(height: 8.0),
+  //       Wrap(
+  //         children: List<Widget>.generate(3, (int index) {
+  //           return GestureDetector(
+  //             onTap: () {
+  //               setState(() {
+  //                 _selectedColor = index.toString();
+  //               });
+  //             },
+  //             child: Padding(
+  //               padding: EdgeInsets.only(right: 8.0),
+  //               child: CircleAvatar(
+  //                   radius: 14,
+  //                   backgroundColor: index == 0
+  //                       ? primaryClr
+  //                       : index == 1
+  //                           ? pinkClr
+  //                           : yellowClr,
+  //                   child: _selectedColor == index
+  //                       ? Icon(Icons.done, color: Colors.white, size: 16)
+  //                       : Container()),
+  //             ),
+  //           );
+  //         }),
+  //       )
+  //     ],
+  //   );
+  // }
 
   _appBar(BuildContext context) {
     return AppBar(
