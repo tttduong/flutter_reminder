@@ -14,35 +14,35 @@ class AllTasksPage extends StatefulWidget {
 
 class _AllTasksPageState extends State<AllTasksPage> {
   // Các danh mục công việc
-  final List<Category> categories = [
-    Category(
-      title: 'Personal Project',
-      color: Colors.pink,
-      icon: Icons.person,
-      tasks: [
-        Task(title: 'build UI home', isCompleted: false),
-        Task(title: 'build UI today', isCompleted: false),
-        Task(title: 'build UI', isCompleted: false),
-      ],
-    ),
-    Category(
-      title: 'Healing',
-      color: Colors.orange,
-      icon: Icons.favorite,
-      tasks: [
-        Task(title: 'sleep', isCompleted: false),
-        Task(title: 'spicy noodles', isCompleted: false),
-        Task(title: 'lunch', isCompleted: false),
-      ],
-    ),
-  ];
+  // final List<Category> categories = [
+  //   Category(
+  //     title: 'Personal Project',
+  //     color: Colors.pink,
+  //     icon: Icons.person,
+  //     tasks: [
+  //       Task(title: 'build UI home', isCompleted: false),
+  //       Task(title: 'build UI today', isCompleted: false),
+  //       Task(title: 'build UI', isCompleted: false),
+  //     ],
+  //   ),
+  //   Category(
+  //     title: 'Healing',
+  //     color: Colors.orange,
+  //     icon: Icons.favorite,
+  //     tasks: [
+  //       Task(title: 'sleep', isCompleted: false),
+  //       Task(title: 'spicy noodles', isCompleted: false),
+  //       Task(title: 'lunch', isCompleted: false),
+  //     ],
+  //   ),
+  // ];
 
   // Công việc đã hoàn thành
-  final List<Task> completedTasks = [
-    Task(title: 'sleep 1', isCompleted: true),
-    Task(title: 'sleep 2', isCompleted: true),
-    Task(title: 'sleep 3', isCompleted: true),
-  ];
+  // final List<Task> completedTasks = [
+  //   Task(title: 'sleep 1', isCompleted: true),
+  //   Task(title: 'sleep 2', isCompleted: true),
+  //   Task(title: 'sleep 3', isCompleted: true),
+  // ];
 
   bool showCompletedTasks = false;
 
@@ -125,8 +125,8 @@ class _AllTasksPageState extends State<AllTasksPage> {
                   // Hiển thị công việc đã hoàn thành
                   if (showCompletedTasks) ...[
                     const SizedBox(height: 16),
-                    ...completedTasks
-                        .map((task) => _buildCompletedTaskItem(task)),
+                    // ...completedTasks
+                    // .map((task) => _buildCompletedTaskItem(task)),
                   ],
 
                   const SizedBox(height: 80), // Để tránh FAB che nội dung

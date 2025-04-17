@@ -3,12 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_to_do_app/model/task.dart';
 
 class Category {
+  final String id;
   final String title;
   final Color color;
   final IconData icon;
   final List<Task>? tasks;
 
   Category({
+    required this.id,
     required this.title,
     required this.color,
     required this.icon,
@@ -18,6 +20,7 @@ class Category {
   // Phương thức chuyển đổi từ JSON sang Category object
   factory Category.fromJson(Map<String, dynamic> json) {
     return Category(
+      id: json['id'] ?? '',
       title: json['title'] ?? '',
       color: _parseColor(json['color']),
       icon: _parseIcon(json['icon']),

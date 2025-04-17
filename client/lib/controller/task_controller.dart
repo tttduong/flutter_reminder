@@ -19,13 +19,19 @@ class TaskController extends GetxController {
   }
 
   Future<void> addTask({Task? task}) async {
-    print("call add task om controller");
+    print("call add task on controller");
     // return await DBHelper.insert(task!);
-    final String title = task?.title.trim() ?? "";
-    final String description = task?.description?.trim() ?? "";
 
-    if (title.isEmpty || description.isEmpty) {
-      print("Title và Description không được để trống");
+    if (task == null) {
+      print("Task null");
+      return;
+    }
+    final String title = task.title.trim();
+    final String description = task.description?.trim() ?? "";
+    final String categoryId = task.categoryId;
+    print("Category ID in Task Controller: " + categoryId); // OK
+    if (title.isEmpty || description.isEmpty || categoryId.isEmpty) {
+      print("Title, Description hoặc Catergory không được để trống");
       return;
     }
 

@@ -26,7 +26,9 @@ class Task(Base):
 class TaskBase(BaseModel):
     title: str
     description: Optional[str] = None
-    category_id: Optional[uuid.UUID] = None
+    # category_id: Optional[uuid.UUID] = None
+    category_id: uuid.UUID
+
     # remind_id: Optional[uuid.UUID] = None  # New
     is_completed: bool = False
     # created_at: datetime
@@ -36,12 +38,15 @@ class TaskBase(BaseModel):
     # is_deleted: bool = False
 
 class TaskCreate(TaskBase):
-    pass  # Dùng khi tạo task, không cần ID
+    # pass  # Dùng khi tạo task, không cần ID
+    category_id: uuid.UUID
 
 class TaskResponse(TaskBase):
     id: uuid.UUID  # Chỉnh sửa để sử dụng uuid.UUID
     user_id: uuid.UUID
-    category_id: Optional[uuid.UUID] = None
+    # category_id: Optional[uuid.UUID] = None
+    category_id: uuid.UUID
+
     description: Optional[str] = None
 
     class Config:

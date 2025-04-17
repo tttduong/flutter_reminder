@@ -229,7 +229,7 @@ class _NewListBottomSheetState extends State<NewListBottomSheet> {
     if (_titleController.text.isEmpty) return;
 
     final category = model.Category(
-      // id: UniqueKey().toString(), // Tạo ID ngẫu nhiên nếu cần
+      id: UniqueKey().toString(), // Tạo ID ngẫu nhiên nếu cần
       title: _titleController.text,
       color: Color(selectedColor.value), // Lưu mã màu dưới dạng int
       icon: IconData(selectedIcon.codePoint,

@@ -3,10 +3,12 @@
 class Task {
   String? id;
   String? userId;
-  String? categoryId;
+  String categoryId;
   String title;
   String? description;
   bool isCompleted;
+  DateTime? date;
+  String? time;
   DateTime? createdAt;
   DateTime? updatedAt;
   bool isDeleted;
@@ -15,9 +17,11 @@ class Task {
     this.id,
     required this.title,
     this.userId,
-    this.categoryId,
+    required this.categoryId,
     this.description,
     this.isCompleted = false,
+    this.date,
+    this.time,
     this.createdAt,
     this.updatedAt,
     this.isDeleted = false,
@@ -31,7 +35,9 @@ class Task {
       categoryId: json['category_id'],
       title: json['title'],
       description: json['description'],
-      isCompleted: json['is_completed'] ?? 0,
+      isCompleted: json['is_completed'] ?? false,
+      date: json['date'] != null ? DateTime.parse(json['date']) : null,
+      time: json['time'], // dạng chuỗi, ví dụ: "08:30"
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'])
           : null,
@@ -55,6 +61,8 @@ class Task {
       'title': title,
       'description': description,
       'is_complete': isCompleted,
+      'date': date?.toIso8601String(),
+      'time': time,
       'created_at': createdAt?.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
       'is_deleted': isDeleted,

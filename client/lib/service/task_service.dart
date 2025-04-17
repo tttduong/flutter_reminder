@@ -39,18 +39,26 @@ class TaskService {
 // Create task
   static Future<bool> createTask({Task? task}) async {
     if (task == null) return false;
-
+    print("cat id in createTask in taskService: " + task.categoryId); // OK
     try {
+      // Tạo Map chứa nội dung body
+      final Map<String, dynamic> jsonBody = {
+        "title": task.title,
+        "description": task.description,
+        "category_id": task.categoryId.toString(), // Đảm bảo là UUID string
+      };
+
+      // In JSON để kiểm tra
+      // print(
+      //     "JSON body gửi đi: ${jsonEncode(jsonBody)}");  //OK
+
       final response = await http.post(
         Uri.parse("$baseUrl/tasks/"),
         headers: {
           "Content-Type": "application/json",
           "Authorization": "Bearer your_access_token", // Nếu API cần token
         },
-        body: jsonEncode({
-          "title": task.title,
-          "description": task.description,
-        }),
+        body: jsonEncode(jsonBody), // id category OK
       );
 
       if (response.statusCode == 201 || response.statusCode == 200) {
