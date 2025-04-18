@@ -58,10 +58,15 @@ def create_task(task: TaskCreate, db: Session = Depends(get_db), current_user=De
     db.refresh(new_task)
     return new_task
 
-
+#get all tasks
 @router.get("/", response_model=list[TaskResponse])
 def get_all_tasks(db: Session = Depends(get_db)):
     tasks = db.query(TaskModel).filter(TaskModel.is_deleted == False).all()
+    return [TaskResponse.from_orm(task) for task in tasks]
+
+@router.get("/by_category/{category_id}", response_model=list[TaskResponse])
+async def get_tasks_by_category(category_id: UUID, db: Session = Depends(get_db)):
+    tasks = db.query(TaskModel).filter(TaskModel.category_id == category_id, TaskModel.is_deleted == False).all()
     return [TaskResponse.from_orm(task) for task in tasks]
 
 # @router.post("/", response_model=TaskResponse)

@@ -6,6 +6,22 @@ import 'package:http/http.dart' as http;
 class TaskService {
   static const String baseUrl = "http://localhost:8000";
 
+  //get all tasks by category_id---------------------------------------------------------------
+  static Future<List<Task>> getTasksByCategoryId(String categoryId) async {
+    final response =
+        await http.get(Uri.parse('$baseUrl/tasks/by_category/$categoryId'));
+    print("loading in loading tasks");
+
+    if (response.statusCode == 200) {
+      List<dynamic> jsonData = json.decode(response.body);
+      print("successing in loading tasks");
+
+      return jsonData.map((task) => Task.fromJson(task)).toList();
+    } else {
+      throw Exception('Failed to load tasks');
+    }
+  }
+
 //get all tasks
   static Future<List<Task>> fetchTasks() async {
     final response = await http.get(Uri.parse('$baseUrl/tasks/'));

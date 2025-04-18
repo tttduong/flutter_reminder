@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_to_do_app/consts.dart';
+import 'package:flutter_to_do_app/service/task_service.dart';
 
-class ListCard extends StatelessWidget {
+class ListCard extends StatefulWidget {
   final String title;
   final Color color;
   final IconData icon;
@@ -20,6 +21,28 @@ class ListCard extends StatelessWidget {
     required this.onTap,
     // required this.onDelete, // Nhận hàm xóa từ parent
   }) : super(key: key);
+
+  @override
+  State<ListCard> createState() => _ListCardState();
+}
+
+class _ListCardState extends State<ListCard> {
+  // Map<int, int> _taskCounts = {}; // categoryId -> task count
+
+  // @override
+  // void initState() {
+  //   super.initState();
+  //   _fetchTaskCounts(); // gọi API ở đây
+  // }
+
+  // Future<void> _fetchTaskCounts() async {
+  //   for (var category in categoryList) {
+  //     final tasks = await TaskService.getTasksByCategoryId(category.id.toString());
+  //     setState(() {
+  //       _taskCounts[category.id] = tasks.length;
+  //     });
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -45,7 +68,7 @@ class ListCard extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.only(bottom: 12.0),
         child: InkWell(
-          onTap: onTap,
+          onTap: widget.onTap,
           child: Container(
             decoration: BoxDecoration(
               color: AppColors.background,
@@ -58,12 +81,12 @@ class ListCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: color.withOpacity(0.2),
+                      color: widget.color.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Icon(
-                      icon,
-                      color: color,
+                      widget.icon,
+                      color: widget.color,
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -72,14 +95,14 @@ class ListCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          title,
+                          widget.title,
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                         Text(
-                          '$taskCount tasks',
+                          '${widget.taskCount} tasks',
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.grey.shade600,
