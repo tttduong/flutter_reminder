@@ -48,6 +48,8 @@ def create_task(task: TaskCreate, db: Session = Depends(get_db), current_user=De
         title=task.title,
         category_id = task.category_id,
         description=task.description,
+        due_date=task.due_date, 
+        time=task.time,
         user_id=current_user.id
         # user_id="33432faf-ddbd-4b50-bd38-33bdb7d6d990"
     )

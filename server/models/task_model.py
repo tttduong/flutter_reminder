@@ -15,7 +15,7 @@ class TaskModel(Base):
     category_id = Column(UUID(as_uuid=True), ForeignKey("categories.id"), nullable=True)
     title = Column(String, nullable=False)
     description = Column(String, nullable=True)
-    date = Column(Date, nullable=True)  # YYYY-MM-DD
+    due_date = Column(Date, nullable=True)  # YYYY-MM-DD
     time = Column(Time, nullable=True)  # HH:MM:SS
     is_completed = Column(Boolean, default=False)  # 0: Chưa hoàn thành, 1: Đã hoàn thành
     created_at = Column(DateTime, default=datetime.utcnow)

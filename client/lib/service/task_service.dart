@@ -46,6 +46,8 @@ class TaskService {
         "title": task.title,
         "description": task.description,
         "category_id": task.categoryId.toString(), // Đảm bảo là UUID string
+        "due_date": task.dueDate,
+        "time": task.time,
       };
 
       // In JSON để kiểm tra

@@ -29,6 +29,7 @@ class TaskController extends GetxController {
     final String title = task.title.trim();
     final String description = task.description?.trim() ?? "";
     final String categoryId = task.categoryId;
+    // final String? time = task.time;
     print("Category ID in Task Controller: " + categoryId); // OK
     if (title.isEmpty || description.isEmpty || categoryId.isEmpty) {
       print("Title, Description hoặc Catergory không được để trống");

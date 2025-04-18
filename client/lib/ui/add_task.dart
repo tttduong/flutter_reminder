@@ -22,7 +22,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _noteController = TextEditingController();
 
-  DateTime _selectedDate = DateTime.now();
+  String _selectedDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
   // String _endTime = "9:30 PM";
   String _time = DateFormat("hh:mm a").format(DateTime.now()).toString();
   String _selectedRemind = "5";
@@ -103,7 +103,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
                           })),
                   MyInputField(
                       title: "Date",
-                      hint: DateFormat.yMd().format(_selectedDate),
+                      hint: _selectedDate,
                       widget: IconButton(
                           icon: Icon(Icons.calendar_today_outlined,
                               color: Colors.grey),
@@ -244,7 +244,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
         description: _noteController.text,
         categoryId: _selectedCategoryId,
         isCompleted: false,
-        date: _selectedDate,
+        dueDate: _selectedDate,
         time: _time,
         // endTime: _endTime,
         // color: _selectedColor.toString(), // Đổi thành string
@@ -252,7 +252,9 @@ class _AddTaskPageState extends State<AddTaskPage> {
         // repeat: _selectedRepeat,
       ),
     );
-    print("Category ID saved to db: " + _selectedCategoryId);
+    // print("Category ID saved to db: " + _selectedCategoryId);      //OK
+    // print("time saved to db: " + _time); //OK
+    print("due date saved to db: " + _selectedDate); //OK
     await Future.delayed(Duration(milliseconds: 500)); // Chờ API cập nhật
     // Cập nhật danh sách task ngay sau khi tạo thành công
     _taskController.getTasks();
@@ -331,7 +333,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
 
     if (_pickerDate != null) {
       setState(() {
-        _selectedDate = _pickerDate;
+        _selectedDate = DateFormat('dd/MM/yyyy').format(_pickerDate);
         print(_selectedDate);
       });
     } else {
