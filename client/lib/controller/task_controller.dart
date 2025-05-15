@@ -47,6 +47,11 @@ class TaskController extends GetxController {
     taskList.value = await TaskService.fetchTasks();
   }
 
+  //get all the data from table
+  void getTasksByCategoryId(String categoryId) async {
+    taskList.value = await TaskService.getTasksByCategoryId(categoryId);
+  }
+
   Future<void> deleteTask(String taskId) async {
     await TaskService.deleteTask(taskId);
     taskList.removeWhere(

@@ -28,6 +28,8 @@ class CategoryController extends GetxController {
     categoryList.value = await CategoryService.fetchCategories();
   }
 
+  
+
   // Xóa category theo ID
   // Future<void> deleteCategory(String categoryId) async {
   //   await CategoryService.deleteCategory(categoryId);

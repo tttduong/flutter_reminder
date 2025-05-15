@@ -6,6 +6,7 @@ import 'package:flutter_to_do_app/ui/add_list.dart';
 import 'package:flutter_to_do_app/ui/add_task.dart';
 import 'package:flutter_to_do_app/ui/all_task.dart';
 import 'package:flutter_to_do_app/ui/button_add_task.dart';
+import 'package:flutter_to_do_app/ui/category_tasks.dart';
 import 'package:flutter_to_do_app/ui/chat.dart';
 import 'package:flutter_to_do_app/ui/schedule.dart';
 import 'package:flutter_to_do_app/ui/today.dart';
@@ -177,7 +178,7 @@ class _HomeState extends State<Home> {
                     : category.tasks!.where((t) => t.isCompleted).length /
                         category.tasks!.length.toDouble(),
                 onTap: () {
-                  // Chuyển sang màn hình chi tiết category (nếu có)
+                  Get.to(() => CategoryTasksPage(category: category));
                 },
               );
             }).toList(),

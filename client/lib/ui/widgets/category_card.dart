@@ -6,9 +6,9 @@ class ListCard extends StatefulWidget {
   final String title;
   final Color color;
   final IconData icon;
-  final int taskCount;
-  final double progress;
-  final VoidCallback onTap;
+  final int? taskCount;
+  final double? progress;
+  final VoidCallback? onTap;
   // final VoidCallback onDelete; // Hàm xóa khi vuốt
 
   const ListCard({
@@ -16,9 +16,9 @@ class ListCard extends StatefulWidget {
     required this.title,
     required this.color,
     required this.icon,
-    required this.taskCount,
-    required this.progress,
-    required this.onTap,
+    this.taskCount,
+    this.progress,
+    this.onTap,
     // required this.onDelete, // Nhận hàm xóa từ parent
   }) : super(key: key);
 
@@ -27,23 +27,6 @@ class ListCard extends StatefulWidget {
 }
 
 class _ListCardState extends State<ListCard> {
-  // Map<int, int> _taskCounts = {}; // categoryId -> task count
-
-  // @override
-  // void initState() {
-  //   super.initState();
-  //   _fetchTaskCounts(); // gọi API ở đây
-  // }
-
-  // Future<void> _fetchTaskCounts() async {
-  //   for (var category in categoryList) {
-  //     final tasks = await TaskService.getTasksByCategoryId(category.id.toString());
-  //     setState(() {
-  //       _taskCounts[category.id] = tasks.length;
-  //     });
-  //   }
-  // }
-
   @override
   Widget build(BuildContext context) {
     return Dismissible(
@@ -65,6 +48,7 @@ class _ListCardState extends State<ListCard> {
       onDismissed: (direction) {
         // onDelete(); // Gọi hàm xóa
       },
+
       child: Padding(
         padding: const EdgeInsets.only(bottom: 12.0),
         child: InkWell(
@@ -96,18 +80,33 @@ class _ListCardState extends State<ListCard> {
                       children: [
                         Text(
                           widget.title,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
+                            color: widget.color,
                           ),
                         ),
-                        Text(
-                          '${widget.taskCount} tasks',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey.shade600,
+                        // Chỉ hiển thị nếu progress không null
+                        if (widget.taskCount != null)
+                          Text(
+                            '${widget.taskCount} tasks',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey.shade600,
+                            ),
                           ),
-                        ),
+                        // Chỉ hiển thị nếu progress không null
+                        if (widget.progress != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: LinearProgressIndicator(
+                              value: widget.progress!.clamp(0.0, 1.0),
+                              backgroundColor: Colors.grey.shade300,
+                              color: widget.color,
+                              minHeight: 6,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
                       ],
                     ),
                   ),
