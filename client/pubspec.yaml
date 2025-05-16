@@ -24,6 +24,7 @@ dependencies:
   http: ^1.3.0
   mongo_dart: 
   postgres: ^2.6.2
+  dash_chat_2: ^0.0.21
   
 
 dev_dependencies:

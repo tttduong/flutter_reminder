@@ -22,15 +22,18 @@ class MyInputField extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              title,
-              style: titleStyle,
-            ),
+            if (title
+                .isNotEmpty) // Kiểm tra nếu title không rỗng thì mới hiển thị
+              Text(
+                title,
+                style: titleStyle,
+              ),
             Container(
               height: 52,
               margin: EdgeInsets.only(top: 8.0),
               padding: EdgeInsets.only(left: 14),
               decoration: BoxDecoration(
+                color: Colors.white,
                 border: Border.all(color: Colors.grey, width: 1.0),
                 borderRadius: BorderRadius.circular(12),
               ),

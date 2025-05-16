@@ -1,7 +1,10 @@
 from fastapi import FastAPI, APIRouter, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.orm import Session
-from database.database import SessionLocal
+# from sqlalchemy.orm import Session
+# from database.database import SessionLocal
+# from database.database import get_db
+# from sqlalchemy.ext.asyncio import AsyncSession
+
 
 from routers import user, task, category
 
@@ -9,12 +12,12 @@ app = FastAPI()
 
 
 # Dependency: Lấy database session
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+# def get_db():
+#     db = SessionLocal()
+#     try:
+#         yield db
+#     finally:
+#         db.close()
 
 # Cấu hình CORS
 app.add_middleware(

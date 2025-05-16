@@ -3,10 +3,12 @@
 class Task {
   String? id;
   String? userId;
-  String? categoryId;
+  String categoryId;
   String title;
   String? description;
-  int status; // 0: Chưa hoàn thành, 1: Đã hoàn thành
+  bool isCompleted;
+  String? dueDate;
+  String? time;
   DateTime? createdAt;
   DateTime? updatedAt;
   bool isDeleted;
@@ -15,9 +17,11 @@ class Task {
     this.id,
     required this.title,
     this.userId,
-    this.categoryId,
+    required this.categoryId,
     this.description,
-    this.status = 0,
+    this.isCompleted = false,
+    this.dueDate,
+    this.time,
     this.createdAt,
     this.updatedAt,
     this.isDeleted = false,
@@ -31,7 +35,11 @@ class Task {
       categoryId: json['category_id'],
       title: json['title'],
       description: json['description'],
-      status: json['status'] ?? 0,
+      isCompleted: json['is_completed'] ?? false,
+      // dueDate:
+      //     json['due_date'] != null ? DateTime.parse(json['due_date']) : null,
+      dueDate: json['due_date'],
+      time: json['time'], // dạng chuỗi, ví dụ: "08:30"
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'])
           : null,
@@ -54,11 +62,30 @@ class Task {
       'category_id': categoryId,
       'title': title,
       'description': description,
-      'status': status,
+      'is_complete': isCompleted,
+      // 'due_date': dueDate?.toIso8601String(),
+      'due_date': dueDate,
+      'time': time,
       'created_at': createdAt?.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
       'is_deleted': isDeleted,
     };
+  }
+
+  Task copyWith(
+      {String? id,
+      String? categoryId,
+      String? title,
+      String? description,
+      bool? isCompleted,
+      s}) {
+    return Task(
+      id: id ?? this.id,
+      categoryId: categoryId ?? this.categoryId,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      isCompleted: isCompleted ?? this.isCompleted,
+    );
   }
 
   // /// Chuyển đổi danh sách JSON sang danh sách `Task`

@@ -19,55 +19,37 @@ class TaskController extends GetxController {
   }
 
   Future<void> addTask({Task? task}) async {
-    print("call add task om controller");
+    print("call add task on controller");
     // return await DBHelper.insert(task!);
-    final String title = task?.title.trim() ?? "";
-    final String description = task?.description?.trim() ?? "";
 
-    if (title.isEmpty || description.isEmpty) {
-      print("Title và Description không được để trống");
+    if (task == null) {
+      print("Task null");
+      return;
+    }
+    final String title = task.title.trim();
+    final String description = task.description?.trim() ?? "";
+    final String categoryId = task.categoryId;
+    // final String? time = task.time;
+    print("Category ID in Task Controller: " + categoryId); // OK
+    if (title.isEmpty || description.isEmpty || categoryId.isEmpty) {
+      print("Title, Description hoặc Catergory không được để trống");
       return;
     }
 
-    try {
-      final response = await http.post(
-        Uri.parse("http://127.0.0.1:8000/tasks/"),
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer your_access_token", // Nếu API cần token
-        },
-        body: jsonEncode({
-          "title": title,
-          "description": description,
-        }),
-      );
-
-      if (response.statusCode == 201 || response.statusCode == 200) {
-        print("Task created successfully!");
-      } else {
-        print("Failed to create task: ${response.body}");
-      }
-    } catch (e) {
-      print("Error: $e");
+    bool success = await TaskService.createTask(task: task);
+    if (success) {
+      getTasks(); // Refresh danh sách task sau khi thêm
     }
   }
 
   //get all the data from table
   void getTasks() async {
-    try {
-      final response = await http.get(
-        Uri.parse("http://127.0.0.1:8000/tasks/"),
-        headers: {"Content-Type": "application/json"},
-      );
+    taskList.value = await TaskService.fetchTasks();
+  }
 
-      if (response.statusCode == 200) {
-        List<dynamic> jsonData = jsonDecode(response.body);
-        taskList
-            .assignAll(jsonData.map((item) => Task.fromJson(item)).toList());
-      }
-    } catch (e) {
-      print("Error loading tasks: $e");
-    }
+  //get all the data from table
+  void getTasksByCategoryId(String categoryId) async {
+    taskList.value = await TaskService.getTasksByCategoryId(categoryId);
   }
 
   Future<void> deleteTask(String taskId) async {
@@ -76,4 +58,6 @@ class TaskController extends GetxController {
         (task) => task.id == taskId); // Cập nhật danh sách sau khi xoá
     update(); // Cập nhật UI
   }
+
+  Future<void> updateTaskStatus(int status) async {}
 }

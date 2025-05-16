@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_to_do_app/controller/task_controller.dart';
+import 'package:flutter_to_do_app/model/category.dart';
 import 'package:flutter_to_do_app/model/task.dart';
+import 'package:flutter_to_do_app/service/category_service.dart';
 import 'package:flutter_to_do_app/service/theme_services.dart';
 import 'package:flutter_to_do_app/ui/theme.dart';
 import 'package:flutter_to_do_app/ui/widgets/button.dart';
@@ -20,14 +22,23 @@ class _AddTaskPageState extends State<AddTaskPage> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _noteController = TextEditingController();
 
-  DateTime _selectedDate = DateTime.now();
-  String _endTime = "9:30 PM";
-  String _startTime = DateFormat("hh:mm a").format(DateTime.now()).toString();
+  String _selectedDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
+  // String _endTime = "9:30 PM";
+  String _time = DateFormat("hh:mm a").format(DateTime.now()).toString();
   String _selectedRemind = "5";
   List<String> remindList = ["5", "10", "15", "20"];
   String _selectedRepeat = "None";
   List<String> repeatList = ["None", "Daily", "Weekly", "Monthly"];
+  List<Category> listCategories = [];
+  String _selectedCategoryId = "";
   String _selectedColor = "0";
+
+  @override
+  void initState() {
+    super.initState();
+    loadCategories();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -46,13 +57,53 @@ class _AddTaskPageState extends State<AddTaskPage> {
                     controller: _titleController,
                   ),
                   MyInputField(
-                    title: "Note",
-                    hint: "Enter your note",
+                    title: "Description",
+                    hint: "Enter your description",
                     controller: _noteController,
                   ),
                   MyInputField(
+                      title: "Category",
+                      hint: listCategories
+                          .firstWhere(
+                            (cat) => cat.id == _selectedCategoryId,
+                            orElse: () => Category(
+                                id: '',
+                                title: 'None',
+                                color: Colors.black,
+                                icon: Icons.category),
+                          )
+                          .title,
+                      widget: DropdownButton<String>(
+                          icon: Icon(
+                            Icons.keyboard_arrow_down,
+                            color: Colors.grey,
+                          ),
+                          iconSize: 32,
+                          elevation: 4,
+                          style: subTitleStyle,
+                          items: listCategories
+                              .map<DropdownMenuItem<String>>((Category cat) {
+                            return DropdownMenuItem<String>(
+                              value: cat.id, // ID (giá trị được lưu)
+                              child: Text(
+                                cat.title, // tên hiển thị
+                                style: const TextStyle(color: Colors.black),
+                              ),
+                            );
+                          }).toList(),
+                          underline: Container(
+                            height: 0,
+                          ),
+                          onChanged: (String? newValue) {
+                            setState(() {
+                              _selectedCategoryId = newValue!;
+                              print("Selected Category ID: " +
+                                  _selectedCategoryId);
+                            });
+                          })),
+                  MyInputField(
                       title: "Date",
-                      hint: DateFormat.yMd().format(_selectedDate),
+                      hint: _selectedDate,
                       widget: IconButton(
                           icon: Icon(Icons.calendar_today_outlined,
                               color: Colors.grey),
@@ -63,8 +114,8 @@ class _AddTaskPageState extends State<AddTaskPage> {
                     children: [
                       Expanded(
                           child: MyInputField(
-                              title: "Start Time",
-                              hint: _startTime,
+                              title: "Time",
+                              hint: _time,
                               widget: IconButton(
                                 onPressed: () {
                                   _getTimeFromUser(isStartTime: true);
@@ -72,18 +123,18 @@ class _AddTaskPageState extends State<AddTaskPage> {
                                 icon: Icon(Icons.access_time_rounded),
                                 color: Colors.grey,
                               ))),
-                      SizedBox(width: 20),
-                      Expanded(
-                          child: MyInputField(
-                              title: "EndTime",
-                              hint: _endTime,
-                              widget: IconButton(
-                                onPressed: () {
-                                  _getTimeFromUser(isStartTime: false);
-                                },
-                                icon: Icon(Icons.access_time_rounded),
-                                color: Colors.grey,
-                              ))),
+                      // SizedBox(width: 20),
+                      // Expanded(
+                      //     child: MyInputField(
+                      //         title: "EndTime",
+                      //         hint: _endTime,
+                      //         widget: IconButton(
+                      //           onPressed: () {
+                      //             _getTimeFromUser(isStartTime: false);
+                      //           },
+                      //           icon: Icon(Icons.access_time_rounded),
+                      //           color: Colors.grey,
+                      //         ))),
                     ],
                   ),
                   MyInputField(
@@ -145,10 +196,10 @@ class _AddTaskPageState extends State<AddTaskPage> {
                     height: 18,
                   ),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    mainAxisAlignment: MainAxisAlignment.end,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      _colorPallete(),
+                      // _colorPallete(),
                       MyButton(
                           label: "Create Task", onTap: () => _validateDate()),
                     ],
@@ -158,11 +209,26 @@ class _AddTaskPageState extends State<AddTaskPage> {
             )));
   }
 
+  Future<void> loadCategories() async {
+    try {
+      final categories = await CategoryService.fetchCategories();
+      setState(() {
+        listCategories = categories;
+      });
+    } catch (e) {
+      print("Error loading categories: $e");
+    }
+  }
+
   _validateDate() {
-    if (_titleController.text.isNotEmpty && _noteController.text.isNotEmpty) {
+    if (_titleController.text.isNotEmpty &&
+        _noteController.text.isNotEmpty &&
+        (_selectedCategoryId != "")) {
       _addTaskToDb();
       Get.back();
-    } else if (_titleController.text.isEmpty || _noteController.text.isEmpty) {
+    } else if (_titleController.text.isEmpty ||
+        _noteController.text.isEmpty ||
+        (_selectedCategoryId == "")) {
       Get.snackbar("Required", "All fields are required!",
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: Colors.white,
@@ -176,15 +242,19 @@ class _AddTaskPageState extends State<AddTaskPage> {
       task: Task(
         title: _titleController.text,
         description: _noteController.text,
-        // isCompleted: "0", // Chuyển thành string "0" hoặc "1"
-        // date: DateFormat.yMd().format(_selectedDate),
-        // startTime: _startTime,
+        categoryId: _selectedCategoryId,
+        isCompleted: false,
+        dueDate: _selectedDate,
+        time: _time,
         // endTime: _endTime,
         // color: _selectedColor.toString(), // Đổi thành string
         // remind: _selectedRemind.toString(), // Đổi thành string
         // repeat: _selectedRepeat,
       ),
     );
+    // print("Category ID saved to db: " + _selectedCategoryId);      //OK
+    // print("time saved to db: " + _time); //OK
+    print("due date saved to db: " + _selectedDate); //OK
     await Future.delayed(Duration(milliseconds: 500)); // Chờ API cập nhật
     // Cập nhật danh sách task ngay sau khi tạo thành công
     _taskController.getTasks();
@@ -192,42 +262,42 @@ class _AddTaskPageState extends State<AddTaskPage> {
     // print("My id is $value");
   }
 
-  _colorPallete() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          "Color",
-          style: titleStyle,
-        ),
-        SizedBox(height: 8.0),
-        Wrap(
-          children: List<Widget>.generate(3, (int index) {
-            return GestureDetector(
-              onTap: () {
-                setState(() {
-                  _selectedColor = index.toString();
-                });
-              },
-              child: Padding(
-                padding: EdgeInsets.only(right: 8.0),
-                child: CircleAvatar(
-                    radius: 14,
-                    backgroundColor: index == 0
-                        ? primaryClr
-                        : index == 1
-                            ? pinkClr
-                            : yellowClr,
-                    child: _selectedColor == index
-                        ? Icon(Icons.done, color: Colors.white, size: 16)
-                        : Container()),
-              ),
-            );
-          }),
-        )
-      ],
-    );
-  }
+  // _colorPallete() {
+  //   return Column(
+  //     crossAxisAlignment: CrossAxisAlignment.start,
+  //     children: [
+  //       Text(
+  //         "Color",
+  //         style: titleStyle,
+  //       ),
+  //       SizedBox(height: 8.0),
+  //       Wrap(
+  //         children: List<Widget>.generate(3, (int index) {
+  //           return GestureDetector(
+  //             onTap: () {
+  //               setState(() {
+  //                 _selectedColor = index.toString();
+  //               });
+  //             },
+  //             child: Padding(
+  //               padding: EdgeInsets.only(right: 8.0),
+  //               child: CircleAvatar(
+  //                   radius: 14,
+  //                   backgroundColor: index == 0
+  //                       ? primaryClr
+  //                       : index == 1
+  //                           ? pinkClr
+  //                           : yellowClr,
+  //                   child: _selectedColor == index
+  //                       ? Icon(Icons.done, color: Colors.white, size: 16)
+  //                       : Container()),
+  //             ),
+  //           );
+  //         }),
+  //       )
+  //     ],
+  //   );
+  // }
 
   _appBar(BuildContext context) {
     return AppBar(
@@ -263,7 +333,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
 
     if (_pickerDate != null) {
       setState(() {
-        _selectedDate = _pickerDate;
+        _selectedDate = DateFormat('yyyy-MM-dd').format(_pickerDate);
         print(_selectedDate);
       });
     } else {
@@ -278,13 +348,14 @@ class _AddTaskPageState extends State<AddTaskPage> {
       print("Time cancel");
     } else if (isStartTime == true) {
       setState(() {
-        _startTime = _formatedTime;
-      });
-    } else if (isStartTime == false) {
-      setState(() {
-        _endTime = _formatedTime;
+        _time = _formatedTime;
       });
     }
+    // else if (isStartTime == false) {
+    //   setState(() {
+    //     _endTime = _formatedTime;
+    //   });
+    // }
   }
 
   _showTimePicker() {
@@ -292,8 +363,8 @@ class _AddTaskPageState extends State<AddTaskPage> {
         initialEntryMode: TimePickerEntryMode.input,
         context: context,
         initialTime: TimeOfDay(
-          hour: int.parse(_startTime.split(":")[0]),
-          minute: int.parse(_startTime.split(":")[1].split(" ")[0]),
+          hour: int.parse(_time.split(":")[0]),
+          minute: int.parse(_time.split(":")[1].split(" ")[0]),
         ));
   }
 }
