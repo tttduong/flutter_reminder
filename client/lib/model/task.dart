@@ -72,6 +72,22 @@ class Task {
     };
   }
 
+  Task copyWith(
+      {String? id,
+      String? categoryId,
+      String? title,
+      String? description,
+      bool? isCompleted,
+      s}) {
+    return Task(
+      id: id ?? this.id,
+      categoryId: categoryId ?? this.categoryId,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      isCompleted: isCompleted ?? this.isCompleted,
+    );
+  }
+
   // /// Chuyển đổi danh sách JSON sang danh sách `Task`
   // static List<Task> listFromJson(List<dynamic> jsonList) {
   //   return jsonList.map((json) => Task.fromJson(json)).toList();

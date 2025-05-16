@@ -68,15 +68,14 @@ class _AllTasksPageState extends State<AllTasksPage> {
 
   bool showCompletedTasks = false;
 
-  late Future<List<Task>> _futureTasks;
   late Future<List<Category>> _futureCategories;
+  final Map<String, Future<List<Task>>> _incompleteTaskFutures = {};
+  final Map<String, Future<List<Task>>> _completedTaskFutures = {};
 
   @override
   void initState() {
     super.initState();
     _futureCategories = CategoryService.fetchCategories();
-    _futureTasks = TaskService.getTasksByCategoryId(
-        "45eb360a-3802-4a64-9008-824e46a88214");
   }
 
   @override
@@ -139,6 +138,18 @@ class _AllTasksPageState extends State<AllTasksPage> {
                     itemBuilder: (context, index) {
                       final category = categories[index];
 
+                      if (!_incompleteTaskFutures.containsKey(category.id)) {
+                        _incompleteTaskFutures[category.id] =
+                            TaskService.fetchIncompletedTasksByCategoryId(
+                                category.id);
+                      }
+
+                      if (!_completedTaskFutures.containsKey(category.id)) {
+                        _completedTaskFutures[category.id] =
+                            TaskService.fetchCompletedTasksByCategoryId(
+                                category.id);
+                      }
+
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -149,8 +160,7 @@ class _AllTasksPageState extends State<AllTasksPage> {
                             icon: category.icon,
                           ),
                           FutureBuilder<List<Task>>(
-                            future:
-                                TaskService.getTasksByCategoryId(category.id),
+                            future: _incompleteTaskFutures[category.id],
                             builder: (context, taskSnapshot) {
                               if (taskSnapshot.connectionState ==
                                   ConnectionState.waiting) {
@@ -181,19 +191,144 @@ class _AllTasksPageState extends State<AllTasksPage> {
                                   return ListTile(
                                     title: Text(task.title),
                                     subtitle: Text(task.description ?? ""),
-                                    leading: Icon(
-                                      task.isCompleted
-                                          ? Icons.check_circle
-                                          : Icons.circle_outlined,
-                                      color: task.isCompleted
-                                          ? Colors.green
-                                          : null,
+                                    leading: Checkbox(
+                                      value: task.isCompleted,
+                                      onChanged: (bool? newValue) async {
+                                        if (newValue == null ||
+                                            newValue == false) return;
+
+                                        final updatedTask =
+                                            task.copyWith(isCompleted: true);
+
+                                        await TaskService.updateTask(
+                                            updatedTask);
+
+                                        setState(() {
+                                          // Cập nhật danh sách: loại bỏ task đã completed
+                                          tasks.removeWhere(
+                                              (t) => t.id == task.id);
+
+                                          // Nếu danh sách đã hoàn thành đã có dữ liệu, thêm task mới vào
+                                          if (_completedTaskFutures
+                                              .containsKey(category.id)) {
+                                            // Tạo bản sao của future cũ, rồi thêm task mới vào
+                                            final oldFuture =
+                                                _completedTaskFutures[
+                                                    category.id];
+                                            oldFuture!.then((completedTasks) {
+                                              setState(() {
+                                                _completedTaskFutures[
+                                                    category.id] = Future.value(
+                                                  List<Task>.from(
+                                                      completedTasks)
+                                                    ..add(updatedTask),
+                                                );
+                                              });
+                                            });
+                                          } else {
+                                            // Nếu chưa có future, tạo một future mới chỉ với task này
+                                            _completedTaskFutures[category.id] =
+                                                Future.value([updatedTask]);
+                                          }
+                                        });
+                                      },
                                     ),
                                   );
                                 },
                               );
                             },
                           ),
+                          // Nút ẩn/hiện công việc đã hoàn thành
+                          TextButton.icon(
+                            onPressed: () {
+                              setState(() {
+                                showCompletedTasks = !showCompletedTasks;
+                              });
+                            },
+                            icon: Icon(
+                              showCompletedTasks
+                                  ? Icons.keyboard_arrow_up
+                                  : Icons.keyboard_arrow_down,
+                              color: AppColors.buttonWhiteText,
+                            ),
+                            label: Text(
+                              'Hide completed tasks',
+                              style: TextStyle(
+                                color: AppColors.buttonWhiteText,
+                              ),
+                            ),
+                            style: TextButton.styleFrom(
+                              backgroundColor: AppColors.secondary,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                            ),
+                          ),
+
+                          // Công việc đã hoàn thành
+                          if (showCompletedTasks) ...[
+                            const SizedBox(height: 16),
+                            // if (category.taskCount != null)
+                            FutureBuilder<List<Task>>(
+                              future: _completedTaskFutures[category.id],
+                              builder: (context, taskSnapshot) {
+                                if (taskSnapshot.connectionState ==
+                                    ConnectionState.waiting) {
+                                  return const Center(
+                                      child: CircularProgressIndicator());
+                                } else if (taskSnapshot.hasError) {
+                                  return Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 20),
+                                    child: Text(
+                                        "Lỗi khi tải task: ${taskSnapshot.error}"),
+                                  );
+                                } else if (!taskSnapshot.hasData ||
+                                    taskSnapshot.data!.isEmpty) {
+                                  return const Padding(
+                                    padding:
+                                        EdgeInsets.symmetric(horizontal: 20),
+                                    child: Text("Không có task nào"),
+                                  );
+                                }
+
+                                final tasks = taskSnapshot.data!;
+                                return ListView.builder(
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  itemCount: tasks.length,
+                                  itemBuilder: (context, taskIndex) {
+                                    final task = tasks[taskIndex];
+                                    return ListTile(
+                                      title: Text(task.title),
+                                      subtitle: Text(task.description ?? ""),
+                                      leading: Checkbox(
+                                        value: task.isCompleted,
+                                        onChanged: (bool? newValue) async {
+                                          if (newValue == null ||
+                                              newValue == false) return;
+
+                                          final updatedTask =
+                                              task.copyWith(isCompleted: true);
+
+                                          await TaskService.updateTask(
+                                              updatedTask);
+
+                                          setState(() {
+                                            // Cập nhật danh sách: loại bỏ task đã completed
+                                            tasks.removeWhere(
+                                                (t) => t.id == task.id);
+                                          });
+                                        },
+                                      ),
+                                    );
+                                  },
+                                );
+                              },
+                            ),
+                          ],
+
+                          const SizedBox(height: 80),
                         ],
                       );
                     },

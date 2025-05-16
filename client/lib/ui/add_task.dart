@@ -333,7 +333,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
 
     if (_pickerDate != null) {
       setState(() {
-        _selectedDate = DateFormat('dd/MM/yyyy').format(_pickerDate);
+        _selectedDate = DateFormat('yyyy-MM-dd').format(_pickerDate);
         print(_selectedDate);
       });
     } else {

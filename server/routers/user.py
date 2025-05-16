@@ -4,7 +4,7 @@ from uuid import UUID
 from datetime import datetime
 from passlib.context import CryptContext
 
-from database.database import SessionLocal
+# from database.database import SessionLocal
 from models.user_model import UserModel
 from schemas.user_schema import UserCreate, UserResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm

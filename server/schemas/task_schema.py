@@ -7,6 +7,7 @@ from database.database import Base
 from sqlalchemy import Column, Date, Integer, String, Boolean, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID as SA_UUID
 from pydantic import validator
+from typing import Optional
 
 # class Task(Base):
 #     __tablename__ = "tasks"
@@ -65,3 +66,10 @@ class TaskResponse(TaskBase):
     class Config:
         arbitrary_types_allowed = True  # Cho phép sử dụng kiểu dữ liệu không chuẩn
         from_attributes = True
+
+class TaskUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    is_completed: Optional[bool] = None
+    is_deleted: Optional[bool] = None
+    category_id: Optional[str] = None
