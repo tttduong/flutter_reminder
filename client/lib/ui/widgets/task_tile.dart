@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_to_do_app/controller/task_controller.dart';
-import 'package:flutter_to_do_app/model/task.dart';
+import 'package:flutter_to_do_app/data/models/task.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -30,13 +30,14 @@ class TaskTile extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start, // Căn trái
                     children: [
-                      // Checkbox(
-                      //   value: task.status,
-                      //   onChanged: (int? newValue) {
-                      //     _taskController.updateTaskStatus(
-                      //         task.id, newValue ?? 0);
-                      //   },
-                      // ),
+                      Checkbox(
+                        value: task!.isCompleted == 1,
+                        onChanged: (bool? newValue) {
+                          final newStatus = (newValue ?? false) ? 1 : 0;
+                          // taskController.updateTaskStatus(task.id, newStatus);
+                        },
+                      ),
+
                       Text(
                         task?.title ?? "No title",
                         style: GoogleFonts.lato(
@@ -62,11 +63,11 @@ class TaskTile extends StatelessWidget {
                 IconButton(
                   icon: Icon(Icons.delete, color: Colors.red),
                   onPressed: () async {
-                    if (task?.id != null) {
-                      await taskController.deleteTask(task!.id!);
-                    } else {
-                      print("Task ID is null");
-                    }
+                    // if (task?.id != null) {
+                    //   await taskController.deleteTask(task!.id!);
+                    // } else {
+                    //   print("Task ID is null");
+                    // }
                   },
                 ),
               ],

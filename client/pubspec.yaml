@@ -7,7 +7,7 @@ version: 0.1.0
 #   sdk: ^3.6.1
 
 environment:
-  sdk: ">=2.16.0 <3.0.0"
+  sdk: ">=2.18.0 <3.0.0"
 
 dependencies:
   flutter:
@@ -19,12 +19,15 @@ dependencies:
   intl:
   google_fonts:
   date_picker_timeline: 
-  sqflite: 
+  sqflite: ^2.3.0
   flutter_staggered_animations:
   http: ^1.3.0
   mongo_dart: 
   postgres: ^2.6.2
   dash_chat_2: ^0.0.21
+  provider: ^6.0.4
+  shared_preferences: ^2.5.3
+  font_awesome_flutter: ^10.7.0
   
 
 dev_dependencies:

@@ -14,6 +14,7 @@ pip install -r requirements.txt  # Cài đặt toàn bộ thư viện
 # copy file doten
 
 uvicorn main:app --reload        # run backend
+(or):  uvicorn main:app --reload --log-level debug
 
 run client (frontend):  main.dart -> click run
 

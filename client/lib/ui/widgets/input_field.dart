@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_to_do_app/ui/theme.dart';
 import 'package:get/get.dart';
 
 class MyInputField extends StatelessWidget {
@@ -26,7 +25,7 @@ class MyInputField extends StatelessWidget {
                 .isNotEmpty) // Kiểm tra nếu title không rỗng thì mới hiển thị
               Text(
                 title,
-                style: titleStyle,
+                // style: titleStyle,
               ),
             Container(
               height: 52,
@@ -46,10 +45,10 @@ class MyInputField extends StatelessWidget {
                       cursorColor:
                           Get.isDarkMode ? Colors.grey[100] : Colors.grey[700],
                       controller: controller,
-                      style: subTitleStyle,
+                      // style: subTitleStyle,
                       decoration: InputDecoration(
                           hintText: hint,
-                          hintStyle: subTitleStyle,
+                          // hintStyle: subTitleStyle,
                           focusedBorder: UnderlineInputBorder(
                               borderSide: BorderSide(
                             color: context.theme.scaffoldBackgroundColor,

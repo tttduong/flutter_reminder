@@ -19,23 +19,23 @@ class MenuCard extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Container(
-        height: 100,
+        height: 50,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.start,
             children: [
               Icon(
                 icon,
                 color: color,
                 size: 28,
               ),
-              const SizedBox(height: 8),
+              const SizedBox(width: 8),
               Text(
                 title,
                 style: const TextStyle(

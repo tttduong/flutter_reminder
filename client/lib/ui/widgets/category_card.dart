@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_to_do_app/consts.dart';
-import 'package:flutter_to_do_app/service/task_service.dart';
 
 class ListCard extends StatefulWidget {
   final String title;

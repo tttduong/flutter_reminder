@@ -1,38 +1,49 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends
+from fastapi import FastAPI, Depends, Request
+from fastapi.responses import JSONResponse
+
+from app.api.endpoints import tasks, users, categories
+from app.api.middleware.middleware import logging_middleware, logger
+from app.core.security import get_user_by_token
+from app.db.database import Base, engine
 from fastapi.middleware.cors import CORSMiddleware
-# from sqlalchemy.orm import Session
-# from database.database import SessionLocal
-# from database.database import get_db
-# from sqlalchemy.ext.asyncio import AsyncSession
 
-
-from routers import user, task, category
 
 app = FastAPI()
 
-
-# Dependency: Lấy database session
-# def get_db():
-#     db = SessionLocal()
-#     try:
-#         yield db
-#     finally:
-#         db.close()
-
-# Cấu hình CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Cho phép tất cả domain truy cập
+    allow_origins=["*"],  # hoặc thay bằng ["http://localhost:52322"]
     allow_credentials=True,
-    allow_methods=["*"],  # Cho phép tất cả method (GET, POST, PUT, DELETE, ...)
-    allow_headers=["*"],  # Cho phép tất cả headers
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
-router = APIRouter()
+app.include_router(tasks.router, prefix="/api/v1", tags=["Tasks"], dependencies=[Depends(get_user_by_token)])
+app.include_router(users.router, prefix="/api/v1", tags=["Users"])
+app.include_router(categories.router, prefix="/api/v1", tags=["Categories"], dependencies=[Depends(get_user_by_token)])
+app.middleware("http")(logging_middleware)
 
 
-# Đăng ký router vào app
-# app.include_router(task_router)
-app.include_router(task.router)
-app.include_router(user.router) 
-app.include_router(category.router)
+@app.on_event("startup")
+def startup_db():
+    Base.metadata.create_all(bind=engine)
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.exception("Alarm! Global exception!")
+    return JSONResponse(
+        status_code=500,
+        content={"error": "O-o-o-ps! Internal server error"}
+    )
+
+
+@app.get("/")
+def read_root():
+    return {"message": "Welcome to the Real-Time Task Manager API"}
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(app, host="127.0.0.1", port=8000)

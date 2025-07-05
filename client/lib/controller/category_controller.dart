@@ -1,5 +1,5 @@
-import 'package:flutter_to_do_app/model/category.dart';
-import 'package:flutter_to_do_app/service/category_service.dart';
+import 'package:flutter_to_do_app/data/models/category.dart';
+import 'package:flutter_to_do_app/data/services/category_service.dart';
 import 'package:get/get.dart';
 
 class CategoryController extends GetxController {
@@ -28,12 +28,10 @@ class CategoryController extends GetxController {
     categoryList.value = await CategoryService.fetchCategories();
   }
 
-  
-
   // Xóa category theo ID
-  // Future<void> deleteCategory(String categoryId) async {
-  //   await CategoryService.deleteCategory(categoryId);
-  //   categoryList.removeWhere((category) => category.id == categoryId);
-  //   update(); // Cập nhật UI
-  // }
+  Future<void> deleteCategory(int categoryId) async {
+    await CategoryService.deleteCategory(categoryId);
+    categoryList.removeWhere((category) => category.id == categoryId);
+    update(); // Cập nhật UI
+  }
 }
