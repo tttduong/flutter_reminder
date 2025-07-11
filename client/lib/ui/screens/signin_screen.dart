@@ -50,18 +50,15 @@ class _SignInPageState extends State<SignInPage> {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (context) => const BottomNavBarScreen()),
       );
-      print("Chuyển sang HomePage...");
-      // Get.offAll(() => const HomePage());
-      Get.offAll(() => const BottomNavBarScreen());
     }
   }
 
   /// Change to SignUp Page
   void _changeToSignUp() {
-    // Navigator.of(context).pushReplacement(
-    //   MaterialPageRoute(builder: (context) => const SignUpPage()),
-    // );
-    Get.to(() => const SignUpPage());
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (context) => const SignUpPage()),
+    );
+    // Get.to(() => const SignUpPage());
     // Navigator.of(context).pop();
   }
 

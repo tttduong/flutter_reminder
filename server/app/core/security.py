@@ -5,6 +5,10 @@ from fastapi import HTTPException, status, Depends
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
+from sqlalchemy.orm import Session 
+
+from app.db.db_structure import User
+from app.db.database import get_db 
 
 from ..core.config import settings
 
@@ -32,6 +36,7 @@ def create_access_token(data: dict) -> str:
 def decode_access_token(token: str = Depends(oauth2_scheme)) -> dict:
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        print("🔑 Token payload:", payload)
         return payload
     except JWTError:
         raise HTTPException(
@@ -43,3 +48,26 @@ def decode_access_token(token: str = Depends(oauth2_scheme)) -> dict:
 
 def get_user_by_token(payload: dict = Depends(decode_access_token)) -> str:
     return payload.get("sub")
+
+async def get_current_user(
+    payload: dict = Depends(decode_access_token),
+    db: Session = Depends(get_db),
+        ) -> User:
+    try:
+        user_email: str = payload.get("sub")
+        if user_email is None:
+            raise HTTPException(status_code=401, detail="Invalid token")
+
+        user = get_user_by_email(db, user_email)
+        if user is None:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        return user
+
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    
+    
+
+def get_user_by_email(db: Session, user_email: str) -> User| None:
+    return db.query(User).filter(User.email == user_email).first()

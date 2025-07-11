@@ -2,7 +2,7 @@ from typing import List, Set
 
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
-
+from app.core.security import get_current_user
 from ..models.task import TaskCreate, TaskUpdate, TaskResponse
 from ...core.security import get_user_by_token
 from ...db.database import get_db
@@ -11,10 +11,7 @@ from ...db.db_structure import Task, User
 router = APIRouter()
 
 active_connections: Set[WebSocket] = set()
-def get_current_user():
-# def get_current_user(token: str = None, db: AsyncSession = Depends(get_db)):
-     return User(id="33432faf-ddbd-4b50-bd38-33bdb7d6d990", email="test@example.com", 
-     hashed_password="123456", name="tduong", is_active=True,created_at="2025-02-28T09:25:49.164693")
+
 
 @router.websocket("/ws/tasks/{client_id}")
 async def websocket_endpoint(client_id: int, websocket: WebSocket):
@@ -30,8 +27,8 @@ async def websocket_endpoint(client_id: int, websocket: WebSocket):
 
 
 @router.post("/tasks/", response_model=TaskResponse)
-def create_task(task: TaskCreate, db: Session = Depends(get_db), username: str = Depends(get_user_by_token)):
-    user = db.query(User).filter(User.username == username).first()
+def create_task(task: TaskCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user) ):
+    user = db.query(User).filter(User.id == current_user.id).first()
     db_task = Task(**task.dict(), owner_id=user.id)
     db.add(db_task)
     db.commit()

@@ -32,6 +32,16 @@ class _SignUpPageState extends State<SignUpPage> {
       UserProvider userProvider =
           Provider.of<UserProvider>(context, listen: false);
       userProvider.setUserFromModel(userData);
+
+      // ✅ Hiện thông báo và điều hướng sang trang đăng nhập
+      Utils.showSnackBar(context, "Tạo tài khoản thành công!");
+
+      // ✅ Delay chút cho SnackBar hiển thị rồi mới chuyển trang
+      await Future.delayed(const Duration(seconds: 1));
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const SignInPage()),
+      );
     }
   }
 
@@ -50,20 +60,26 @@ class _SignUpPageState extends State<SignUpPage> {
       username: _usernameController.text,
       password: _passwordController.text,
     );
+    print("sign up - userAccount: $userAccount");
+    await _signUpSuccess(userAccount!);
 
-    if (userAccount != null) {
-      // NOTE : Process, if Sign-Up via API successfully
-      await _signUpSuccess(userAccount);
-    }
+    // if (userAccount != null) {
+    //   // NOTE : Process, if Sign-Up via API successfully
+    //   print("user not null");
+    //   // ✅ Lưu local và cập nhật provider
+    //   await _signUpSuccess(userAccount);
+    // } else {
+    //   print("user null");
+    // }
   }
 
   /// Change to SignIn Page
   void _changeToSignIn() {
-    // Navigator.push(
-    //   context,
-    //   MaterialPageRoute(builder: (context) => const SignUpPage()),
-    // );
-    Get.to(() => const SignInPage());
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const SignInPage()),
+    );
+    // Get.to(() => const SignInPage());
   }
 
   @override

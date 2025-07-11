@@ -54,23 +54,25 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    var user = Provider.of<UserProvider>(context, listen: true).user;
+    // final user = Provider.of<UserProvider>(context).user;
 
-    if (user != null) {
-      return Scaffold(
-        backgroundColor: const Color.fromARGB(255, 168, 182, 151),
+    // if (user != null) {
+    return Scaffold(
+      backgroundColor: const Color.fromARGB(255, 168, 182, 151),
 
-        // 👉 Sidebar ở đây
-        drawer: Drawer(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              // 🔒 Nút đăng nhập / tên người dùng
-              Padding(
+      // 👉 Sidebar ở đây
+      drawer: Drawer(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            // 🔒 Nút đăng nhập / tên người dùng
+            Padding(
                 padding: const EdgeInsets.only(top: 20, left: 10),
-                child: Obx(() {
-                  final userController = Get.find<UserController>();
-                  final userName = userController.userName.value;
+                child: Consumer<UserProvider>(
+                    builder: (context, userProvider, child) {
+                  final user = userProvider.user;
+                  final userName = user?.username;
+                  print("Full user: ${user?.toJson()}");
 
                   return ElevatedButton.icon(
                     onPressed: () {
@@ -87,195 +89,193 @@ class _HomePageState extends State<HomePage> {
                       foregroundColor: Colors.white,
                     ),
                   );
-                }),
-              ),
+                })),
 
-              // 🔹 Header (tuỳ chọn)
-              // DrawerHeader(
-              //   decoration: const BoxDecoration(
-              //     color: Color.fromARGB(255, 168, 182, 151),
-              //   ),
-              //   child: Container(
-              //     alignment: Alignment.centerLeft,
-              //     child: const Text(
-              //       'Menu',
-              //       style: TextStyle(color: Colors.white, fontSize: 24),
-              //     ),
-              //   ),
-              // ),
+            // 🔹 Header (tuỳ chọn)
+            // DrawerHeader(
+            //   decoration: const BoxDecoration(
+            //     color: Color.fromARGB(255, 168, 182, 151),
+            //   ),
+            //   child: Container(
+            //     alignment: Alignment.centerLeft,
+            //     child: const Text(
+            //       'Menu',
+            //       style: TextStyle(color: Colors.white, fontSize: 24),
+            //     ),
+            //   ),
+            // ),
 
-              // 🔸 Danh sách category
-              Expanded(
-                child: Obx(() {
-                  if (_categoryController.categoryList.isEmpty) {
-                    return const ListTile(
-                      title: Text("Không có danh mục nào!"),
-                    );
-                  }
-                  return ListView(
-                    children: _categoryController.categoryList.map((category) {
-                      return ListTile(
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () {
-                            _categoryController.deleteCategory(category.id);
-                          },
-                        ),
-                        leading: const Icon(Icons.work),
-                        title: Text(category.title),
-                        onTap: () {
-                          Get.to(() => HomePage(category: category),
-                              preventDuplicates: false);
-                        },
-                      );
-                    }).toList(),
+            // 🔸 Danh sách category
+            Expanded(
+              child: Obx(() {
+                if (_categoryController.categoryList.isEmpty) {
+                  return const ListTile(
+                    title: Text("Không có danh mục nào!"),
                   );
-                }),
-              ),
-
-              // ➕ Nút thêm category ở dưới cùng bên trái
-              Align(
-                alignment: Alignment.bottomLeft,
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: IconButton(
-                    onPressed: _showNewListBottomSheet,
-                    style: IconButton.styleFrom(
-                      backgroundColor: Colors.amber,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                }
+                return ListView(
+                  children: _categoryController.categoryList.map((category) {
+                    return ListTile(
+                      trailing: IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        onPressed: () {
+                          _categoryController.deleteCategory(category.id);
+                        },
                       ),
+                      leading: const Icon(Icons.work),
+                      title: Text(category.title),
+                      onTap: () {
+                        Get.to(() => HomePage(category: category),
+                            preventDuplicates: false);
+                      },
+                    );
+                  }).toList(),
+                );
+              }),
+            ),
+
+            // ➕ Nút thêm category ở dưới cùng bên trái
+            Align(
+              alignment: Alignment.bottomLeft,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: IconButton(
+                  onPressed: _showNewListBottomSheet,
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.amber,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    icon: const Icon(
-                      Icons.add,
-                      color: Colors.white,
-                    ),
+                  ),
+                  icon: const Icon(
+                    Icons.add,
+                    color: Colors.white,
                   ),
                 ),
               ),
-            ],
-          ),
-        ),
-
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          leading: Builder(
-            builder: (context) => IconButton(
-              icon: const Icon(Icons.menu, color: Colors.black),
-              onPressed: () {
-                Scaffold.of(context).openDrawer(); // open sidebar
-              },
-            ),
-          ),
-          title: Container(
-            height: 40,
-            decoration: BoxDecoration(
-              color: Colors.red,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: 'Search',
-                border: InputBorder.none,
-                prefixIcon: const Icon(Icons.search),
-                contentPadding: const EdgeInsets.symmetric(vertical: 10),
-              ),
-            ),
-          ),
-          actions: [
-            IconButton(
-              icon:
-                  const Icon(Icons.notifications_outlined, color: Colors.black),
-              onPressed: () {},
             ),
           ],
         ),
-        body: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 10),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    widget.category?.title ?? 'Inbox',
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
+      ),
+
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu, color: Colors.black),
+            onPressed: () {
+              Scaffold.of(context).openDrawer(); // open sidebar
+            },
+          ),
+        ),
+        title: Container(
+          height: 40,
+          decoration: BoxDecoration(
+            color: Colors.red,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: TextField(
+            decoration: InputDecoration(
+              hintText: 'Search',
+              border: InputBorder.none,
+              prefixIcon: const Icon(Icons.search),
+              contentPadding: const EdgeInsets.symmetric(vertical: 10),
+            ),
+          ),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_outlined, color: Colors.black),
+            onPressed: () {},
+          ),
+        ],
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  widget.category?.title ?? 'Inbox',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
                   ),
+                ),
 
-                  // IconButton(
-                  //   onPressed:
-                  //   _showNewListBottomSheet,
-                  //   style: IconButton.styleFrom(
-                  //     backgroundColor: AppColors.primary,
-                  //     shape: RoundedRectangleBorder(
-                  //       borderRadius: BorderRadius.circular(8), // Nút vuông
-                  //     ),
-                  //   ),
-                  //   icon: const Icon(
-                  //     Icons.add,
-                  //     color: Colors.white,
-                  //   ),
-                  // ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              // _showCategories()
-              Obx(() => _showTasksByCategory())
-            ],
-          ),
+                // IconButton(
+                //   onPressed:
+                //   _showNewListBottomSheet,
+                //   style: IconButton.styleFrom(
+                //     backgroundColor: AppColors.primary,
+                //     shape: RoundedRectangleBorder(
+                //       borderRadius: BorderRadius.circular(8), // Nút vuông
+                //     ),
+                //   ),
+                //   icon: const Icon(
+                //     Icons.add,
+                //     color: Colors.white,
+                //   ),
+                // ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            // _showCategories()
+            Obx(() => _showTasksByCategory())
+          ],
         ),
-        floatingActionButton: const ButtonAddTask(),
-      );
+      ),
+      floatingActionButton: const ButtonAddTask(),
+    );
 
-      // return const Center(child: CircularProgressIndicator());
-      // return Scaffold(
-      //   body: Center(
-      //     child: Column(
-      //       mainAxisAlignment: MainAxisAlignment.center,
-      //       children: [
-      //         const Text("Home Page",
-      //             style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
-      //         const SizedBox(height: 35),
-      //         Text("Username : ${user.username}",
-      //             style: const TextStyle(fontSize: 18)),
-      //         const SizedBox(height: 15),
-      //         Text("Email : ${user.email}",
-      //             style: const TextStyle(fontSize: 18)),
-      //         const SizedBox(height: 15),
-      //         Text("JWT token : ${user.token}",
-      //             style: const TextStyle(fontSize: 18)),
-      //         const SizedBox(height: 30),
-      //         CustomElevatedButton(
-      //           onPressfunc: _logOut,
-      //           buttonText: "Log out",
-      //         ),
-      //       ],
-      //     ),
-      //   ),
-      // );
-    } else {
-      return Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text("Home Page",
-                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 35),
-              Text(
-                  "Please log in or sign up to sync data across multiple devices",
-                  style: const TextStyle(fontSize: 18)),
-            ],
-          ),
-        ),
-      );
-    }
+    // return const Center(child: CircularProgressIndicator());
+    // return Scaffold(
+    //   body: Center(
+    //     child: Column(
+    //       mainAxisAlignment: MainAxisAlignment.center,
+    //       children: [
+    //         const Text("Home Page",
+    //             style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+    //         const SizedBox(height: 35),
+    //         Text("Username : ${user.username}",
+    //             style: const TextStyle(fontSize: 18)),
+    //         const SizedBox(height: 15),
+    //         Text("Email : ${user.email}",
+    //             style: const TextStyle(fontSize: 18)),
+    //         const SizedBox(height: 15),
+    //         Text("JWT token : ${user.token}",
+    //             style: const TextStyle(fontSize: 18)),
+    //         const SizedBox(height: 30),
+    //         CustomElevatedButton(
+    //           onPressfunc: _logOut,
+    //           buttonText: "Log out",
+    //         ),
+    //       ],
+    //     ),
+    //   ),
+    // );
+    // } else {
+    //   return Scaffold(
+    //     body: Center(
+    //       child: Column(
+    //         mainAxisAlignment: MainAxisAlignment.center,
+    //         children: [
+    //           const Text("Home Page",
+    //               style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+    //           const SizedBox(height: 35),
+    //           Text(
+    //               "Please log in or sign up to sync data across multiple devices",
+    //               style: const TextStyle(fontSize: 18)),
+    //         ],
+    //       ),
+    //     ),
+    //   );
+    // }
   }
 
   _showTasksByCategory() {

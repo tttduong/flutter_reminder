@@ -25,6 +25,9 @@ class CategoryService {
     );
     print("Loading categories...");
 
+    print("📦 Status: ${response.statusCode}");
+    print("📤 Raw body: ${response.body}");
+    print("📤 Headers: ${response.headers}");
     if (response.statusCode == 200) {
       List<dynamic> jsonData = json.decode(response.body);
       print("Successfully loaded categories");

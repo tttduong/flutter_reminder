@@ -6,7 +6,8 @@ class UserProvider extends ChangeNotifier {
   //* If [_user] is null, if not Signed-In
   User? _user;
 
-  // UserProvider() {
+  UserProvider();
+  // {
   //   _user = User(
   //     username: '',
   //     email: '',

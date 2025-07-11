@@ -4,8 +4,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
+
 from ..models.user import UserCreate, UserResponse
-from ...core.security import get_password_hash, create_access_token, get_user_by_token, verify_password
+from ...core.security import get_current_user, get_password_hash, create_access_token, get_user_by_token, verify_password
 from ...db.database import get_db
 from ...db.db_structure import User
 
@@ -36,3 +37,9 @@ def read_user(db: Session = Depends(get_db), username: str = Depends(get_user_by
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
     return user
+
+
+@router.get("/me", response_model=UserResponse)
+async def read_users_me(current_user: User = Depends(get_current_user)):
+    return current_user
+
