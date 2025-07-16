@@ -1,11 +1,12 @@
 import 'dart:convert';
 
+import 'package:flutter_to_do_app/consts.dart';
 import 'package:flutter_to_do_app/data/models/task.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class TaskService {
-  static const String baseUrl = "http://localhost:8000/api/v1";
+  static const String baseUrl = "${Constants.URI}/api/v1";
 
   //update tasks
   static Future<void> updateTask(Task updatedTask) async {
