@@ -1,37 +1,46 @@
-import 'dart:convert';
+// import 'dart:convert';
 
-class User {
-  final int id;
-  final String username;
-  final String email;
-  final String token;
+// class User {
+//   final int id;
+//   final String username;
+//   final String email;
+//   // final String? token;
 
-  User(
-      {required this.id,
-      required this.username,
-      required this.email,
-      required this.token});
+//   User({
+//     required this.id,
+//     required this.username,
+//     required this.email,
+//     // this.token
+//   });
 
-  Map<String, dynamic> toMap() {
-    final result = <String, dynamic>{};
-    result.addAll({'id': id});
-    result.addAll({'username': username});
-    result.addAll({'email': email});
-    result.addAll({'token': token});
+//   Map<String, dynamic> toMap() {
+//     final result = <String, dynamic>{};
+//     result.addAll({'id': id});
+//     result.addAll({'username': username});
+//     result.addAll({'email': email});
+//     // result.addAll({'token': token});
 
-    return result;
-  }
+//     return result;
+//   }
 
-  factory User.fromMap(Map<String, dynamic> map) {
-    return User(
-      id: map['id'],
-      username: map['username'] ?? '',
-      email: map['email'] ?? '',
-      token: map['token'] ?? '',
-    );
-  }
+//   factory User.fromMap(Map<String, dynamic> map) {
+//     return User(
+//       id: map['id'],
+//       username: map['username'] ?? '',
+//       email: map['email'] ?? '',
+//       // token: map['token'] ?? '',
+//     );
+//   }
 
-  String toJson() => json.encode(toMap());
+//   String toJson() => json.encode(toMap());
 
-  factory User.fromJson(String source) => User.fromMap(json.decode(source));
-}
+//   // factory User.fromJson(String source) => User.fromMap(json.decode(source));
+//   factory User.fromJson(Map<String, dynamic> json, {String? token}) {
+//     return User(
+//       id: json['id'],
+//       username: json['username'],
+//       email: json['email'],
+//       // token: token,
+//     );
+//   }
+// }

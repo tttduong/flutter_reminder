@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_to_do_app/controller/user_controller.dart';
+import 'package:flutter_to_do_app/data/models/login_model.dart';
 import 'package:flutter_to_do_app/data/models/user.dart';
 import 'package:flutter_to_do_app/providers/user_provider.dart';
 import 'package:flutter_to_do_app/data/services/auth_services.dart';
@@ -20,7 +21,7 @@ class _SignInPageState extends State<SignInPage> {
   late TextEditingController _emailController;
   late TextEditingController _passwordController;
 
-  Future<void> _signInSuccess(User userData) async {
+  Future<void> _signInSuccess(LoginModel userData) async {
     bool isSaveSuccess =
         await LocalStoreServices.saveInLocal(context, userData);
     if (isSaveSuccess) {
@@ -28,25 +29,45 @@ class _SignInPageState extends State<SignInPage> {
       if (!mounted) return;
       UserProvider userProvider =
           Provider.of<UserProvider>(context, listen: false);
-      userProvider.setUserFromModel(userData);
+      // userProvider.setUserFromModel(userData.data);
+      userProvider.setUserFromLoginModel(userData);
     }
   }
 
   /// Trigger this when "Sign In" button is clicked
+  // void _signIn() async {
+  //   // NOTE : If signing-ip failed, return null
+  //   print("Bắt đầu đăng nhập");
+  //   User? userAccount = await AuthService.signInUser(
+  //     context: context,
+  //     email: _emailController.text,
+  //     password: _passwordController.text,
+  //   );
+
+  //   print("userAccount: $userAccount");
+  //   // NOTE : Process belows, if Sign-Ip via API successfully
+  //   if (userAccount != null) {
+  //     await _signInSuccess(userAccount);
+  //     if (!mounted) return;
+  //     Navigator.of(context).pushReplacement(
+  //       MaterialPageRoute(builder: (context) => const BottomNavBarScreen()),
+  //     );
+  //   }
+  // }
+
   void _signIn() async {
-    // NOTE : If signing-ip failed, return null
-    print("Bắt đầu đăng nhập");
-    User? userAccount = await AuthService.signInUser(
+    final loginModel = await AuthService.signInUser(
       context: context,
       email: _emailController.text,
       password: _passwordController.text,
     );
 
-    print("userAccount: $userAccount");
-    // NOTE : Process belows, if Sign-Ip via API successfully
-    if (userAccount != null) {
-      await _signInSuccess(userAccount);
-      if (!mounted) return;
+    if (loginModel != null) {
+      await LocalStoreServices.saveToken(loginModel.token!);
+
+      Provider.of<UserProvider>(context, listen: false)
+          .setUserFromModel(loginModel.user!);
+
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (context) => const BottomNavBarScreen()),
       );

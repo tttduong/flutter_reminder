@@ -3,6 +3,7 @@ import 'package:flutter_to_do_app/ui/screens/signin_screen.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 
+import '../../data/models/login_model.dart';
 import '../../data/models/models.dart';
 import '../../providers/providers.dart';
 import '../../data/services/services.dart';
@@ -23,7 +24,7 @@ class _SignUpPageState extends State<SignUpPage> {
   late TextEditingController _confirmPasswordController;
 
   /// Call this if Sign-Up via backend-API successfully
-  Future<void> _signUpSuccess(User userData) async {
+  Future<void> _signUpSuccess(LoginModel userData) async {
     bool isSaveSuccess =
         await LocalStoreServices.saveInLocal(context, userData);
     if (isSaveSuccess) {
@@ -31,7 +32,8 @@ class _SignUpPageState extends State<SignUpPage> {
       // NOTE : Update UserProvider
       UserProvider userProvider =
           Provider.of<UserProvider>(context, listen: false);
-      userProvider.setUserFromModel(userData);
+      // userProvider.setUserFromModel(userData);
+      userProvider.setUserFromLoginModel(userData);
 
       // ✅ Hiện thông báo và điều hướng sang trang đăng nhập
       Utils.showSnackBar(context, "Tạo tài khoản thành công!");
@@ -61,7 +63,7 @@ class _SignUpPageState extends State<SignUpPage> {
       password: _passwordController.text,
     );
     print("sign up - userAccount: $userAccount");
-    await _signUpSuccess(userAccount!);
+    // await _signUpSuccess(userAccount!);
 
     // if (userAccount != null) {
     //   // NOTE : Process, if Sign-Up via API successfully

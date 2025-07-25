@@ -51,28 +51,28 @@ AppBar userBanner(context, {VoidCallback? onTapped}) {
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                CircleAvatar(
-                  radius: 25,
-                  child: Image.memory(
-                    showBase64Image(AuthUtility.userInfo.data?.photo),
-                    errorBuilder: (_, __, ___) {
-                      return const Icon(Icons.person);
-                    },
-                  ),
-                ),
+                // CircleAvatar(
+                //   radius: 25,
+                //   child: Image.memory(
+                //     showBase64Image(AuthUtility.userInfo.data?.photo),
+                //     errorBuilder: (_, __, ___) {
+                //       return const Icon(Icons.person);
+                //     },
+                //   ),
+                // ),
                 const SizedBox(width: 15),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "${AuthUtility.userInfo.data?.firstName ?? " "} ${AuthUtility.userInfo.data?.lastName}",
+                      AuthUtility.userInfo.user?.username ?? " ",
                       style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                           color: Colors.white),
                     ),
                     const SizedBox(height: 2),
-                    Text(AuthUtility.userInfo.data?.email ?? "",
+                    Text(AuthUtility.userInfo.user?.email ?? "",
                         style:
                             const TextStyle(fontSize: 14, color: Colors.white)),
                   ],

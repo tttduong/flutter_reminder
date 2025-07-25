@@ -2,35 +2,32 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthUtils {
   static String? token;
-  static String? firstName;
-  static String? lastName;
+  static String? username;
   static String? email;
-  static String? mobile;
-  static String? photo;
+  // static String? mobile;
+  // static String? photo;
 
   static Future<void> saveUserData(
     String userToken,
-    String userFirstName,
-    String userLastName,
+    String username,
     String userEmail,
-    String userMobile,
-    String userPhoto,
+    // String userMobile,
+    // String userPhoto,
   ) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     await sharedPreferences.setString('token', userToken);
-    await sharedPreferences.setString('firstName', userFirstName);
-    await sharedPreferences.setString('lastName', userLastName);
+    await sharedPreferences.setString('firstName', username);
     await sharedPreferences.setString('email', userEmail);
-    await sharedPreferences.setString('mobile', userMobile);
-    await sharedPreferences.setString('photo', userPhoto);
+    // await sharedPreferences.setString('mobile', userMobile);
+    // await sharedPreferences.setString('photo', userPhoto);
 
     //
     token = userToken;
-    firstName = userFirstName;
-    lastName = userLastName;
+    username = username;
+    // lastName = userLastName;
     email = userEmail;
-    mobile = userMobile;
-    photo = userPhoto;
+    // mobile = userMobile;
+    // photo = userPhoto;
   }
 
   //
@@ -47,11 +44,10 @@ class AuthUtils {
   static Future<void> getUserData() async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     token = sharedPreferences.getString('token');
-    firstName = sharedPreferences.getString('firstName');
-    lastName = sharedPreferences.getString('lastName');
+    username = sharedPreferences.getString('username');
     email = sharedPreferences.getString('email');
-    mobile = sharedPreferences.getString('mobile');
-    photo = sharedPreferences.getString('photo');
+    // mobile = sharedPreferences.getString('mobile');
+    // photo = sharedPreferences.getString('photo');
   }
 
   //

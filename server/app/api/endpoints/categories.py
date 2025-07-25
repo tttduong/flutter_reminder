@@ -28,7 +28,7 @@ async def create_category(
     current_user: User = Depends(get_current_user)
 ):
     # Kiểm tra trùng tiêu đề (của người dùng hiện tại)
-    result = db.execute(
+    result = await db.execute(
         select(Category).where(
             Category.title == category.title,
             Category.owner_id == current_user.id
@@ -47,8 +47,8 @@ async def create_category(
     )
 
     db.add(new_category)
-    db.commit()
-    db.refresh(new_category)
+    await db.commit()
+    await db.refresh(new_category)
 
     return new_category
 
@@ -61,7 +61,7 @@ async def get_user_categories(
 ):
     print(f"🔐 current_user: {current_user.id}")
 
-    result = db.execute(
+    result = await db.execute(
         select(Category).where(Category.owner_id == current_user.id)
     )
     categories = result.scalars().all()

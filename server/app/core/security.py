@@ -1,12 +1,14 @@
 from datetime import datetime, timedelta
 from typing import Any
+from sqlalchemy.ext.asyncio import AsyncSession
+
 
 from fastapi import HTTPException, status, Depends
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session 
-
+from sqlalchemy.future import select
 from app.db.db_structure import User
 from app.db.database import get_db 
 
@@ -58,7 +60,7 @@ async def get_current_user(
         if user_email is None:
             raise HTTPException(status_code=401, detail="Invalid token")
 
-        user = get_user_by_email(db, user_email)
+        user = await get_user_by_email(db, user_email)
         if user is None:
             raise HTTPException(status_code=404, detail="User not found")
 
@@ -68,6 +70,16 @@ async def get_current_user(
         raise HTTPException(status_code=401, detail="Invalid token")
     
     
+async def get_user_by_email(db: AsyncSession, email: str) -> User | None:
+    result = await db.execute(select(User).where(User.email == email))
+    return result.scalars().first()
 
-def get_user_by_email(db: Session, user_email: str) -> User| None:
-    return db.query(User).filter(User.email == user_email).first()
+async def authenticate_user(db: AsyncSession, email: str, password: str):
+    result = await db.execute(select(User).where(User.email == email))
+    user = result.scalars().first()
+
+    if not user:
+        return None
+    if not verify_password(password, user.hashed_password):
+        return None
+    return user

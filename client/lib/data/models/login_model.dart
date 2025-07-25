@@ -1,51 +1,57 @@
 class LoginModel {
   String? status;
   String? token;
-  Data? data;
+  User? user;
 
-  LoginModel({this.status, this.token, this.data});
+  LoginModel({this.status, this.token, this.user});
 
   LoginModel.fromJson(Map<String, dynamic> json) {
     status = json['status'];
     token = json['token'];
-    data = json['data'] != null ? Data.fromJson(json['data']) : null;
+    user = json['data'] != null ? User.fromJson(json['data']) : null;
   }
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};
     data['status'] = status;
     data['token'] = token;
-    if (this.data != null) {
-      data['data'] = this.data!.toJson();
+    if (this.user != null) {
+      data['data'] = this.user!.toJson();
     }
     return data;
   }
 }
 
-class Data {
-  String? email;
-  String? firstName;
-  String? lastName;
-  String? mobile;
-  String? photo;
+class User {
+  final int? id;
+  final String? email;
+  final String? username;
+  // final String? mobile;
+  // final String? photo;
 
-  Data({this.email, this.firstName, this.lastName, this.mobile, this.photo});
+  User({
+    this.id,
+    this.email,
+    this.username,
+    // this.mobile,
+    // this.photo,
+  });
 
-  Data.fromJson(Map<String, dynamic> json) {
-    email = json['email'];
-    firstName = json['firstName'];
-    lastName = json['lastName'];
-    mobile = json['mobile'];
-    photo = json['photo'];
+  factory User.fromJson(Map<String, dynamic> json) {
+    return User(
+      id: json['id'],
+      email: json['email'],
+      username: json['username'],
+      // mobile: json['mobile'],
+      // photo: json['photo'],
+    );
   }
 
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = <String, dynamic>{};
-    data['email'] = email;
-    data['firstName'] = firstName;
-    data['lastName'] = lastName;
-    data['mobile'] = mobile;
-    data['photo'] = photo;
-    return data;
-  }
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'email': email,
+        'username': username,
+        // 'mobile': mobile,
+        // 'photo': photo,
+      };
 }

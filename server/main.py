@@ -6,7 +6,7 @@ from app.api.middleware.middleware import logging_middleware, logger
 from app.core.security import get_user_by_token
 from app.db.database import Base, engine
 from fastapi.middleware.cors import CORSMiddleware
-
+from app.db.database import init_models
 
 app = FastAPI()
 
@@ -24,9 +24,12 @@ app.include_router(categories.router, prefix="/api/v1", tags=["Categories"], dep
 app.middleware("http")(logging_middleware)
 
 
+# @app.on_event("startup")
+# def startup_db():
+#     Base.metadata.create_all(bind=engine)
 @app.on_event("startup")
-def startup_db():
-    Base.metadata.create_all(bind=engine)
+async def on_startup():
+    await init_models()
 
 
 @app.exception_handler(Exception)
@@ -46,6 +49,6 @@ def read_root():
 if __name__ == "__main__":
     import uvicorn
 
-    # uvicorn.run(app, host="127.0.0.1", port=8000)
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="127.0.0.1", port=8000)
+    # uvicorn.run(app, host="0.0.0.0", port=8000)
 

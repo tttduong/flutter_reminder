@@ -1,4 +1,4 @@
-from typing import List, Set
+from typing import List, Optional, Set
 
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
@@ -63,6 +63,12 @@ def read_tasks(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
     tasks = db.query(Task).offset(skip).limit(limit).all()
     return tasks
 
+# @router.get("/tasks/by-category", response_model=List[TaskOut])
+# def get_tasks_by_category(category_id: Optional[int] = Query(None), db: Session = Depends(get_db)):
+#     if category_id is None:
+#         return db.query(Task).filter(Task.category_id == None).all()
+#     else:
+#         return db.query(Task).filter(Task.category_id == category_id).all()
 
 @router.get("/tasks/{task_id}", response_model=TaskResponse)
 def read_task(task_id: int, db: Session = Depends(get_db)):

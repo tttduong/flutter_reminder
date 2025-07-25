@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../consts.dart';
+import '../models/login_model.dart';
 import '../models/models.dart';
 import '../../ui/utils/error_handling.dart';
 import '../../ui/utils/utils.dart';
@@ -15,7 +16,6 @@ class AuthService {
   /// A function for Sign-Up user account,
   /// Success : return User model,
   /// Fail : return null
-  // static Future<User?> signUpUser({
   static Future<User?> signUpUser({
     required BuildContext context,
     required String email,
@@ -55,11 +55,37 @@ class AuthService {
       return null;
     }
   }
+//   static Future<LoginModel?> signInUser({
+//   required BuildContext context,
+//   required String email,
+//   required String password,
+// }) async {
+//   try {
+//     final response = await http.post(
+//       Uri.parse('http://localhost:8000/api/v1/login'),
+//       body: {
+//         'username': email,
+//         'password': password,
+//       },
+//     );
+
+//     if (response.statusCode == 200) {
+//       final jsonResponse = json.decode(response.body);
+//       return LoginModel.fromJson(jsonResponse);
+//     } else {
+//       // handle error
+//       return null;
+//     }
+//   } catch (e) {
+//     // handle error
+//     return null;
+//   }
+// }
 
   /// A function for Sign-Up user account,
   /// Success : return User model,
   /// Fail : return null
-  static Future<User?> signInUser({
+  static Future<LoginModel?> signInUser({
     required BuildContext context,
     required String email,
     required String password,
@@ -82,7 +108,6 @@ class AuthService {
           ErrorHandling.httpErrorHandling(response: res, context: context);
       if (hasError) return null;
 
-      /// Execute successfully
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
         final token = data['access_token'];
@@ -90,15 +115,11 @@ class AuthService {
         if (token != null) {
           final prefs = await SharedPreferences.getInstance();
           await prefs.setString('access_token', token);
-          print("✅ Token saved: $token");
-          // return User.fromJson(res.body);
-          // ✅ Gọi Provider tại đây để set user (nếu muốn)
-          final user =
-              await AuthService.getUser(context: context, token: token);
+
+          final user = await AuthService.getUser(token: token);
 
           if (user != null) {
-            context.read<UserProvider>().setUserFromModel(user);
-            return user;
+            return LoginModel(token: token, user: user);
           }
         }
       } else {
@@ -106,31 +127,69 @@ class AuthService {
       }
     } catch (e) {
       Utils.showSnackBar(context, e.toString());
-      return null;
     }
+
+    return null; // ✅ Thêm return null để tránh lỗi "might complete without returning"
   }
 
   /// A function for getting User account's datas via token,
   /// Success : return User model,
   /// Fail : return null
+  // static Future<User?> getUser({
+  //   required BuildContext context,
+  //   required String token,
+  // }) async {
+  //   try {
+  //     http.Response res = await http.get(
+  //       Uri.parse("${Constants.URI}/api/v1/me"),
+  //       headers: <String, String>{
+  //         'Content-Type': 'application/json; charset=UTF-8',
+  //         'Authorization': 'Bearer $token',
+  //       },
+  //     );
+
+  //     if (res.statusCode != 200) return null;
+
+  //     // return User.fromJson(res.body);
+  //     final userJson = jsonDecode(res.body);
+  //     print("📦 userJson from BE: $userJson");
+  //     return User.fromJson(userJson);
+  //   } catch (e) {
+  //     Utils.showSnackBar(context, e.toString());
+  //     return null;
+  //   }
+  // }
   static Future<User?> getUser({
-    required BuildContext context,
+    // required BuildContext context,
     required String token,
   }) async {
     try {
-      http.Response res = await http.get(
+      print("📤 Gửi request GET /me với token: $token");
+
+      final res = await http.get(
         Uri.parse("${Constants.URI}/api/v1/me"),
-        headers: <String, String>{
+        headers: {
           'Content-Type': 'application/json; charset=UTF-8',
           'Authorization': 'Bearer $token',
         },
       );
 
-      if (res.statusCode != 200) return null;
+      print("📥 Status code: ${res.statusCode}");
+      print("📥 Response body: ${res.body}");
 
-      return User.fromJson(res.body);
-    } catch (e) {
-      Utils.showSnackBar(context, e.toString());
+      if (res.statusCode != 200) {
+        print("⚠️ Không phải 200, trả về null");
+        return null;
+      }
+
+      final userJson = jsonDecode(res.body); // ✅ FIXED!
+      print("📦 userJson from BE: $userJson");
+
+      return User.fromJson(userJson); // ✅ FIXED!
+    } catch (e, stack) {
+      print("❌ Exception trong getUser: $e");
+      print("🪵 Stacktrace: $stack");
+      // Utils.showSnackBar(context, e.toString());
       return null;
     }
   }

@@ -19,12 +19,10 @@ class UpdateProfileScreen extends StatefulWidget {
 }
 
 class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
-  Data userInfo = AuthUtility.userInfo.data!;
+  User userInfo = AuthUtility.userInfo.user!;
   final TextEditingController _emailController = TextEditingController();
 
-  final TextEditingController _firstNameController = TextEditingController();
-
-  final TextEditingController _lastNameController = TextEditingController();
+  final TextEditingController _usernameController = TextEditingController();
 
   final TextEditingController _phoneNumberController = TextEditingController();
 
@@ -38,10 +36,10 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
   @override
   void initState() {
     super.initState();
-    _emailController.text = AuthUtility.userInfo.data?.email ?? "";
-    _firstNameController.text = AuthUtility.userInfo.data?.firstName ?? "";
-    _lastNameController.text = AuthUtility.userInfo.data?.lastName ?? "";
-    _phoneNumberController.text = AuthUtility.userInfo.data?.mobile ?? "";
+    _emailController.text = AuthUtility.userInfo.user?.email ?? "";
+    _usernameController.text = AuthUtility.userInfo.user?.username ?? "";
+    // _lastNameController.text = AuthUtility.userInfo.user?.lastName ?? "";
+    // _phoneNumberController.text = AuthUtility.userInfo.user?.mobile ?? "";
   }
 
   Future<void> updateProfile() async {
@@ -51,10 +49,9 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
     }
     Map<String, dynamic> requestBody = {
       "email": _emailController.text.trim(),
-      "firstName": _firstNameController.text.trim(),
-      "lastName": _lastNameController.text.trim(),
-      "phoneNumber": _phoneNumberController.text.trim(),
-      "photos": ""
+      "username": _usernameController.text.trim(),
+      // "phoneNumber": _phoneNumberController.text.trim(),
+      // "photos": ""
     };
     if (_passwordController.text.isNotEmpty) {
       requestBody["password"] = _passwordController.text;
@@ -66,9 +63,8 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
       setState(() {});
     }
     if (response.isSuccess) {
-      userInfo.firstName = _firstNameController.text.trim();
-      userInfo.lastName = _lastNameController.text.trim();
-      userInfo.mobile = _phoneNumberController.text.trim();
+      // userInfo.username = _usernameController.text.trim();
+      // userInfo.mobile = _phoneNumberController.text.trim();
       _passwordController.clear();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -166,8 +162,8 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                   height: 8,
                 ),
                 CustomTextFormField(
-                  hintText: "First Name",
-                  controller: _firstNameController,
+                  hintText: "Username",
+                  controller: _usernameController,
                   textInputType: TextInputType.text,
                   validator: (value) {
                     if (value?.isEmpty ?? true) {
@@ -179,17 +175,17 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                 const SizedBox(
                   height: 8,
                 ),
-                CustomTextFormField(
-                  hintText: "Last Name",
-                  controller: _lastNameController,
-                  textInputType: TextInputType.text,
-                  validator: (value) {
-                    if (value?.isEmpty ?? true) {
-                      return "Please enter last name";
-                    }
-                    return null;
-                  },
-                ),
+                // CustomTextFormField(
+                //   hintText: "Last Name",
+                //   controller: _lastNameController,
+                //   textInputType: TextInputType.text,
+                //   validator: (value) {
+                //     if (value?.isEmpty ?? true) {
+                //       return "Please enter last name";
+                //     }
+                //     return null;
+                //   },
+                // ),
                 const SizedBox(
                   height: 8,
                 ),

@@ -13,7 +13,8 @@ class AppColors {
 }
 
 class Constants {
-  static const String URI = "http://10.0.213.30:8000";
+  // static const String URI = "http://10.221.143.30:8000";
+  static const String URI = "http://localhost:8000";
 
   static const String LOCAL_STORAGE_TOKEN_KEY = "user-data-token";
 }
