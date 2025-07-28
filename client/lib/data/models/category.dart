@@ -7,6 +7,8 @@ class Category {
   final String title;
   final Color color;
   final IconData icon;
+  final int? ownerId;
+  final bool? isDefault;
   final List<Task>? tasks;
 
   Category({
@@ -14,6 +16,8 @@ class Category {
     required this.title,
     required this.color,
     required this.icon,
+    this.ownerId,
+    this.isDefault,
     this.tasks,
   });
 
@@ -24,6 +28,8 @@ class Category {
       title: json['title'] ?? '',
       color: _parseColor(json['color']),
       icon: _parseIcon(json['icon']),
+      ownerId: json['owner_id'],
+      isDefault: json['is_default'],
       tasks: (json['tasks'] as List<dynamic>?)
               ?.map((taskJson) => Task.fromJson(taskJson))
               .toList() ??
@@ -58,5 +64,16 @@ class Category {
     if (icon == null) return const IconData(0, fontFamily: 'MaterialIcons');
     return IconData(int.tryParse(icon.toString()) ?? 0,
         fontFamily: 'MaterialIcons');
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'color': color.value.toRadixString(16), // Chuyển về chuỗi hex
+      'icon': icon.codePoint, // IconData => int
+      'owner_id': ownerId,
+      'is_default': isDefault,
+    };
   }
 }

@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../consts.dart';
+import '../models/category.dart';
 import '../models/login_model.dart';
 import '../models/models.dart';
 import '../../ui/utils/error_handling.dart';
@@ -29,7 +30,6 @@ class AuthService {
         Uri.parse("${Constants.URI}/api/v1/register"),
         // body: userAuth.toJson(),
         body: jsonEncode(userAuth.toJson()),
-
         // body: jsonEncode({
         //   "email": email,
         //   "password": password,
@@ -39,6 +39,7 @@ class AuthService {
           'Content-Type': 'application/json; charset=UTF-8'
         },
       );
+      print(jsonEncode(userAuth.toJson()));
 
       bool hasError =
           ErrorHandling.httpErrorHandling(response: res, context: context);
@@ -55,32 +56,6 @@ class AuthService {
       return null;
     }
   }
-//   static Future<LoginModel?> signInUser({
-//   required BuildContext context,
-//   required String email,
-//   required String password,
-// }) async {
-//   try {
-//     final response = await http.post(
-//       Uri.parse('http://localhost:8000/api/v1/login'),
-//       body: {
-//         'username': email,
-//         'password': password,
-//       },
-//     );
-
-//     if (response.statusCode == 200) {
-//       final jsonResponse = json.decode(response.body);
-//       return LoginModel.fromJson(jsonResponse);
-//     } else {
-//       // handle error
-//       return null;
-//     }
-//   } catch (e) {
-//     // handle error
-//     return null;
-//   }
-// }
 
   /// A function for Sign-Up user account,
   /// Success : return User model,
@@ -110,17 +85,23 @@ class AuthService {
 
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
+        print("📦 Full login response: $data");
+        print("🔥 Default category: ${data['default_category']}");
+
         final token = data['access_token'];
 
         if (token != null) {
           final prefs = await SharedPreferences.getInstance();
           await prefs.setString('access_token', token);
 
-          final user = await AuthService.getUser(token: token);
-
-          if (user != null) {
-            return LoginModel(token: token, user: user);
-          }
+          // ✅ Tạo LoginModel từ toàn bộ response data
+          return LoginModel(
+            token: token,
+            user: data['user'] != null ? User.fromJson(data['user']) : null,
+            defaultCategory: data['default_category'] != null
+                ? Category.fromJson(data['default_category'])
+                : null,
+          );
         }
       } else {
         print("Đăng nhập thất bại: ${res.body}");

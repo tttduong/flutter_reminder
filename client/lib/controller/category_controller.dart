@@ -4,6 +4,8 @@ import 'package:get/get.dart';
 
 class CategoryController extends GetxController {
   var categoryList = <Category>[].obs;
+  // Rxn<Category> selectedCategory = Rxn<Category>(); //toi day rui
+  var selectedCategory = Rxn<Category>(); // Rxn cho phép null
 
   @override
   void onInit() {
@@ -24,8 +26,18 @@ class CategoryController extends GetxController {
   }
 
   // Lấy tất cả danh mục từ API
-  void getCategories() async {
-    categoryList.value = await CategoryService.fetchCategories();
+  // void getCategories() async {
+  //   categoryList.value = await CategoryService.fetchCategories();
+  // }
+  Future<void> getCategories() async {
+    try {
+      // gọi API
+      final categories = await CategoryService.fetchCategories();
+      categoryList.value = categories;
+      print("Successfully loaded categories");
+    } catch (e) {
+      print("Failed to load categories: $e");
+    }
   }
 
   // Xóa category theo ID

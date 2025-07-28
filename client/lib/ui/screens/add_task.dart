@@ -52,46 +52,43 @@ class _AddTaskPageState extends State<AddTaskPage> {
                     hint: "Enter your description",
                     controller: _noteController,
                   ),
-                  // MyInputField(
-                  //   title: "Category",
-                  //   hint: listCategories
-                  //       .firstWhere(
-                  //         (cat) => cat.id == _selectedCategoryId,
-                  //         orElse: () => Category(
-                  //             id: -1,
-                  //             title: 'None',
-                  //             color: Colors.black,
-                  //             icon: Icons.category),
-                  //       )
-                  //       .title,
-                  //   widget: DropdownButton<int>(
-                  //     value:
-                  //         _selectedCategoryId, // _selectedCategoryId phải là int?
-                  //     icon: const Icon(
-                  //       Icons.keyboard_arrow_down,
-                  //       color: Colors.grey,
-                  //     ),
-                  //     iconSize: 32,
-                  //     elevation: 4,
-                  //     items: listCategories
-                  //         .map<DropdownMenuItem<int>>((Category cat) {
-                  //       return DropdownMenuItem<int>(
-                  //         value: cat.id, // ID kiểu int
-                  //         child: Text(
-                  //           cat.title,
-                  //           style: const TextStyle(color: Colors.black),
-                  //         ),
-                  //       );
-                  //     }).toList(),
-                  //     underline: Container(height: 0),
-                  //     onChanged: (int? newValue) {
-                  //       setState(() {
-                  //         _selectedCategoryId = newValue!;
-                  //         print("Selected Category ID: $_selectedCategoryId");
-                  //       });
-                  //     },
-                  //   ),
-                  // ),
+                  MyInputField(
+                    title: "Category",
+                    hint: listCategories.isEmpty
+                        ? "No category"
+                        : listCategories
+                            .firstWhere(
+                              (cat) => cat.id == _selectedCategoryId,
+                              orElse: () => listCategories.first,
+                            )
+                            .title,
+                    widget: DropdownButton<int>(
+                      value: _selectedCategoryId,
+                      icon: const Icon(Icons.keyboard_arrow_down,
+                          color: Colors.grey),
+                      iconSize: 32,
+                      elevation: 4,
+                      items: listCategories
+                          .map<DropdownMenuItem<int>>((Category cat) {
+                        return DropdownMenuItem<int>(
+                          value: cat.id,
+                          child: Text(
+                            cat.title,
+                            style: const TextStyle(color: Colors.black),
+                          ),
+                        );
+                      }).toList(),
+                      underline: Container(height: 0),
+                      onChanged: (int? newValue) {
+                        if (newValue != null) {
+                          setState(() {
+                            _selectedCategoryId = newValue;
+                            print("Selected Category ID: $_selectedCategoryId");
+                          });
+                        }
+                      },
+                    ),
+                  ),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     crossAxisAlignment: CrossAxisAlignment.center,
@@ -127,7 +124,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
       task: Task(
         title: _titleController.text,
         description: _noteController.text,
-        // categoryId: _selectedCategoryId,
+        categoryId: _selectedCategoryId,
       ),
     );
 
@@ -156,6 +153,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
       final categories = await CategoryService.fetchCategories();
       setState(() {
         listCategories = categories;
+        _selectedCategoryId = categories.first.id;
       });
     } catch (e) {
       print("Error loading categories: $e");

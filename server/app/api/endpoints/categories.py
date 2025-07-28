@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
+from app.core.utils import get_or_create_inbox_category
 from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
@@ -43,7 +44,8 @@ async def create_category(
         title=category.title,
         color=category.color,
         icon=category.icon,
-        owner_id=current_user.id  # Gán người tạo
+        owner_id=current_user.id,
+        is_default=True
     )
 
     db.add(new_category)
@@ -60,15 +62,12 @@ async def get_user_categories(
     current_user: User = Depends(get_current_user)
 ):
     print(f"🔐 current_user: {current_user.id}")
-
+    await get_or_create_inbox_category(db, current_user.id)
     result = await db.execute(
         select(Category).where(Category.owner_id == current_user.id)
     )
     categories = result.scalars().all()
     return categories
-
-
-
 
 # Lấy một category theo ID
 # @router.get("/categories/{category_id}", response_model=CategoryResponse)
@@ -95,12 +94,25 @@ async def get_user_categories(
 
 # Xóa category theo ID
 @router.delete("/categories/{category_id}")
-def delete_category(category_id: int, db: Session = Depends(get_db)):
-    category = db.query(Category).filter(Category.id == category_id).first()
+async def delete_category(
+    category_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    result = await db.execute(
+        select(Category).where(Category.id == category_id, Category.owner_id == current_user.id)
+    )
+    category = result.scalar_one_or_none()
+
     if not category:
         raise HTTPException(status_code=404, detail="Category not found")
 
-    db.delete(category)
-    db.commit()
-    return {"message": "Category deleted successfully"}
+    if category.is_default:
+        raise HTTPException(status_code=400, detail="Cannot delete default Inbox category.")
+
+    await db.delete(category)
+    await db.commit()
+
+    return {"detail": "Category deleted successfully"}
+
 

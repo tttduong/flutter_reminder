@@ -23,10 +23,12 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       TextEditingController();
   bool _addNewTaskLoading = false;
 
+  final TextEditingController _categoryController = TextEditingController();
+
   Future<void> addNewTask() async {
     final title = _taskNameController.text.trim();
     final description = _taskDescriptionController.text.trim();
-
+    final category_id = _categoryController.text.trim();
     if (title.isEmpty || description.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Title and Description cannot be empty")),
@@ -40,6 +42,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     Map<String, dynamic> requestBody = {
       "title": title,
       "description": description,
+      "category_id": category_id,
       "status": "New",
     };
 
@@ -120,6 +123,24 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                     ),
                     const SizedBox(
                       height: 16,
+                    ),
+                    CustomTextFormField(
+                      maxLines: 4,
+                      hintText: "Description",
+                      controller: _taskDescriptionController,
+                      textInputType: TextInputType.text,
+                      validator: (value) {
+                        if (value?.isEmpty ?? true) {
+                          return "Please enter task description";
+                        }
+                        return null;
+                      },
+                    ),
+                    CustomTextFormField(
+                      maxLines: 4,
+                      hintText: "category_id",
+                      controller: _categoryController,
+                      textInputType: TextInputType.text,
                     ),
                     Visibility(
                         visible: _addNewTaskLoading == false,

@@ -42,4 +42,5 @@ class Category(Base):
 
     owner = relationship("User", back_populates="categories")
     tasks = relationship("Task", back_populates="category", cascade="all, delete", passive_deletes=True)
+    is_default = Column(Boolean, default=False)
 #  tasks = relationship("Task", back_populates="category", cascade="all, delete")

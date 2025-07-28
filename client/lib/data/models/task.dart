@@ -102,3 +102,15 @@ class Task {
   //   return jsonEncode(tasks.map((task) => task.toJson()).toList());
   // }
 }
+
+class UpdateTaskStatusDto {
+  final bool isCompleted;
+
+  UpdateTaskStatusDto({required this.isCompleted});
+
+  Map<String, dynamic> toJson() {
+    return {
+      "is_completed": isCompleted,
+    };
+  }
+}

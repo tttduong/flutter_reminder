@@ -6,7 +6,10 @@ from app.core.security import get_current_user
 from ..models.task import TaskCreate, TaskUpdate, TaskResponse
 from ...core.security import get_user_by_token
 from ...db.database import get_db
-from ...db.db_structure import Task, User
+from ...db.db_structure import Category, Task, User
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+from fastapi import Query
 
 router = APIRouter()
 
@@ -27,48 +30,69 @@ async def websocket_endpoint(client_id: int, websocket: WebSocket):
 
 
 @router.post("/tasks/", response_model=TaskResponse)
-def create_task(task: TaskCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user) ):
-    user = db.query(User).filter(User.id == current_user.id).first()
-    db_task = Task(**task.dict(), owner_id=user.id)
-    db.add(db_task)
-    db.commit()
-    db.refresh(db_task)
-    for connection in active_connections:
-        connection.send_text(f"New task created: {db_task.title}")
-    return db_task
-# @router.post("/")
-# def create_task(task: TaskCreate, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
-#     print("Current user:", current_user)
-#     if not current_user:
-#         raise HTTPException(status_code=401, detail="Unauthorized")
+async def create_task(
+    task: TaskCreate, 
+    db: Session = Depends(get_db), 
+    current_user: User = Depends(get_current_user) 
+    ):
+    # category_id = task.category_id
 
-#     new_task = TaskCreate(
-#         # id=uuid.uuid4(),
-#         title=task.title,
-#         category_id = task.category_id,
-#         # description=task.description,
-#         # due_date=task.due_date, 
-#         # time=task.time,
-#         # user_id=current_user.id
-#         # user_id="33432faf-ddbd-4b50-bd38-33bdb7d6d990"
-#     )
-#     db.add(new_task)
-#     db.commit()
-#     db.refresh(new_task)
-#     return new_task
+    # if category_id is None:
+    #     result = await db.execute(
+    #         select(Category.id)
+    #         .where(Category.owner_id == current_user.id)
+    #         .where(Category.default == True)
+    #     )
+    #     inbox_category_id = result.scalar()
 
+    #     if inbox_category_id is None:
+    #         raise HTTPException(status_code=400, detail="No default (Inbox) category found for this user.")
 
-@router.get("/tasks/", response_model=List[TaskResponse])
-def read_tasks(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
-    tasks = db.query(Task).offset(skip).limit(limit).all()
+    #     category_id = inbox_category_id
+        
+    new_task = Task(
+    title=task.title,
+    description=task.description,
+    category_id= task.category_id,
+    owner_id=current_user.id
+    )
+    db.add(new_task)
+    await db.commit()
+    await db.refresh(new_task)
+    return new_task
+
+@router.get("/tasks/by-category/", response_model=List[TaskResponse])
+async def get_tasks_by_category(
+    category_id: Optional[int] = Query(None),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    stmt = select(Task).where(Task.owner_id == current_user.id)
+
+    if category_id is None:
+        stmt = stmt.where(Task.category_id == None)
+    else:
+        stmt = stmt.where(Task.category_id == category_id)
+
+    result = await db.execute(stmt)
+    tasks = result.scalars().all()
+
     return tasks
 
-# @router.get("/tasks/by-category", response_model=List[TaskOut])
-# def get_tasks_by_category(category_id: Optional[int] = Query(None), db: Session = Depends(get_db)):
-#     if category_id is None:
-#         return db.query(Task).filter(Task.category_id == None).all()
-#     else:
-#         return db.query(Task).filter(Task.category_id == category_id).all()
+@router.get("/tasks/", response_model=List[TaskResponse])
+async def read_tasks(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    print(f"🔐 current_user: {current_user.id}")
+
+    result = await db.execute(
+        select(Task)
+        .where(Task.owner_id == current_user.id)
+    )
+
+    tasks = result.scalars().all()
+    return tasks
 
 @router.get("/tasks/{task_id}", response_model=TaskResponse)
 def read_task(task_id: int, db: Session = Depends(get_db)):
@@ -76,6 +100,7 @@ def read_task(task_id: int, db: Session = Depends(get_db)):
     if task is None:
         raise HTTPException(status_code=404, detail="Task not found")
     return task
+
 
 
 # @router.put("/tasks/{task_id}", response_model=TaskResponse)
@@ -92,26 +117,52 @@ def read_task(task_id: int, db: Session = Depends(get_db)):
 #     return db_task
 
 @router.patch("/tasks/{task_id}", response_model=TaskResponse)
-def partial_update_task(task_id: int, task_update: TaskUpdate, db: Session = Depends(get_db)):
-    db_task = db.query(Task).filter(Task.id == task_id).first()
+async def partial_update_task(
+    task_id: int,
+    task_update: TaskUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    # 1. Tìm task theo ID và người dùng hiện tại
+    result = await db.execute(
+        select(Task).where(Task.id == task_id, Task.owner_id == current_user.id)
+    )
+    db_task = result.scalar_one_or_none()
+
+    # 2. Không tìm thấy task
     if db_task is None:
         raise HTTPException(status_code=404, detail="Task not found")
+
+    # 3. Cập nhật các field được truyền vào
     update_data = task_update.dict(exclude_unset=True)
     for key, value in update_data.items():
         setattr(db_task, key, value)
-    db.commit()
-    db.refresh(db_task)
+
+    # 4. Commit và trả về task mới
+    await db.commit()
+    await db.refresh(db_task)
+
     return db_task
 
-
-
 @router.delete("/tasks/{task_id}", response_model=TaskResponse)
-def delete_task(task_id: int, db: Session = Depends(get_db)):
-    task = db.query(Task).filter(Task.id == task_id).first()
+async def delete_task(
+    task_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    result = await db.execute(
+        select(Task).where(Task.id == task_id, Task.owner_id == current_user.id)
+    )
+    task = result.scalars().first()
+
     if task is None:
-        raise HTTPException(status_code=404, detail="Task not found")
-    db.delete(task)
-    db.commit()
+        raise HTTPException(status_code=404, detail="Task not found or access denied")
+
+    await db.delete(task)
+    await db.commit()
+
+    # Gửi thông báo WebSocket nếu có
     for connection in active_connections:
-        connection.send_text(f"Task {task.id} deleted")
+        await connection.send_text(f"Task {task.id} deleted")
+
     return task

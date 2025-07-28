@@ -1,11 +1,12 @@
 from typing import Optional
 from pydantic import BaseModel
+from pydantic import BaseModel, constr
 
 
 class TaskCreate(BaseModel):
-    title: str
-    description: str
-    # category_id: Optional[int] = None
+    title: constr(strip_whitespace=True, min_length=1)
+    description: Optional[str] = None
+    category_id: int
 
 
 

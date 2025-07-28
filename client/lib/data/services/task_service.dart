@@ -1,5 +1,5 @@
 import 'dart:convert';
-
+import 'package:dio/dio.dart';
 import 'package:flutter_to_do_app/consts.dart';
 import 'package:flutter_to_do_app/data/models/task.dart';
 import 'package:http/http.dart' as http;
@@ -7,12 +7,51 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class TaskService {
   static const String baseUrl = "${Constants.URI}/api/v1";
+  final Dio _dio = Dio(BaseOptions(baseUrl: baseUrl));
+  // Future<bool> updateTaskStatusAPI(int taskId, bool isCompleted) async {
+  //   try {
+  //     final dto = UpdateTaskStatusDto(isCompleted: isCompleted);
+  //     final response = await _dio.patch(
+  //       "/tasks/$taskId", // endpoint backend của bạn
+  //       data: dto.toJson(),
+  //     );
+
+  //     return response.statusCode == 200;
+  //   } catch (e) {
+  //     print('Error updating task: $e');
+  //     return false;
+  //   }
+  // }
+
+  Future<bool> updateTaskStatusAPI(int taskId, bool isCompleted) async {
+    try {
+      final dto = UpdateTaskStatusDto(isCompleted: isCompleted);
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('access_token');
+
+      final response = await _dio.patch(
+        "/tasks/$taskId",
+        data: dto.toJson(),
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token', // Adjust format as needed
+            'Content-Type': 'application/json',
+          },
+        ),
+      );
+
+      return response.statusCode == 200;
+    } catch (e) {
+      print('Error updating task: $e');
+      return false;
+    }
+  }
 
   //update tasks
   static Future<void> updateTask(Task updatedTask) async {
     final url = Uri.parse('$baseUrl/tasks/${updatedTask.id}');
     try {
-      final response = await http.put(
+      final response = await http.patch(
         url,
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
@@ -49,18 +88,31 @@ class TaskService {
   }
 
   //get all tasks by category_id---------------------------------------------------------------
-  static Future<List<Task>> getTasksByCategoryId(String categoryId) async {
-    final response =
-        await http.get(Uri.parse('$baseUrl/tasks/by_category/$categoryId'));
-    print("loading in loading tasks");
+  static Future<List<Task>> getTasksByCategoryId(int? categoryId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('access_token'); // dùng đúng key bạn lưu
+
+    if (token == null) {
+      throw Exception('Token not found');
+    }
+
+    final queryParam = categoryId == null
+        ? '$baseUrl/tasks/by-category/'
+        : '$baseUrl/tasks/by-category/?category_id=$categoryId';
+
+    final response = await http.get(
+      Uri.parse(queryParam),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
 
     if (response.statusCode == 200) {
       List<dynamic> jsonData = json.decode(response.body);
-      print("successing in loading tasks");
-
       return jsonData.map((task) => Task.fromJson(task)).toList();
     } else {
-      throw Exception('Failed to load tasks');
+      throw Exception('Failed to load tasks (${response.statusCode})');
     }
   }
 
@@ -146,7 +198,7 @@ class TaskService {
   // }
 
 //delete tasks
-  static Future<void> deleteTask(Task task) async {
+  static Future<void> deleteTask(int taskId) async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('access_token');
 
@@ -155,7 +207,7 @@ class TaskService {
       // return false;
     }
 
-    final url = Uri.parse('$baseUrl/tasks/${task.id}');
+    final url = Uri.parse('$baseUrl/tasks/${taskId}/');
     try {
       final response = await http.delete(
         url,
@@ -191,7 +243,7 @@ class TaskService {
       final Map<String, dynamic> jsonBody = {
         "title": task.title,
         "description": task.description,
-        // "category_id": task.categoryId.toString(), // Đảm bảo là UUID string
+        "category_id": task.categoryId,
         // "due_date": task.dueDate,
         // "time": task.time,
       };
@@ -201,7 +253,7 @@ class TaskService {
       //     "JSON body gửi đi: ${jsonEncode(jsonBody)}");  //OK
 
       final response = await http.post(
-        Uri.parse("$baseUrl/tasks"),
+        Uri.parse("$baseUrl/tasks/"),
         headers: {
           "Content-Type": "application/json",
           "Authorization": "Bearer $token", // Nếu API cần token
@@ -232,7 +284,7 @@ class TaskService {
     }
 
     final response = await http.patch(
-      Uri.parse('$baseUrl/tasks/${updatedTask.id}'),
+      Uri.parse('$baseUrl/tasks/${updatedTask.id}/'),
       headers: {
         "Content-Type": "application/json",
         "Authorization": "Bearer $token",

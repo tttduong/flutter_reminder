@@ -10,8 +10,12 @@ import 'package:flutter_to_do_app/ui/widgets/widgets.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 
+import '../../controller/category_controller.dart';
+import '../../data/models/category.dart';
+
 class SignInPage extends StatefulWidget {
   const SignInPage({super.key});
+  // Rxn<Category> selectedCategory = Rxn<Category>();
 
   @override
   State<SignInPage> createState() => _SignInPageState();
@@ -34,21 +38,54 @@ class _SignInPageState extends State<SignInPage> {
     }
   }
 
-  /// Trigger this when "Sign In" button is clicked
   // void _signIn() async {
-  //   // NOTE : If signing-ip failed, return null
-  //   print("Bắt đầu đăng nhập");
-  //   User? userAccount = await AuthService.signInUser(
+  //   final loginModel = await AuthService.signInUser(
   //     context: context,
   //     email: _emailController.text,
   //     password: _passwordController.text,
   //   );
 
-  //   print("userAccount: $userAccount");
-  //   // NOTE : Process belows, if Sign-Ip via API successfully
-  //   if (userAccount != null) {
-  //     await _signInSuccess(userAccount);
-  //     if (!mounted) return;
+  //   if (loginModel != null) {
+  //     await LocalStoreServices.saveToken(loginModel.token!);
+
+  //     Provider.of<UserProvider>(context, listen: false)
+  //         .setUserFromModel(loginModel.user!);
+
+  //     // ✅ Sau khi login, load categories
+  //     final categoryController = Get.put(CategoryController());
+  //     await categoryController.getCategories();
+
+  //     // ✅ Tìm category có tên là "Inbox" hoặc id mặc định
+  //     final inboxCategory = categoryController.categoryList.firstWhereOrNull(
+  //       (cat) => cat.title.toLowerCase() == "inbox",
+  //     );
+
+  //     // ✅ Nếu có, set làm mặc định
+  //     if (inboxCategory != null) {
+  //       categoryController.selectedCategory.value = inboxCategory;
+  //     }
+
+  //     // ✅ Chuyển qua màn hình chính
+  //     Navigator.of(context).pushReplacement(
+  //       MaterialPageRoute(builder: (context) => const BottomNavBarScreen()),
+  //     );
+  //   }
+  // }
+
+  // void _signIn() async {
+  //   final loginModel = await AuthService.signInUser(
+  //     context: context,
+  //     email: _emailController.text,
+  //     password: _passwordController.text,
+  //   );
+
+  //   if (loginModel != null) {
+  //     await LocalStoreServices.saveToken(loginModel.token!);
+
+  //     Provider.of<UserProvider>(context, listen: false)
+  //         .setUserFromModel(loginModel.user!);
+  //     final categoryController = Get.find<CategoryController>();
+  //     categoryController.getCategories();
   //     Navigator.of(context).pushReplacement(
   //       MaterialPageRoute(builder: (context) => const BottomNavBarScreen()),
   //     );
@@ -63,13 +100,34 @@ class _SignInPageState extends State<SignInPage> {
     );
 
     if (loginModel != null) {
+      // ✅ 1. Lưu token
       await LocalStoreServices.saveToken(loginModel.token!);
 
+      // ✅ 2. Set user vào Provider
       Provider.of<UserProvider>(context, listen: false)
           .setUserFromModel(loginModel.user!);
 
+      // ✅ 3. Get categories
+      final categoryController = Get.find<CategoryController>();
+      await categoryController.getCategories();
+
+      // ✅ 4. Gán default category (Inbox)
+      if (loginModel.defaultCategory != null) {
+        categoryController.selectedCategory.value = loginModel.defaultCategory!;
+      }
+
+      // ✅ 5. Điều hướng sang màn chính
+      // Navigator.of(context).pushReplacement(
+      //   MaterialPageRoute(builder: (context) => const BottomNavBarScreen()),
+      // );
+      print("📦 Default Category: ${loginModel.defaultCategory?.id}");
+
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const BottomNavBarScreen()),
+        MaterialPageRoute(
+          builder: (context) => BottomNavBarScreen(
+            initialCategory: loginModel.defaultCategory,
+          ),
+        ),
       );
     }
   }

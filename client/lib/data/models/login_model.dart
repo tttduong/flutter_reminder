@@ -1,22 +1,38 @@
+import 'category.dart';
+
 class LoginModel {
   String? status;
   String? token;
   User? user;
+  final Category? defaultCategory;
 
-  LoginModel({this.status, this.token, this.user});
+  LoginModel({
+    this.status,
+    this.token,
+    this.user,
+    this.defaultCategory,
+  });
 
-  LoginModel.fromJson(Map<String, dynamic> json) {
-    status = json['status'];
-    token = json['token'];
-    user = json['data'] != null ? User.fromJson(json['data']) : null;
+  factory LoginModel.fromJson(Map<String, dynamic> json) {
+    return LoginModel(
+      status: json['status'],
+      token: json['access_token'] ?? json['token'],
+      user: json['user'] != null ? User.fromJson(json['user']) : null,
+      defaultCategory: json['default_category'] != null
+          ? Category.fromJson(json['default_category'])
+          : null,
+    );
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = <String, dynamic>{};
+    final Map<String, dynamic> data = {};
     data['status'] = status;
     data['token'] = token;
-    if (this.user != null) {
-      data['data'] = this.user!.toJson();
+    if (user != null) {
+      data['user'] = user!.toJson();
+    }
+    if (defaultCategory != null) {
+      data['default_category'] = defaultCategory!.toJson();
     }
     return data;
   }

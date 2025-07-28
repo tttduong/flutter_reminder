@@ -24,11 +24,11 @@ class CategoryService {
         "Authorization": "Bearer $token", // Nếu API cần token
       },
     );
-    print("Loading categories...");
+    // print("Loading categories...");
 
-    print("📦 Status: ${response.statusCode}");
-    print("📤 Raw body: ${response.body}");
-    print("📤 Headers: ${response.headers}");
+    // print("📦 Status: ${response.statusCode}");
+    // print("📤 Raw body: ${response.body}");
+    // print("📤 Headers: ${response.headers}");
     if (response.statusCode == 200) {
       List<dynamic> jsonData = json.decode(response.body);
       print("Successfully loaded categories");
@@ -49,7 +49,7 @@ class CategoryService {
       // return false;
     }
 
-    final url = Uri.parse('$baseUrl/categories/$categoryId');
+    final url = Uri.parse('$baseUrl/categories/$categoryId/');
     try {
       final response = await http.delete(
         url,
@@ -77,7 +77,7 @@ class CategoryService {
 
     if (token == null) {
       print("Chưa có token, bạn cần login trước");
-      // return false;
+      return false;
     }
 
     final url = Uri.parse('$baseUrl/categories/');
@@ -93,7 +93,8 @@ class CategoryService {
           "color":
               "#${category.color.value.toRadixString(16).padLeft(8, '0').substring(2)}",
 
-          "icon": category.icon.codePoint.toString(), // Lưu mã icon
+          "icon": category.icon.codePoint.toString(), // Lưu mã icon\
+          "is_default": false
         }),
       );
 
