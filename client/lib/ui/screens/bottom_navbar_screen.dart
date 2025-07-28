@@ -11,6 +11,16 @@ import 'package:flutter_to_do_app/data/services/local_store_services.dart';
 import '../../providers/user_provider.dart';
 import 'add_list.dart';
 
+class AppNavigation {
+  static final GlobalKey<BottomNavBarScreenState> bottomNavKey =
+      GlobalKey<BottomNavBarScreenState>();
+
+  // Method để navigate đến category từ bất kỳ đâu
+  static void navigateToCategory(Category category) {
+    bottomNavKey.currentState?.openCategory(category);
+  }
+}
+
 class BottomNavBarScreen extends StatefulWidget {
   final Category? initialCategory;
   // const BottomNavBarScreen({super.key});
@@ -24,11 +34,25 @@ class BottomNavBarScreenState extends State<BottomNavBarScreen> {
   int selectedIndex = 0;
   Category? selectedCategory; // 👈 Thêm biến để giữ category đang chọn
   final _categoryController = Get.put(CategoryController());
+  static BottomNavBarScreenState? _instance;
   @override
   void initState() {
     super.initState();
     print("🔥 initState - initialCategory: ${widget.initialCategory?.id}");
     selectedCategory = widget.initialCategory;
+    _instance = this;
+  }
+
+  @override
+  void dispose() {
+    _instance = null; // 👈 CHỈ THÊM dòng này
+    super.dispose();
+  }
+
+  static void navigateToCategoryFromAnywhere(Category category) {
+    if (_instance != null) {
+      _instance!.openCategory(category);
+    }
   }
 
   void openCategory(Category category) {
@@ -53,6 +77,27 @@ class BottomNavBarScreenState extends State<BottomNavBarScreen> {
     });
   }
 
+  // Widget _getCurrentScreen() {
+  //   return Obx(() {
+  //     switch (navigationController.selectedIndex.value) {
+  //       case 0:
+  //         if (navigationController.selectedCategory.value != null) {
+  //           return CategoryTasksPage(category: navigationController.selectedCategory.value!);
+  //         } else {
+  //           return ChatPage();
+  //         }
+  //       case 1:
+  //         return CalendarTasks();
+  //       case 2:
+  //         return const SignInPage();
+  //       case 3:
+  //         return const ChatPage();
+  //       default:
+  //         return const HomePage();
+  //     }
+  //   });
+  // }
+
   Widget _getCurrentScreen() {
     // print("Current selected Category: "{$selectedCategor});
     switch (selectedIndex) {
@@ -74,28 +119,6 @@ class BottomNavBarScreenState extends State<BottomNavBarScreen> {
         return const HomePage();
     }
   }
-  // Widget _getCurrentScreen() {
-  //   return Obx(() {
-  //     final category = _categoryController.selectedCategory.value;
-
-  //     switch (selectedIndex) {
-  //       case 0:
-  //         if (category != null) {
-  //           return CategoryTasksPage(category: category);
-  //         } else {
-  //           return ChatPage();
-  //         }
-  //       case 1:
-  //         return CalendarTasks();
-  //       case 2:
-  //         return const SignInPage();
-  //       case 3:
-  //         return const ChatPage();
-  //       default:
-  //         return const HomePage();
-  //     }
-  //   });
-  // }
 
   void _logOut() async {
     bool removeSuccess = await LocalStoreServices.removeFromLocal(context);
@@ -300,4 +323,3 @@ class BottomNavBarScreenState extends State<BottomNavBarScreen> {
     );
   }
 }
-// }

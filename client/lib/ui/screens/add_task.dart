@@ -7,6 +7,8 @@ import 'package:get/get.dart';
 
 import '../../data/models/category.dart';
 import '../../data/models/task.dart';
+import 'bottom_navbar_screen.dart';
+import 'category_tasks.dart';
 
 class AddTaskPage extends StatefulWidget {
   const AddTaskPage({Key? key}) : super(key: key);
@@ -102,22 +104,55 @@ class _AddTaskPageState extends State<AddTaskPage> {
             )));
   }
 
-  _validateDate() {
-    if (_titleController.text.isNotEmpty && _noteController.text.isNotEmpty
-        // && (_selectedCategoryId != "")
-        ) {
-      _addTaskToDb();
-      Get.back();
-    } else if (_titleController.text.isEmpty || _noteController.text.isEmpty
-        // || (_selectedCategoryId == "")
-        ) {
+  _validateDate() async {
+    if (_titleController.text.isNotEmpty) {
+      await _addTaskToDb();
+
+      // Navigate đến category screen chứa task vừa tạo
+      if (_selectedCategoryId != null) {
+        // Tìm category object
+        final category = listCategories.firstWhere(
+          (cat) => cat.id == _selectedCategoryId,
+        );
+
+        // Navigate với success message
+        // Get.off(() => CategoryTasksPage(category: category));
+
+        Get.back(); // Close create task screen
+        BottomNavBarScreenState.navigateToCategoryFromAnywhere(category);
+        // Show success notification
+        // Get.snackbar(
+        //   "Success",
+        //   "Task created in ${category.title}!",
+        //   snackPosition: SnackPosition.TOP,
+        //   backgroundColor: Colors.green,
+        //   colorText: Colors.white,
+        // );
+      }
+    } else {
       Get.snackbar("Required", "All fields are required!",
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: Colors.white,
-          // colorText: pinkClr,
           icon: Icon(Icons.warning_amber_rounded, color: Colors.red));
     }
   }
+
+  // _validateDate() {
+  //   if (_titleController.text.isNotEmpty && _noteController.text.isNotEmpty
+  //       // && (_selectedCategoryId != "")
+  //       ) {
+  //     _addTaskToDb();
+  //     Get.back();
+  //   } else if (_titleController.text.isEmpty || _noteController.text.isEmpty
+  //       // || (_selectedCategoryId == "")
+  //       ) {
+  //     Get.snackbar("Required", "All fields are required!",
+  //         snackPosition: SnackPosition.BOTTOM,
+  //         backgroundColor: Colors.white,
+  //         // colorText: pinkClr,
+  //         icon: Icon(Icons.warning_amber_rounded, color: Colors.red));
+  //   }
+  // }
 
   _addTaskToDb() async {
     await _taskController.addTask(
