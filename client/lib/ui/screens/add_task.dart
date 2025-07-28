@@ -130,7 +130,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
         // );
       }
     } else {
-      Get.snackbar("Required", "All fields are required!",
+      Get.snackbar("Required", "Title is required!",
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: Colors.white,
           icon: Icon(Icons.warning_amber_rounded, color: Colors.red));
