@@ -20,7 +20,8 @@ class TaskController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    getTasks(); // Fetch task khi controller khởi tạo
+    // getTasks(); // Fetch task khi controller khởi tạo
+    // getTasksByCategory(selectedCategoryId);
   }
 
   // Toggle method với String key fix
@@ -61,13 +62,94 @@ class TaskController extends GetxController {
   }
 
   // Refresh method
+  // Future<void> refreshTasks(int? categoryId) async {
+  //   await getTasksByCategory(categoryId);
+  // }
+
+  // Future<List<Task>> getTasksByCategory(int? categoryId) async {
+  //   return await TaskService.getTasksByCategoryId(categoryId);
+  // }
+
+  // Future<void> getTasksByCategory(int? categoryId) async {
+  //   isLoading.value = true;
+  //   try {
+  //     final tasks = await TaskService.getTasksByCategoryId(categoryId);
+  //     taskList.assignAll(tasks);
+  //   } catch (e) {
+  //     print("Error fetching tasks: $e");
+  //   } finally {
+  //     isLoading.value = false;
+  //   }
+  // }
+
   Future<void> refreshTasks(int? categoryId) async {
-    await getTasksByCategory(categoryId);
+    if (categoryId != null) {
+      selectedCategoryId = null; // Force refresh
+      await getTasksByCategory(categoryId);
+    }
   }
 
-  Future<List<Task>> getTasksByCategory(int? categoryId) async {
-    return await TaskService.getTasksByCategoryId(categoryId);
+  Future<void> getTasksByCategory(int categoryId) async {
+    print("🔍 Getting tasks for category: $categoryId");
+    print("🔍 Current selectedCategoryId: $selectedCategoryId");
+    print("🔍 Current taskList count: ${taskList.length}");
+
+    // 🔥 LUÔN LUÔN clear và fetch lại khi switch category
+    if (selectedCategoryId != categoryId) {
+      print(
+          "📝 Category changed from $selectedCategoryId to $categoryId - clearing cache");
+      taskList.clear();
+      selectedCategoryId = categoryId;
+    } else {
+      print("📝 Same category but forcing refresh anyway");
+      taskList.clear(); // 👈 FORCE clear để đảm bảo
+    }
+
+    isLoading.value = true;
+
+    try {
+      print("🌐 Calling API for category: $categoryId");
+      final tasks = await TaskService.getTasksByCategoryId(categoryId);
+      print("📊 API returned ${tasks.length} tasks for category $categoryId");
+
+      // Debug: In ra từng task
+      for (int i = 0; i < tasks.length; i++) {
+        print(
+            "  Task $i: ${tasks[i].title} (Category: ${tasks[i].categoryId})");
+      }
+
+      taskList.value = tasks;
+      print("✅ TaskList updated with ${taskList.length} tasks");
+    } catch (e) {
+      print("❌ Error getting tasks for category $categoryId: $e");
+      taskList.clear();
+    } finally {
+      isLoading.value = false;
+    }
   }
+
+  // Future<void> getTasksByCategory(int categoryId) async {
+  //   print("🔍 Getting tasks for category: $categoryId");
+
+  //   // 👈 Nếu category khác, clear cache
+  //   if (selectedCategoryId != categoryId) {
+  //     taskList.clear();
+  //     selectedCategoryId = categoryId;
+  //   }
+
+  //   isLoading.value = true;
+
+  //   try {
+  //     final tasks = await TaskService.getTasksByCategoryId(categoryId);
+  //     print("📊 API returned ${tasks.length} tasks");
+
+  //     taskList.value = tasks;
+  //   } catch (e) {
+  //     print("❌ Error: $e");
+  //   } finally {
+  //     isLoading.value = false;
+  //   }
+  // }
 
   Future<void> addTask({Task? task}) async {
     print("call add task on controller");
@@ -83,9 +165,9 @@ class TaskController extends GetxController {
   }
 
   //get all the data from table
-  void getTasks() async {
-    taskList.value = await TaskService.fetchTasks();
-  }
+  // void getTasks() async {
+  //   taskList.value = await TaskService.fetchTasks();
+  // }
 
   Future<bool> updateTaskStatus(Task updatedTask, bool newStatus) async {
     // final task = taskList.firstWhere((t) => t.id == id);

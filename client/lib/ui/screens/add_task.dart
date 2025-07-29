@@ -164,7 +164,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
     );
 
     await Future.delayed(Duration(milliseconds: 500)); // Chờ API cập nhật
-    _taskController.getTasks();
+    _taskController.getTasksByCategory(_selectedCategoryId!);
   }
 
   _appBar(BuildContext context) {

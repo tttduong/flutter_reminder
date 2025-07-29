@@ -32,7 +32,7 @@ class _HomePageState extends State<HomePage> {
     // Khởi tạo controller
     taskController = Get.put(TaskController());
     // Gọi hàm fetch task nếu cần
-    taskController.getTasks();
+    // taskController.getTasks();
     _categoryController.getCategories();
   }
 
@@ -86,9 +86,9 @@ class _HomePageState extends State<HomePage> {
             ),
             const SizedBox(height: 16),
             // _showCategories()
-            Expanded(
-              child: _showTasksByCategory(),
-            )
+            // Expanded(
+            //   child: _showTasksByCategory(),
+            // )
           ],
         ),
       ),
@@ -96,89 +96,89 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _showTasksByCategory() {
-    return FutureBuilder<List<Task>>(
-      future: taskController.getTasksByCategory(widget.category?.id),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        } else if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
-        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return const Center(child: Text("No tasks"));
-        }
+  // Widget _showTasksByCategory() {
+  //   return FutureBuilder<List<Task>>(
+  //     future: taskController.getTasksByCategory(widget.category?.id),
+  //     builder: (context, snapshot) {
+  //       if (snapshot.connectionState == ConnectionState.waiting) {
+  //         return const Center(child: CircularProgressIndicator());
+  //       } else if (snapshot.hasError) {
+  //         return Center(child: Text('Error: ${snapshot.error}'));
+  //       } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+  //         return const Center(child: Text("No tasks"));
+  //       }
 
-        final allTasks = snapshot.data!;
-        final incompleteTasks =
-            allTasks.where((t) => t.isCompleted != true).toList();
-        final completedTasks =
-            allTasks.where((t) => t.isCompleted == true).toList();
+  //       final allTasks = snapshot.data!;
+  //       final incompleteTasks =
+  //           allTasks.where((t) => t.isCompleted != true).toList();
+  //       final completedTasks =
+  //           allTasks.where((t) => t.isCompleted == true).toList();
 
-        return SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: incompleteTasks.length,
-                itemBuilder: (context, index) {
-                  final task = incompleteTasks[index];
-                  return ListTile(
-                    leading: Checkbox(
-                      value: task.isCompleted == true,
-                      onChanged: (bool? newValue) {
-                        final newStatus = newValue ?? false;
-                        taskController.updateTaskStatus(task, newStatus);
-                        setState(() {}); // cần refactor nếu dùng GetX
-                      },
-                    ),
-                    title: Text(task.title),
-                    subtitle: Text(task.description ?? ''),
-                  );
-                },
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                "Completed Tasks",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: completedTasks.length,
-                itemBuilder: (context, index) {
-                  final task = completedTasks[index];
-                  return ListTile(
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red),
-                      onPressed: () {
-                        taskController.deleteTask(task.id);
-                        setState(() {});
-                      },
-                    ),
-                    leading: Checkbox(
-                      value: task.isCompleted,
-                      onChanged: (bool? newValue) {
-                        final newStatus = newValue ?? false;
-                        taskController.updateTaskStatus(task, newStatus);
-                        setState(() {});
-                      },
-                    ),
-                    title: Text(
-                      task.title,
-                      style: const TextStyle(
-                        decoration: TextDecoration.lineThrough,
-                      ),
-                    ),
-                    subtitle: Text(task.description ?? ''),
-                  );
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
+  //       return SingleChildScrollView(
+  //         child: Column(
+  //           crossAxisAlignment: CrossAxisAlignment.start,
+  //           children: [
+  //             ListView.builder(
+  //               shrinkWrap: true,
+  //               physics: const NeverScrollableScrollPhysics(),
+  //               itemCount: incompleteTasks.length,
+  //               itemBuilder: (context, index) {
+  //                 final task = incompleteTasks[index];
+  //                 return ListTile(
+  //                   leading: Checkbox(
+  //                     value: task.isCompleted == true,
+  //                     onChanged: (bool? newValue) {
+  //                       final newStatus = newValue ?? false;
+  //                       taskController.updateTaskStatus(task, newStatus);
+  //                       setState(() {}); // cần refactor nếu dùng GetX
+  //                     },
+  //                   ),
+  //                   title: Text(task.title),
+  //                   subtitle: Text(task.description ?? ''),
+  //                 );
+  //               },
+  //             ),
+  //             const SizedBox(height: 16),
+  //             const Text(
+  //               "Completed Tasks",
+  //               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+  //             ),
+  //             ListView.builder(
+  //               shrinkWrap: true,
+  //               physics: const NeverScrollableScrollPhysics(),
+  //               itemCount: completedTasks.length,
+  //               itemBuilder: (context, index) {
+  //                 final task = completedTasks[index];
+  //                 return ListTile(
+  //                   trailing: IconButton(
+  //                     icon: const Icon(Icons.delete, color: Colors.red),
+  //                     onPressed: () {
+  //                       taskController.deleteTask(task.id);
+  //                       setState(() {});
+  //                     },
+  //                   ),
+  //                   leading: Checkbox(
+  //                     value: task.isCompleted,
+  //                     onChanged: (bool? newValue) {
+  //                       final newStatus = newValue ?? false;
+  //                       taskController.updateTaskStatus(task, newStatus);
+  //                       setState(() {});
+  //                     },
+  //                   ),
+  //                   title: Text(
+  //                     task.title,
+  //                     style: const TextStyle(
+  //                       decoration: TextDecoration.lineThrough,
+  //                     ),
+  //                   ),
+  //                   subtitle: Text(task.description ?? ''),
+  //                 );
+  //               },
+  //             ),
+  //           ],
+  //         ),
+  //       );
+  //     },
+  //   );
+  // }
 }

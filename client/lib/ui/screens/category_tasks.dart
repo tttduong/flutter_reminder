@@ -7,9 +7,9 @@ import 'package:flutter_to_do_app/consts.dart';
 import '../../controller/task_controller.dart';
 
 class CategoryTasksPage extends StatefulWidget {
-  final Category? category;
+  final Category category;
 
-  const CategoryTasksPage({super.key, this.category});
+  const CategoryTasksPage({super.key, required this.category});
 
   @override
   State<CategoryTasksPage> createState() => _AllTasksPageState();
@@ -19,6 +19,7 @@ class _AllTasksPageState extends State<CategoryTasksPage> {
   bool showCompletedTasks = false;
   late final TaskController taskController;
   final Map<int?, bool> _pendingUpdates = {};
+  int? currentCategoryId;
   // final _taskController = Get.put(TaskController());
   @override
   void initState() {
@@ -26,8 +27,28 @@ class _AllTasksPageState extends State<CategoryTasksPage> {
     // Khởi tạo controller
     taskController = Get.put(TaskController());
     // Gọi hàm fetch task nếu cần
-    taskController.getTasks();
-    // _taskController.getTasksByCategory();
+    // taskController.getTasks();
+    // Debug category data
+    print("🔥 CategoryTasksPage initState");
+    print("📦 Category: ${widget.category}");
+    print("📦 Category ID: ${widget.category.id}");
+    print("📦 Category Name: ${widget.category.title}");
+
+    // 👈 FORCE clear cache trước khi load
+    taskController.taskList.clear();
+
+    // 👈 Delay để đảm bảo clear hoàn thành
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      taskController.getTasksByCategory(widget.category.id);
+    });
+    // if (widget.category != null) {
+    //   print("✅ Getting tasks for category: ${widget.category!.id}");
+    //   taskController.getTasksByCategory(widget.category!.id);
+    // } else {
+    //   print("❌ No category provided - cannot get tasks by category");
+    // Có thể load all tasks hoặc show empty state
+    // taskController.getTasks(); // Hoặc không gọi gì cả
+    // }
   }
 
   @override
@@ -113,9 +134,11 @@ class _AllTasksPageState extends State<CategoryTasksPage> {
 // 2. Improved Widget with better state management
   Widget _showTasksByCategory() {
     // Fetch data khi widget init
-    taskController.getTasksByCategory(widget.category?.id);
+    // taskController.getTasksByCategory(widget.category?.id);
 
     return Obx(() {
+      print("Selected Category 3: ${widget.category.toString()}");
+      print("Selected Category ID: ${widget.category.id}");
       if (taskController.isLoading.value) {
         return const Center(child: CircularProgressIndicator());
       }
@@ -130,7 +153,7 @@ class _AllTasksPageState extends State<CategoryTasksPage> {
 
       return RefreshIndicator(
         onRefresh: () async {
-          await taskController.refreshTasks(widget.category?.id);
+          await taskController.refreshTasks(widget.category.id);
         },
         child: SingleChildScrollView(
           child: Column(

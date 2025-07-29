@@ -116,7 +116,7 @@ def read_task(task_id: int, db: Session = Depends(get_db)):
 #         connection.send_text(f"Task {db_task.id} updated")
 #     return db_task
 
-@router.patch("/tasks/{task_id}", response_model=TaskResponse)
+@router.patch("/tasks/{task_id}/", response_model=TaskResponse)
 async def partial_update_task(
     task_id: int,
     task_update: TaskUpdate,
@@ -144,7 +144,7 @@ async def partial_update_task(
 
     return db_task
 
-@router.delete("/tasks/{task_id}", response_model=TaskResponse)
+@router.delete("/tasks/{task_id}/", response_model=TaskResponse)
 async def delete_task(
     task_id: int,
     db: AsyncSession = Depends(get_db),

@@ -1,3 +1,5 @@
+import 'dart:js_interop';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_to_do_app/controller/category_controller.dart';
 import 'package:flutter_to_do_app/data/models/category.dart';
@@ -8,6 +10,7 @@ import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_to_do_app/data/services/local_store_services.dart';
 
+import '../../controller/task_controller.dart';
 import '../../providers/user_provider.dart';
 import 'add_list.dart';
 
@@ -56,10 +59,30 @@ class BottomNavBarScreenState extends State<BottomNavBarScreen> {
   }
 
   void openCategory(Category category) {
+    print("🔥 CategoryTasksPage initState - openCategory function");
+    print("📦 Category: ${category.toString()}");
+    print("📦 Category ID: ${category.id}");
+    print("📦 Category Name: ${category.title}");
     setState(() {
       selectedCategory = category;
       selectedIndex = 0; // chuyển về HomePage
     });
+    if (category.id != null) {
+      print("🚀 Fetching tasks for new category: ${category.id}");
+
+      // Lấy TaskController (nếu chưa có thì tạo mới)
+      TaskController taskController;
+      if (Get.isRegistered<TaskController>()) {
+        taskController = Get.find<TaskController>();
+      } else {
+        taskController = Get.put(TaskController());
+      }
+
+      // Fetch tasks cho category mới
+      taskController.getTasksByCategory(category.id!);
+    } else {
+      print("⚠️ Category ID is null, cannot fetch tasks");
+    }
   }
 
   void _showNewListBottomSheet() {
@@ -103,6 +126,8 @@ class BottomNavBarScreenState extends State<BottomNavBarScreen> {
     switch (selectedIndex) {
       case 0:
         if (selectedCategory != null) {
+          print("Selected Category 1: ${selectedCategory.toString()}");
+          print("Selected Category ID: ${selectedCategory!.id}");
           return CategoryTasksPage(category: selectedCategory!);
         } else {
           return ChatPage();

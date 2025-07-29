@@ -49,7 +49,7 @@ class TaskService {
 
   //update tasks
   static Future<void> updateTask(Task updatedTask) async {
-    final url = Uri.parse('$baseUrl/tasks/${updatedTask.id}');
+    final url = Uri.parse('$baseUrl/tasks/${updatedTask.id}/');
     try {
       final response = await http.patch(
         url,
@@ -90,7 +90,7 @@ class TaskService {
   //get all tasks by category_id---------------------------------------------------------------
   static Future<List<Task>> getTasksByCategoryId(int? categoryId) async {
     final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('access_token'); // dùng đúng key bạn lưu
+    final token = prefs.getString('access_token');
 
     if (token == null) {
       throw Exception('Token not found');
@@ -108,6 +108,7 @@ class TaskService {
       },
     );
 
+    print("service load task from cate ID: $categoryId");
     if (response.statusCode == 200) {
       List<dynamic> jsonData = json.decode(response.body);
       return jsonData.map((task) => Task.fromJson(task)).toList();

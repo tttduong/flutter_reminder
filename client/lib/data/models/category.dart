@@ -21,6 +21,11 @@ class Category {
     this.tasks,
   });
 
+  @override
+  String toString() {
+    return 'Category{id: $id, title: "$title"}';
+  }
+
   // Phương thức chuyển đổi từ JSON sang Category object
   factory Category.fromJson(Map<String, dynamic> json) {
     return Category(
