@@ -1,11 +1,8 @@
 import 'dart:async';
 
-import 'package:flutter_to_do_app/db/db_helper.dart';
 import 'package:flutter_to_do_app/data/models/task.dart';
 import 'package:flutter_to_do_app/data/services/task_service.dart';
 import 'package:get/get.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 
 class TaskController extends GetxController {
   // final _tasksStreamController = StreamController<List<Task>>.broadcast();
@@ -14,13 +11,58 @@ class TaskController extends GetxController {
     super.onReady();
   }
 
-  var taskList = <Task>[].obs;
+  // var taskList = <Task>[].obs;
   var isLoading = false.obs;
   int? selectedCategoryId;
+  final RxList<Task> taskList = <Task>[].obs;
+  final RxMap<int, bool> pendingUpdates = <int, bool>{}.obs;
+
   @override
   void onInit() {
     super.onInit();
     getTasks(); // Fetch task khi controller khởi tạo
+  }
+
+  // Toggle method với String key fix
+  Future<void> toggleTaskStatus(Task task, bool newStatus) async {
+    final taskId = task.id;
+
+    // Update immediately
+    task.isCompleted = newStatus;
+    pendingUpdates[taskId!] = newStatus;
+    taskList.refresh();
+
+    try {
+      await updateTaskStatus(task, newStatus);
+      pendingUpdates.remove(taskId);
+    } catch (e) {
+      // Revert on error
+      task.isCompleted = !newStatus;
+      pendingUpdates.remove(taskId);
+      taskList.refresh();
+
+      Get.snackbar('Error', 'Failed to update task');
+    }
+  }
+
+  // Check if task is pending
+  bool isTaskPending(int taskId) {
+    return pendingUpdates.containsKey(taskId.toString());
+  }
+
+  Future<void> deleteTask(int? taskId) async {
+    if (taskId == null) {
+      print("❌ Task ID is null. Cannot delete task.");
+      return;
+    }
+    await TaskService.deleteTask(taskId);
+    taskList.removeWhere((t) => t.id == taskId);
+    update(); // Cập nhật UI
+  }
+
+  // Refresh method
+  Future<void> refreshTasks(int? categoryId) async {
+    await getTasksByCategory(categoryId);
   }
 
   Future<List<Task>> getTasksByCategory(int? categoryId) async {
@@ -45,16 +87,6 @@ class TaskController extends GetxController {
     taskList.value = await TaskService.fetchTasks();
   }
 
-  Future<void> deleteTask(int? taskId) async {
-    if (taskId == null) {
-      print("❌ Task ID is null. Cannot delete task.");
-      return;
-    }
-    await TaskService.deleteTask(taskId);
-    taskList.removeWhere((t) => t.id == taskId);
-    update(); // Cập nhật UI
-  }
-
   Future<bool> updateTaskStatus(Task updatedTask, bool newStatus) async {
     // final task = taskList.firstWhere((t) => t.id == id);
     updatedTask.isCompleted = newStatus;
@@ -67,20 +99,6 @@ class TaskController extends GetxController {
       return true;
     } else {
       print("Failed to update task status");
-      return false;
-    }
-  }
-
-  Future<bool> updateTaskStatusAPI(int taskId, bool isCompleted) async {
-    // Thay thế bằng API call thực tế từ service của bạn
-    // Ví dụ:
-    try {
-      final taskService = TaskService();
-      bool success = await taskService.updateTaskStatusAPI(taskId, true);
-
-      return success;
-    } catch (e) {
-      print('Error updating task: $e');
       return false;
     }
   }

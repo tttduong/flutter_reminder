@@ -1,15 +1,10 @@
-// import 'dart:ffi';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_to_do_app/data/models/category.dart';
 import 'package:flutter_to_do_app/data/models/task.dart';
 import 'package:flutter_to_do_app/ui/screens/add_task.dart';
 import 'package:get/get.dart';
 import 'package:flutter_to_do_app/consts.dart';
-
-import '../../controller/category_controller.dart';
 import '../../controller/task_controller.dart';
-import '../../data/services/task_service.dart';
 
 class CategoryTasksPage extends StatefulWidget {
   final Category? category;
@@ -58,56 +53,7 @@ class _AllTasksPageState extends State<CategoryTasksPage> {
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 children: [
                   _showTasksByCategory(),
-
-                  // Expanded(
-                  //   child: Obx(() => _showTasksByCategory()),
-                  // ),
-                  // Danh sách công việc chưa hoàn thành
-                  // ...widget.category.tasks
-                  //         ?.where((task) => !task.isCompleted)
-                  //         .map(_buildTaskItem)
-                  //         .toList() ??
-                  //     [],
-
                   const SizedBox(height: 16),
-
-                  // Nút ẩn/hiện công việc đã hoàn thành
-                  // TextButton.icon(
-                  //   onPressed: () {
-                  //     setState(() {
-                  //       showCompletedTasks = !showCompletedTasks;
-                  //     });
-                  //   },
-                  //   icon: Icon(
-                  //     showCompletedTasks
-                  //         ? Icons.keyboard_arrow_up
-                  //         : Icons.keyboard_arrow_down,
-                  //     color: AppColors.buttonWhiteText,
-                  //   ),
-                  //   label: Text(
-                  //     'Hide completed tasks',
-                  //     style: TextStyle(
-                  //       color: AppColors.buttonWhiteText,
-                  //     ),
-                  //   ),
-                  //   style: TextButton.styleFrom(
-                  //     backgroundColor: AppColors.secondary,
-                  //     shape: RoundedRectangleBorder(
-                  //       borderRadius: BorderRadius.circular(20),
-                  //     ),
-                  //   ),
-                  // ),
-
-                  // Công việc đã hoàn thành
-                  // if (showCompletedTasks) ...[
-                  //   const SizedBox(height: 16),
-                  //   ...widget.category.tasks
-                  //           ?.where((task) => task.isCompleted)
-                  //           .map(_buildCompletedTaskItem)
-                  //           .toList() ??
-                  //       []
-                  // ],
-
                   const SizedBox(height: 80), // Để tránh FAB che nội dung
                 ],
               ),
@@ -166,43 +112,42 @@ class _AllTasksPageState extends State<CategoryTasksPage> {
 
 // 2. Improved Widget with better state management
   Widget _showTasksByCategory() {
-    return FutureBuilder<List<Task>>(
-      future: taskController.getTasksByCategory(widget.category?.id),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        } else if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
-        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return const Center(child: Text("No tasks"));
-        }
+    // Fetch data khi widget init
+    taskController.getTasksByCategory(widget.category?.id);
 
-        final allTasks = snapshot.data!;
-        final incompleteTasks = allTasks.where((t) => !t.isCompleted).toList();
-        final completedTasks = allTasks.where((t) => t.isCompleted).toList();
+    return Obx(() {
+      if (taskController.isLoading.value) {
+        return const Center(child: CircularProgressIndicator());
+      }
 
-        return RefreshIndicator(
-          onRefresh: () async {
-            setState(() {}); // Refresh the FutureBuilder
-          },
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Incomplete Tasks Section
-                _buildTaskSection("Active Tasks", incompleteTasks, false),
+      if (taskController.taskList.isEmpty) {
+        return const Center(child: Text("No tasks"));
+      }
 
-                const SizedBox(height: 16),
+      final allTasks = taskController.taskList;
+      final incompleteTasks = allTasks.where((t) => !t.isCompleted).toList();
+      final completedTasks = allTasks.where((t) => t.isCompleted).toList();
 
-                // Completed Tasks Section
-                if (completedTasks.isNotEmpty)
-                  _buildTaskSection("Completed Tasks", completedTasks, true),
-              ],
-            ),
+      return RefreshIndicator(
+        onRefresh: () async {
+          await taskController.refreshTasks(widget.category?.id);
+        },
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Incomplete Tasks Section
+              _buildTaskSection("Active Tasks", incompleteTasks, false),
+              const SizedBox(height: 16),
+
+              // Completed Tasks Section
+              if (completedTasks.isNotEmpty)
+                _buildTaskSection("Completed Tasks", completedTasks, true),
+            ],
           ),
-        );
-      },
-    );
+        ),
+      );
+    });
   }
 
 // 3. Reusable task section builder
@@ -219,21 +164,34 @@ class _AllTasksPageState extends State<CategoryTasksPage> {
           ),
           const SizedBox(height: 8),
         ],
+        // CHỈ MỘT Obx cho cả ListView
         ListView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          itemCount: tasks.length,
+          itemCount: tasks
+              .length, // Dùng tasks từ parameter, không phải taskController.taskList
           itemBuilder: (context, index) {
             final task = tasks[index];
+
             return AnimatedContainer(
               duration: const Duration(milliseconds: 300),
               child: ListTile(
+                trailing: IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.red),
+                  onPressed: taskController.isTaskPending(task.id!)
+                      ? null
+                      : () async {
+                          await taskController.deleteTask(task.id);
+                        },
+                ),
                 leading: Checkbox(
                   value: task.isCompleted,
-                  onChanged: (bool? newValue) {
-                    final newStatus = newValue ?? false;
-                    _toggleTaskStatus(task, newStatus);
-                  },
+                  onChanged: taskController.isTaskPending(task.id!)
+                      ? null
+                      : (bool? newValue) {
+                          final newStatus = newValue ?? false;
+                          taskController.toggleTaskStatus(task, newStatus);
+                        },
                 ),
                 title: Text(
                   task.title,
