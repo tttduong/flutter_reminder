@@ -3,17 +3,27 @@ import 'package:dio/dio.dart';
 import 'package:flutter_to_do_app/consts.dart';
 import 'package:flutter_to_do_app/data/models/task.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class TaskService {
   static const String baseUrl = "${Constants.URI}/api/v1";
-  final Dio _dio = Dio(BaseOptions(baseUrl: baseUrl));
+  // final Dio _dio = Dio(BaseOptions(baseUrl: baseUrl));
   // Future<bool> updateTaskStatusAPI(int taskId, bool isCompleted) async {
   //   try {
   //     final dto = UpdateTaskStatusDto(isCompleted: isCompleted);
+  //     final prefs = await SharedPreferences.getInstance();
+  //     final token = prefs.getString('access_token');
+
   //     final response = await _dio.patch(
-  //       "/tasks/$taskId", // endpoint backend của bạn
+  //       "/tasks/$taskId",
   //       data: dto.toJson(),
+  //       options: Options(
+  //         headers: {
+  //           'Authorization': 'Bearer $token', // Adjust format as needed
+  //           'Content-Type': 'application/json',
+  //         },
+  //       ),
   //     );
 
   //     return response.statusCode == 200;
@@ -23,27 +33,35 @@ class TaskService {
   //   }
   // }
 
-  Future<bool> updateTaskStatusAPI(int taskId, bool isCompleted) async {
+  static Future<List<Task>> getTasksByDate(DateTime date) async {
     try {
-      final dto = UpdateTaskStatusDto(isCompleted: isCompleted);
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('access_token');
 
-      final response = await _dio.patch(
-        "/tasks/$taskId",
-        data: dto.toJson(),
-        options: Options(
-          headers: {
-            'Authorization': 'Bearer $token', // Adjust format as needed
-            'Content-Type': 'application/json',
-          },
-        ),
+      if (token == null) {
+        throw Exception('Token not found');
+      }
+
+      // Format ngày theo chuẩn backend: YYYY-MM-DD
+      String formattedDate = DateFormat('yyyy-MM-dd').format(date);
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/tasks/by-date/?date=$formattedDate'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
       );
 
-      return response.statusCode == 200;
+      if (response.statusCode == 200) {
+        List<dynamic> jsonData = json.decode(response.body);
+        return jsonData.map((item) => Task.fromJson(item)).toList();
+      } else {
+        throw Exception(
+            'Failed to load tasks by date (${response.statusCode})');
+      }
     } catch (e) {
-      print('Error updating task: $e');
-      return false;
+      throw Exception('Error fetching tasks by date: $e');
     }
   }
 
@@ -72,20 +90,20 @@ class TaskService {
   }
 
 //get all tasks by date---------------------------------------------------------------
-  static Future<List<Task>> getTasksByDate(String due_date) async {
-    final response =
-        await http.get(Uri.parse('$baseUrl/tasks/by_category/$due_date'));
-    print("loading in loading tasks");
+  // static Future<List<Task>> getTasksByDate(String due_date) async {
+  //   final response =
+  //       await http.get(Uri.parse('$baseUrl/tasks/by_category/$due_date'));
+  //   print("loading in loading tasks");
 
-    if (response.statusCode == 200) {
-      List<dynamic> jsonData = json.decode(response.body);
-      print("successing in loading tasks");
+  //   if (response.statusCode == 200) {
+  //     List<dynamic> jsonData = json.decode(response.body);
+  //     print("successing in loading tasks");
 
-      return jsonData.map((task) => Task.fromJson(task)).toList();
-    } else {
-      throw Exception('Failed to load tasks');
-    }
-  }
+  //     return jsonData.map((task) => Task.fromJson(task)).toList();
+  //   } else {
+  //     throw Exception('Failed to load tasks');
+  //   }
+  // }
 
   //get all tasks by category_id---------------------------------------------------------------
   static Future<List<Task>> getTasksByCategoryId(int? categoryId) async {
@@ -240,18 +258,24 @@ class TaskService {
     if (task == null) return false;
     // print("cat id in createTask in taskService: " + task.categoryId); // OK
     try {
+      // Convert DateTime to UTC and format as ISO8601 string with timezone
+      String formatDateTimeToUTC(DateTime? dateTime) {
+        if (dateTime == null) return "";
+        // Convert to UTC if not already, then format with 'Z' suffix
+        return dateTime.toUtc().toIso8601String();
+      }
+
       // Tạo Map chứa nội dung body
       final Map<String, dynamic> jsonBody = {
         "title": task.title,
         "description": task.description,
         "category_id": task.categoryId,
-        // "due_date": task.dueDate,
-        // "time": task.time,
+        "date": formatDateTimeToUTC(task.date),
+        "due_date": formatDateTimeToUTC(task.dueDate),
       };
 
       // In JSON để kiểm tra
-      // print(
-      //     "JSON body gửi đi: ${jsonEncode(jsonBody)}");  //OK
+      print("JSON body gửi đi: ${jsonEncode(jsonBody)}"); //OK
 
       final response = await http.post(
         Uri.parse("$baseUrl/tasks/"),

@@ -10,7 +10,8 @@ from ...db.db_structure import Category, Task, User
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from fastapi import Query
-
+from datetime import date, datetime, timezone
+from sqlalchemy import func, cast, Date
 router = APIRouter()
 
 active_connections: Set[WebSocket] = set()
@@ -35,31 +36,40 @@ async def create_task(
     db: Session = Depends(get_db), 
     current_user: User = Depends(get_current_user) 
     ):
-    # category_id = task.category_id
-
-    # if category_id is None:
-    #     result = await db.execute(
-    #         select(Category.id)
-    #         .where(Category.owner_id == current_user.id)
-    #         .where(Category.default == True)
-    #     )
-    #     inbox_category_id = result.scalar()
-
-    #     if inbox_category_id is None:
-    #         raise HTTPException(status_code=400, detail="No default (Inbox) category found for this user.")
-
-    #     category_id = inbox_category_id
-        
+    print(f"📝 Received task data: {task}")  
+    print(f"📝 Task dict: {task.dict()}") 
+    task_date = task.date if task.date else datetime.now(timezone.utc)
     new_task = Task(
     title=task.title,
     description=task.description,
     category_id= task.category_id,
-    owner_id=current_user.id
+    owner_id=current_user.id,
+    date=task_date, 
+    due_date=task.due_date
     )
     db.add(new_task)
     await db.commit()
     await db.refresh(new_task)
     return new_task
+
+@router.get("/tasks/by-date/", response_model=List[TaskResponse])
+async def get_tasks_by_date(
+    date: date = Query(...),
+    include_multiday: bool = Query(True),  # 👈 Cho phép filter task nhiều ngày
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    stmt = select(Task).where(
+        Task.owner_id == current_user.id,
+        cast(Task.date, Date) <= date,
+        cast(Task.due_date, Date) >= date
+        # (Task.date <= date)&(Task.due_date >= date)  # 👈 Task đang diễn ra trong ngày đó
+    )
+    if not include_multiday:
+        # stmt = stmt.where(Task.date == Task.due_date)
+        stmt = stmt.where(cast(Task.date, Date) == cast(Task.due_date, Date))
+    result = await db.execute(stmt)
+    return result.scalars().all()
 
 @router.get("/tasks/by-category/", response_model=List[TaskResponse])
 async def get_tasks_by_category(

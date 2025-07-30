@@ -45,7 +45,7 @@ async def create_category(
         color=category.color,
         icon=category.icon,
         owner_id=current_user.id,
-        is_default=True
+        is_default=category.is_default
     )
 
     db.add(new_category)
@@ -93,7 +93,7 @@ async def get_user_categories(
 #     return category
 
 # Xóa category theo ID
-@router.delete("/categories/{category_id}")
+@router.delete("/categories/{category_id}/")
 async def delete_category(
     category_id: int,
     db: AsyncSession = Depends(get_db),

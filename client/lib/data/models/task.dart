@@ -7,7 +7,8 @@ class Task {
   String title;
   String? description;
   bool isCompleted;
-  String? dueDate;
+  DateTime? date;
+  DateTime? dueDate;
   String? time;
   DateTime? createdAt;
   DateTime? updatedAt;
@@ -20,6 +21,7 @@ class Task {
     this.categoryId,
     this.description,
     this.isCompleted = false,
+    this.date,
     this.dueDate,
     this.time,
     this.createdAt,
@@ -42,7 +44,10 @@ class Task {
       // isCompleted: json['is_completed'] ?? false,
       // dueDate:
       //     json['due_date'] != null ? DateTime.parse(json['due_date']) : null,
-      dueDate: json['due_date'],
+      // dueDate: json['due_date'],
+      dueDate:
+          json['due_date'] != null ? DateTime.parse(json['due_date']) : null,
+      // dueDate: json['due_date'] != null ? DateTime.parse(json['due_date']) : null,
       time: json['time'], // dạng chuỗi, ví dụ: "08:30"
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'])
@@ -76,21 +81,21 @@ class Task {
     };
   }
 
-  Task copyWith(
-      {int? id,
-      int? categoryId,
-      String? title,
-      String? description,
-      required bool isCompleted,
-      s}) {
-    return Task(
-      id: id ?? this.id,
-      categoryId: categoryId ?? this.categoryId,
-      title: title ?? this.title,
-      description: description ?? this.description,
-      isCompleted: this.isCompleted,
-    );
-  }
+  // Task copyWith(
+  //     {int? id,
+  //     int? categoryId,
+  //     String? title,
+  //     String? description,
+  //     required bool isCompleted,
+  //     s}) {
+  //   return Task(
+  //     id: id ?? this.id,
+  //     categoryId: categoryId ?? this.categoryId,
+  //     title: title ?? this.title,
+  //     description: description ?? this.description,
+  //     isCompleted: this.isCompleted,
+  //   );
+  // }
 
   // /// Chuyển đổi danh sách JSON sang danh sách `Task`
   // static List<Task> listFromJson(List<dynamic> jsonList) {

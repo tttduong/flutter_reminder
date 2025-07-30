@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_to_do_app/data/models/task.dart';
 import 'package:flutter_to_do_app/data/services/task_service.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 
 class TaskController extends GetxController {
   // final _tasksStreamController = StreamController<List<Task>>.broadcast();
@@ -61,26 +62,19 @@ class TaskController extends GetxController {
     update(); // Cập nhật UI
   }
 
-  // Refresh method
-  // Future<void> refreshTasks(int? categoryId) async {
-  //   await getTasksByCategory(categoryId);
-  // }
-
-  // Future<List<Task>> getTasksByCategory(int? categoryId) async {
-  //   return await TaskService.getTasksByCategoryId(categoryId);
-  // }
-
-  // Future<void> getTasksByCategory(int? categoryId) async {
-  //   isLoading.value = true;
-  //   try {
-  //     final tasks = await TaskService.getTasksByCategoryId(categoryId);
-  //     taskList.assignAll(tasks);
-  //   } catch (e) {
-  //     print("Error fetching tasks: $e");
-  //   } finally {
-  //     isLoading.value = false;
-  //   }
-  // }
+  Future<void> getTasksByDate(DateTime date) async {
+    try {
+      isLoading.value = true;
+      List<Task> tasks = await TaskService.getTasksByDate(date);
+      taskList.value = tasks;
+    } catch (e) {
+      print('Error in controller: $e');
+      // Có thể show snackbar error ở đây
+      Get.snackbar('Lỗi', 'Không thể tải tasks: $e');
+    } finally {
+      isLoading.value = false;
+    }
+  }
 
   Future<void> refreshTasks(int? categoryId) async {
     if (categoryId != null) {

@@ -4,11 +4,10 @@ import 'package:flutter_to_do_app/data/services/category_service.dart';
 import 'package:flutter_to_do_app/ui/widgets/button.dart';
 import 'package:flutter_to_do_app/ui/widgets/input_field.dart';
 import 'package:get/get.dart';
-
+import 'package:intl/intl.dart';
 import '../../data/models/category.dart';
 import '../../data/models/task.dart';
 import 'bottom_navbar_screen.dart';
-import 'category_tasks.dart';
 
 class AddTaskPage extends StatefulWidget {
   const AddTaskPage({Key? key}) : super(key: key);
@@ -21,6 +20,13 @@ class _AddTaskPageState extends State<AddTaskPage> {
   final TaskController _taskController = Get.put(TaskController());
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _noteController = TextEditingController();
+
+  String _selectedDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
+  String _selectedEndDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
+  // String _endTime = "9:30 PM";
+  String _startTime = DateFormat("hh:mm a").format(DateTime.now()).toString();
+  String _endTime = DateFormat("hh:mm a").format(DateTime.now()).toString();
+  String _time = DateFormat("hh:mm a").format(DateTime.now()).toString();
   List<Category> listCategories = [];
   int? _selectedCategoryId;
   @override
@@ -92,6 +98,60 @@ class _AddTaskPageState extends State<AddTaskPage> {
                     ),
                   ),
                   Row(
+                    children: [
+                      Expanded(
+                        child: MyInputField(
+                            title: "Start Date",
+                            hint: _selectedDate,
+                            widget: IconButton(
+                                icon: Icon(Icons.calendar_today_outlined,
+                                    color: Colors.grey),
+                                onPressed: () {
+                                  _getDateFromUser(isStartDate: true);
+                                })),
+                      ),
+                      SizedBox(width: 10), // Khoảng cách giữa 2 field
+                      Expanded(
+                        child: MyInputField(
+                            title: "End Date",
+                            hint: _selectedEndDate,
+                            widget: IconButton(
+                                icon: Icon(Icons.calendar_today_outlined,
+                                    color: Colors.grey),
+                                onPressed: () {
+                                  _getDateFromUser(isStartDate: false);
+                                })),
+                      ),
+                      //   ],
+                      // ),
+                      // Row(
+                      //   children: [
+                      //     Expanded(
+                      //         child: MyInputField(
+                      //             title: "Time",
+                      //             hint: _startTime,
+                      //             widget: IconButton(
+                      //               onPressed: () {
+                      //                 _getTimeFromUser(isStartTime: true);
+                      //               },
+                      //               icon: Icon(Icons.access_time_rounded),
+                      //               color: Colors.grey,
+                      //             ))),
+                      //     SizedBox(width: 20),
+                      //     Expanded(
+                      //         child: MyInputField(
+                      //             title: "EndTime",
+                      //             hint: _endTime,
+                      //             widget: IconButton(
+                      //               onPressed: () {
+                      //                 _getTimeFromUser(isStartTime: false);
+                      //               },
+                      //               icon: Icon(Icons.access_time_rounded),
+                      //               color: Colors.grey,
+                      //             ))),
+                    ],
+                  ),
+                  Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
@@ -106,6 +166,20 @@ class _AddTaskPageState extends State<AddTaskPage> {
 
   _validateDate() async {
     if (_titleController.text.isNotEmpty) {
+      // Kiểm tra start date và end date
+      DateTime startDateTime = _combineDateTime(_selectedDate, _startTime);
+      DateTime endDateTime = _combineDateTime(_selectedEndDate, _endTime);
+
+      // Validation: Start date phải nhỏ hơn hoặc bằng end date
+      if (startDateTime.isAfter(endDateTime)) {
+        Get.snackbar("Invalid Date Range",
+            "Start date must be before or equal to end date!",
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.red,
+            colorText: Colors.white,
+            icon: Icon(Icons.error_outline, color: Colors.white));
+        return; // Dừng lại, không tạo task
+      }
       await _addTaskToDb();
 
       // Navigate đến category screen chứa task vừa tạo
@@ -137,34 +211,57 @@ class _AddTaskPageState extends State<AddTaskPage> {
     }
   }
 
-  // _validateDate() {
-  //   if (_titleController.text.isNotEmpty && _noteController.text.isNotEmpty
-  //       // && (_selectedCategoryId != "")
-  //       ) {
-  //     _addTaskToDb();
-  //     Get.back();
-  //   } else if (_titleController.text.isEmpty || _noteController.text.isEmpty
-  //       // || (_selectedCategoryId == "")
-  //       ) {
-  //     Get.snackbar("Required", "All fields are required!",
-  //         snackPosition: SnackPosition.BOTTOM,
-  //         backgroundColor: Colors.white,
-  //         // colorText: pinkClr,
-  //         icon: Icon(Icons.warning_amber_rounded, color: Colors.red));
-  //   }
+  // _addTaskToDb() async {
+  //   // print("_addTaskToDb(): $_selectedDate");
+  //   await _taskController.addTask(
+  //     task: Task(
+  //       title: _titleController.text,
+  //       description: _noteController.text,
+  //       categoryId: _selectedCategoryId,
+  //       date: DateFormat('yyyy-MM-dd').parse(_selectedDate),
+  //       dueDate: DateFormat('yyyy-MM-dd').parse(_selectedDate),
+  //     ),
+  //   );
+
+  //   await Future.delayed(Duration(milliseconds: 500)); // Chờ API cập nhật
+  //   _taskController.getTasksByCategory(_selectedCategoryId!);
   // }
 
   _addTaskToDb() async {
+    // Combine date và time thành DateTime object
+    DateTime startDateTime = _combineDateTime(_selectedDate, _startTime);
+    DateTime endDateTime = _combineDateTime(_selectedEndDate, _endTime);
+
     await _taskController.addTask(
       task: Task(
         title: _titleController.text,
         description: _noteController.text,
         categoryId: _selectedCategoryId,
+        date: startDateTime, // 👈 Start date + time
+        dueDate: endDateTime, // 👈 End date + time
       ),
     );
 
-    await Future.delayed(Duration(milliseconds: 500)); // Chờ API cập nhật
+    await Future.delayed(Duration(milliseconds: 500));
     _taskController.getTasksByCategory(_selectedCategoryId!);
+  }
+
+// 👈 Thêm helper method để combine date và time
+  DateTime _combineDateTime(String date, String time) {
+    DateTime dateOnly = DateFormat('yyyy-MM-dd').parse(date);
+
+    // Parse time (format: "9:30 AM")
+    DateFormat timeFormat = DateFormat("hh:mm a");
+    DateTime timeOnly = timeFormat.parse(time);
+
+    // Combine date và time
+    return DateTime(
+      dateOnly.year,
+      dateOnly.month,
+      dateOnly.day,
+      timeOnly.hour,
+      timeOnly.minute,
+    );
   }
 
   _appBar(BuildContext context) {
@@ -193,5 +290,70 @@ class _AddTaskPageState extends State<AddTaskPage> {
     } catch (e) {
       print("Error loading categories: $e");
     }
+  }
+
+  // _getDateFromUser() async {
+  //   DateTime? _pickerDate = await showDatePicker(
+  //       context: context,
+  //       initialDate: DateTime.now(),
+  //       firstDate: DateTime(2015),
+  //       lastDate: DateTime(2030));
+
+  //   if (_pickerDate != null) {
+  //     setState(() {
+  //       _selectedDate = DateFormat('yyyy-MM-dd').format(_pickerDate);
+  //       print(_selectedDate);
+  //     });
+  //   } else {
+  //     print("it's null or something is wrong");
+  //   }
+  // }
+  _getDateFromUser({required bool isStartDate}) async {
+    DateTime? _pickerDate = await showDatePicker(
+        context: context,
+        initialDate: DateTime.now(),
+        firstDate: DateTime(2015),
+        lastDate: DateTime(2030));
+
+    if (_pickerDate != null) {
+      setState(() {
+        if (isStartDate) {
+          _selectedDate = DateFormat('yyyy-MM-dd').format(_pickerDate);
+        } else {
+          _selectedEndDate = DateFormat('yyyy-MM-dd').format(_pickerDate);
+        }
+        print(isStartDate
+            ? 'Start Date: $_selectedDate'
+            : 'End Date: $_selectedEndDate');
+      });
+    } else {
+      print("it's null or something is wrong");
+    }
+  }
+
+  _getTimeFromUser({required bool isStartTime}) async {
+    var pickedTime = await _showTimePicker();
+    String _formatedTime = pickedTime.format(context);
+    if (pickedTime == null) {
+      print("Time cancel");
+    } else if (isStartTime == true) {
+      setState(() {
+        _startTime = _formatedTime;
+      });
+    } else if (isStartTime == false) {
+      setState(() {
+        _endTime = _formatedTime;
+      });
+    }
+  }
+
+  _showTimePicker() {
+    return showTimePicker(
+        initialEntryMode: TimePickerEntryMode.input,
+        context: context,
+        initialTime: TimeOfDay(
+          hour: int.parse(_time.split(":")[0]),
+          minute: int.parse(_time.split(":")[1].split(" ")[0]),
+        ));
   }
 }

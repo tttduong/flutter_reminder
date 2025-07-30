@@ -7,6 +7,7 @@ class CategoryBase(BaseModel):
     
 
 class CategoryCreate(CategoryBase):
+    is_default: bool
     pass
 
 class CategoryOut(BaseModel):

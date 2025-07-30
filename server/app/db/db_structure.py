@@ -1,4 +1,6 @@
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
+from datetime import datetime, timezone
+from sqlalchemy.dialects.postgresql import TIMESTAMP
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 
 from app.db.database import Base
@@ -22,6 +24,8 @@ class Task(Base):
     title = Column(String, index=True)
     description = Column(String, index=True)
     completed = Column(Boolean, default=False)
+    date = Column(TIMESTAMP(timezone=True), default=lambda: datetime.now(timezone.utc))
+    due_date = Column(TIMESTAMP(timezone=True), nullable=True)
 
     owner_id = Column(Integer, ForeignKey("user.id"))
     category_id = Column(Integer, ForeignKey("category.id", ondelete="CASCADE"), nullable=True)

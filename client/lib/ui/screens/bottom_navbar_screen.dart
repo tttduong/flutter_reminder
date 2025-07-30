@@ -1,5 +1,3 @@
-import 'dart:js_interop';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_to_do_app/controller/category_controller.dart';
 import 'package:flutter_to_do_app/data/models/category.dart';

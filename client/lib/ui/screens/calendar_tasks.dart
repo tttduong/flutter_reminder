@@ -24,13 +24,14 @@ class _CalendarTasksState extends State<CalendarTasks> {
   @override
   void initState() {
     super.initState();
+    _taskController.getTasksByDate(_selectedDate);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       // backgroundColor: Colors.green,
-      appBar: _appBar(),
+      // appBar: _appBar(),
       body: Column(
         children: [
           _addTaskBar(),
@@ -42,11 +43,42 @@ class _CalendarTasksState extends State<CalendarTasks> {
     );
   }
 
+  // _showTasks() {
+  //   return Obx(() {
+  //     if (_taskController.taskList.isEmpty) {
+  //       return Center(child: Text("Không có task nào!"));
+  //     }
+  //     return Column(
+  //       children: [
+  //         SizedBox(
+  //           height: 300,
+  //           child: ListView.builder(
+  //             itemCount: _taskController.taskList.length,
+  //             itemBuilder: (context, index) {
+  //               return TaskTile(
+  //                 task: _taskController.taskList[index],
+  //                 onTap: () => null,
+  //               );
+  //             },
+  //           ),
+  //         ),
+  //       ],
+  //     );
+  //   });
+  // }
   _showTasks() {
     return Obx(() {
-      if (_taskController.taskList.isEmpty) {
-        return Center(child: Text("Không có task nào!"));
+      // Hiển thị loading khi đang fetch data
+      if (_taskController.isLoading.value) {
+        return Center(child: CircularProgressIndicator());
       }
+
+      if (_taskController.taskList.isEmpty) {
+        return Center(
+            child: Text(
+                "No tasks on ${DateFormat('dd/MM/yyyy').format(_selectedDate)}!"));
+      }
+
       return Column(
         children: [
           SizedBox(
@@ -86,6 +118,7 @@ class _CalendarTasksState extends State<CalendarTasks> {
         setState(() {
           _selectedDate = date;
         });
+        _taskController.getTasksByDate(date);
       }),
     );
   }
