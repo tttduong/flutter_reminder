@@ -112,6 +112,21 @@ class _AddTaskPageState extends State<AddTaskPage> {
                       ),
                       SizedBox(width: 10), // Khoảng cách giữa 2 field
                       Expanded(
+                          child: MyInputField(
+                              title: "Start Time",
+                              hint: _startTime,
+                              widget: IconButton(
+                                onPressed: () {
+                                  _getTimeFromUser(isStartTime: true);
+                                },
+                                icon: Icon(Icons.access_time_rounded),
+                                color: Colors.grey,
+                              ))),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      Expanded(
                         child: MyInputField(
                             title: "End Date",
                             hint: _selectedEndDate,
@@ -122,33 +137,18 @@ class _AddTaskPageState extends State<AddTaskPage> {
                                   _getDateFromUser(isStartDate: false);
                                 })),
                       ),
-                      //   ],
-                      // ),
-                      // Row(
-                      //   children: [
-                      //     Expanded(
-                      //         child: MyInputField(
-                      //             title: "Time",
-                      //             hint: _startTime,
-                      //             widget: IconButton(
-                      //               onPressed: () {
-                      //                 _getTimeFromUser(isStartTime: true);
-                      //               },
-                      //               icon: Icon(Icons.access_time_rounded),
-                      //               color: Colors.grey,
-                      //             ))),
-                      //     SizedBox(width: 20),
-                      //     Expanded(
-                      //         child: MyInputField(
-                      //             title: "EndTime",
-                      //             hint: _endTime,
-                      //             widget: IconButton(
-                      //               onPressed: () {
-                      //                 _getTimeFromUser(isStartTime: false);
-                      //               },
-                      //               icon: Icon(Icons.access_time_rounded),
-                      //               color: Colors.grey,
-                      //             ))),
+                      SizedBox(width: 20),
+                      Expanded(
+                          child: MyInputField(
+                              title: "EndTime",
+                              hint: _endTime,
+                              widget: IconButton(
+                                onPressed: () {
+                                  _getTimeFromUser(isStartTime: false);
+                                },
+                                icon: Icon(Icons.access_time_rounded),
+                                color: Colors.grey,
+                              ))),
                     ],
                   ),
                   Row(
@@ -210,22 +210,6 @@ class _AddTaskPageState extends State<AddTaskPage> {
           icon: Icon(Icons.warning_amber_rounded, color: Colors.red));
     }
   }
-
-  // _addTaskToDb() async {
-  //   // print("_addTaskToDb(): $_selectedDate");
-  //   await _taskController.addTask(
-  //     task: Task(
-  //       title: _titleController.text,
-  //       description: _noteController.text,
-  //       categoryId: _selectedCategoryId,
-  //       date: DateFormat('yyyy-MM-dd').parse(_selectedDate),
-  //       dueDate: DateFormat('yyyy-MM-dd').parse(_selectedDate),
-  //     ),
-  //   );
-
-  //   await Future.delayed(Duration(milliseconds: 500)); // Chờ API cập nhật
-  //   _taskController.getTasksByCategory(_selectedCategoryId!);
-  // }
 
   _addTaskToDb() async {
     // Combine date và time thành DateTime object

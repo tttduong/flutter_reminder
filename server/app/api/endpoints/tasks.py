@@ -63,10 +63,8 @@ async def get_tasks_by_date(
         Task.owner_id == current_user.id,
         cast(Task.date, Date) <= date,
         cast(Task.due_date, Date) >= date
-        # (Task.date <= date)&(Task.due_date >= date)  # 👈 Task đang diễn ra trong ngày đó
     )
     if not include_multiday:
-        # stmt = stmt.where(Task.date == Task.due_date)
         stmt = stmt.where(cast(Task.date, Date) == cast(Task.due_date, Date))
     result = await db.execute(stmt)
     return result.scalars().all()
