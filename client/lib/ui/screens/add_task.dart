@@ -24,9 +24,10 @@ class _AddTaskPageState extends State<AddTaskPage> {
   String _selectedDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
   String _selectedEndDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
   // String _endTime = "9:30 PM";
-  String _startTime = DateFormat("hh:mm a").format(DateTime.now()).toString();
-  String _endTime = DateFormat("hh:mm a").format(DateTime.now()).toString();
-  String _time = DateFormat("hh:mm a").format(DateTime.now()).toString();
+  String? _startTime = DateFormat("hh:mm a").format(DateTime.now()).toString();
+  String? _endTime = DateFormat("hh:mm a").format(DateTime.now()).toString();
+  String? _time = DateFormat("hh:mm a").format(DateTime.now()).toString();
+  bool _hasDate = false;
   List<Category> listCategories = [];
   int? _selectedCategoryId;
   @override
@@ -97,60 +98,89 @@ class _AddTaskPageState extends State<AddTaskPage> {
                       },
                     ),
                   ),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: MyInputField(
-                            title: "Start Date",
-                            hint: _selectedDate,
-                            widget: IconButton(
-                                icon: Icon(Icons.calendar_today_outlined,
-                                    color: Colors.grey),
-                                onPressed: () {
-                                  _getDateFromUser(isStartDate: true);
-                                })),
-                      ),
-                      SizedBox(width: 10), // Khoảng cách giữa 2 field
-                      Expanded(
-                          child: MyInputField(
-                              title: "Start Time",
-                              hint: _startTime,
-                              widget: IconButton(
-                                onPressed: () {
-                                  _getTimeFromUser(isStartTime: true);
-                                },
-                                icon: Icon(Icons.access_time_rounded),
-                                color: Colors.grey,
-                              ))),
-                    ],
+                  Container(
+                    margin: const EdgeInsets.only(top: 16, bottom: 6),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          "Set Date & Time",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w400,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        Switch(
+                          value: _hasDate,
+                          onChanged: (bool value) {
+                            setState(() {
+                              _hasDate = value;
+                            });
+                          },
+                          activeColor: Colors.blue,
+                        ),
+                      ],
+                    ),
                   ),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: MyInputField(
-                            title: "End Date",
-                            hint: _selectedEndDate,
-                            widget: IconButton(
-                                icon: Icon(Icons.calendar_today_outlined,
-                                    color: Colors.grey),
-                                onPressed: () {
-                                  _getDateFromUser(isStartDate: false);
-                                })),
-                      ),
-                      SizedBox(width: 20),
-                      Expanded(
+                  if (_hasDate) ...[
+                    Row(
+                      children: [
+                        Expanded(
                           child: MyInputField(
-                              title: "EndTime",
-                              hint: _endTime,
+                              title: "Start Date",
+                              hint: _selectedDate,
                               widget: IconButton(
-                                onPressed: () {
-                                  _getTimeFromUser(isStartTime: false);
-                                },
-                                icon: Icon(Icons.access_time_rounded),
-                                color: Colors.grey,
-                              ))),
-                    ],
-                  ),
+                                  icon: Icon(Icons.calendar_today_outlined,
+                                      color: Colors.grey),
+                                  onPressed: () {
+                                    _getDateFromUser(isStartDate: true);
+                                  })),
+                        ),
+                        SizedBox(width: 10), // Khoảng cách giữa 2 field
+                        Expanded(
+                            child: MyInputField(
+                                title: "Start Time",
+                                hint: _startTime,
+                                widget: IconButton(
+                                  onPressed: () {
+                                    _getTimeFromUser(
+                                        isStartTime: true, hasDate: _hasDate);
+                                  },
+                                  icon: Icon(Icons.access_time_rounded),
+                                  color: Colors.grey,
+                                ))),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: MyInputField(
+                              title: "End Date",
+                              hint: _selectedEndDate,
+                              widget: IconButton(
+                                  icon: Icon(Icons.calendar_today_outlined,
+                                      color: Colors.grey),
+                                  onPressed: () {
+                                    _getDateFromUser(isStartDate: false);
+                                  })),
+                        ),
+                        SizedBox(width: 20),
+                        Expanded(
+                            child: MyInputField(
+                                title: "End Time",
+                                hint: _endTime,
+                                widget: IconButton(
+                                  onPressed: () {
+                                    _getTimeFromUser(
+                                        isStartTime: false, hasDate: _hasDate);
+                                  },
+                                  icon: Icon(Icons.access_time_rounded),
+                                  color: Colors.grey,
+                                ))),
+                      ],
+                    ),
+                  ],
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     crossAxisAlignment: CrossAxisAlignment.center,
@@ -212,17 +242,23 @@ class _AddTaskPageState extends State<AddTaskPage> {
   }
 
   _addTaskToDb() async {
-    // Combine date và time thành DateTime object
-    DateTime startDateTime = _combineDateTime(_selectedDate, _startTime);
-    DateTime endDateTime = _combineDateTime(_selectedEndDate, _endTime);
+// Chỉ set date/time nếu _hasDate = true, ngược lại để null
+    DateTime? startDateTime;
+    DateTime? endDateTime;
+
+    if (_hasDate) {
+      startDateTime = _combineDateTime(_selectedDate, _startTime);
+      endDateTime = _combineDateTime(_selectedEndDate, _endTime);
+    }
+    // Nếu _hasDate = false, startDateTime và endDateTime sẽ là null
 
     await _taskController.addTask(
       task: Task(
         title: _titleController.text,
         description: _noteController.text,
         categoryId: _selectedCategoryId,
-        date: startDateTime, // 👈 Start date + time
-        dueDate: endDateTime, // 👈 End date + time
+        date: startDateTime, // 👈 Null nếu không có date
+        dueDate: endDateTime, // 👈 Null nếu không có date
       ),
     );
 
@@ -231,12 +267,12 @@ class _AddTaskPageState extends State<AddTaskPage> {
   }
 
 // 👈 Thêm helper method để combine date và time
-  DateTime _combineDateTime(String date, String time) {
+  DateTime _combineDateTime(String date, String? time) {
     DateTime dateOnly = DateFormat('yyyy-MM-dd').parse(date);
 
     // Parse time (format: "9:30 AM")
     DateFormat timeFormat = DateFormat("hh:mm a");
-    DateTime timeOnly = timeFormat.parse(time);
+    DateTime timeOnly = timeFormat.parse(time!);
 
     // Combine date và time
     return DateTime(
@@ -315,29 +351,43 @@ class _AddTaskPageState extends State<AddTaskPage> {
     }
   }
 
-  _getTimeFromUser({required bool isStartTime}) async {
+  _getTimeFromUser({required bool isStartTime, required bool hasDate}) async {
     var pickedTime = await _showTimePicker();
     String _formatedTime = pickedTime.format(context);
-    if (pickedTime == null) {
-      print("Time cancel");
-    } else if (isStartTime == true) {
+    if (hasDate == true) {
+      if (pickedTime == null) {
+        print("Time cancel");
+      } else if (isStartTime == true) {
+        setState(() {
+          _startTime = _formatedTime;
+        });
+      } else if (isStartTime == false) {
+        setState(() {
+          _endTime = _formatedTime;
+        });
+      }
+    } else {
       setState(() {
-        _startTime = _formatedTime;
+        _startTime = null;
+        _endTime = null;
       });
-    } else if (isStartTime == false) {
-      setState(() {
-        _endTime = _formatedTime;
-      });
+      return;
     }
   }
 
   _showTimePicker() {
-    return showTimePicker(
-        initialEntryMode: TimePickerEntryMode.input,
-        context: context,
-        initialTime: TimeOfDay(
-          hour: int.parse(_time.split(":")[0]),
-          minute: int.parse(_time.split(":")[1].split(" ")[0]),
-        ));
+    if (!_hasDate) {
+      setState(() {
+        _time = null;
+      });
+    } else {
+      return showTimePicker(
+          initialEntryMode: TimePickerEntryMode.input,
+          context: context,
+          initialTime: TimeOfDay(
+            hour: int.parse(_time!.split(":")[0]),
+            minute: int.parse(_time!.split(":")[1].split(" ")[0]),
+          ));
+    }
   }
 }

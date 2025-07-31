@@ -284,8 +284,32 @@ class BottomNavBarScreenState extends State<BottomNavBarScreen> {
                           _categoryController.deleteCategory(category.id);
                         },
                       ),
-                      leading: const Icon(Icons.work),
-                      title: Text(category.title),
+                      leading: Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          // color: category.color.withOpacity(0.1),
+                          color: category.color,
+                          borderRadius: BorderRadius.circular(50),
+                          // border: Border.all(
+                          //   color: category.color.withOpacity(0.3),
+                          //   width: 1,
+                          // ),
+                        ),
+                        child: Icon(
+                          category.icon,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ),
+                      title: Text(
+                        category.title,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w500,
+                          fontSize: 16,
+                        ),
+                      ),
+                      // tileColor: category.color.withOpacity(0.1),
                       onTap: () {
                         openCategory(category);
                         Navigator.of(context).pop(); // đóng drawer

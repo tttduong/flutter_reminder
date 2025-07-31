@@ -38,13 +38,13 @@ async def create_task(
     ):
     print(f"📝 Received task data: {task}")  
     print(f"📝 Task dict: {task.dict()}") 
-    task_date = task.date if task.date else datetime.now(timezone.utc)
+    # task_date = task.date if task.date else datetime.now(timezone.utc)
     new_task = Task(
     title=task.title,
     description=task.description,
     category_id= task.category_id,
     owner_id=current_user.id,
-    date=task_date, 
+    date=task.date, 
     due_date=task.due_date
     )
     db.add(new_task)

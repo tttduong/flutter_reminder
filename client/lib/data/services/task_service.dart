@@ -257,10 +257,11 @@ class TaskService {
     }
     if (task == null) return false;
     // print("cat id in createTask in taskService: " + task.categoryId); // OK
+
     try {
       // Convert DateTime to UTC and format as ISO8601 string with timezone
-      String formatDateTimeToUTC(DateTime? dateTime) {
-        if (dateTime == null) return "";
+      String? formatDateTimeToUTC(DateTime? dateTime) {
+        if (dateTime == null) return null;
         // Convert to UTC if not already, then format with 'Z' suffix
         return dateTime.toUtc().toIso8601String();
       }

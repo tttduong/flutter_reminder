@@ -30,7 +30,7 @@ class TaskResponse(BaseModel):
     description: Optional[str] = None
     category_id: Optional[int] = None
     completed: bool
-    date: datetime
+    date: Optional[datetime] = None
     due_date: Optional[datetime] = None
     class Config:
             from_attributes = True  # Để Pydantic có thể convert từ SQLAlchemy model

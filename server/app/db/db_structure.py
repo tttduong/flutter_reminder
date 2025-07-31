@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from sqlalchemy.dialects.postgresql import TIMESTAMP
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
-
+from sqlalchemy.sql import func
 from app.db.database import Base
 
 
@@ -24,7 +24,7 @@ class Task(Base):
     title = Column(String, index=True)
     description = Column(String, index=True)
     completed = Column(Boolean, default=False)
-    date = Column(TIMESTAMP(timezone=True), default=lambda: datetime.now(timezone.utc))
+    date = Column(TIMESTAMP(timezone=True), nullable=True)
     due_date = Column(TIMESTAMP(timezone=True), nullable=True)
 
     owner_id = Column(Integer, ForeignKey("user.id"))
@@ -43,6 +43,10 @@ class Category(Base):
     color = Column(String, nullable=False)  # Lưu màu sắc dưới dạng chuỗi hex
     icon = Column(String, nullable=False)   # Lưu icon dưới dạng mã
     owner_id = Column(Integer, ForeignKey("user.id"), nullable=False)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
 
     owner = relationship("User", back_populates="categories")
     tasks = relationship("Task", back_populates="category", cascade="all, delete", passive_deletes=True)

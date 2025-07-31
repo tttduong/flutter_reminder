@@ -45,6 +45,7 @@ class Task {
       // dueDate:
       //     json['due_date'] != null ? DateTime.parse(json['due_date']) : null,
       // dueDate: json['due_date'],
+      date: json['date'] != null ? DateTime.parse(json['date']) : null,
       dueDate:
           json['due_date'] != null ? DateTime.parse(json['due_date']) : null,
       // dueDate: json['due_date'] != null ? DateTime.parse(json['due_date']) : null,
@@ -73,6 +74,7 @@ class Task {
       'description': description,
       'is_complete': isCompleted,
       // 'due_date': dueDate?.toIso8601String(),
+      'date': date,
       'due_date': dueDate,
       'time': time,
       'created_at': createdAt?.toIso8601String(),

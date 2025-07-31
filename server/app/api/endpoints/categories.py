@@ -63,8 +63,16 @@ async def get_user_categories(
 ):
     print(f"🔐 current_user: {current_user.id}")
     await get_or_create_inbox_category(db, current_user.id)
+    # result = await db.execute(
+    #     select(Category).where(Category.owner_id == current_user.id)
+    # )
     result = await db.execute(
-        select(Category).where(Category.owner_id == current_user.id)
+        select(Category)
+        .where(Category.owner_id == current_user.id)
+        .order_by(
+            Category.is_default.desc(),  # Default categories (Inbox) lên đầu
+            Category.created_at.asc()    # Sau đó sắp xếp theo thời gian tạo
+        )
     )
     categories = result.scalars().all()
     return categories
