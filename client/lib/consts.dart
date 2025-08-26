@@ -3,13 +3,14 @@ import 'package:flutter/material.dart';
 const FOREFRONT_API_KEY = "";
 
 class AppColors {
-  static const Color primary = Color(0xFF00A7D5);
-  static const Color secondary = Color(0xFF03DAC5);
-  static const Color background = Colors.white;
-  static const Color textColor = Colors.black;
+  static const Color primary = Color(0xFF575DFB);
+  static const Color secondary = Color.fromARGB(255, 157, 157, 255);
+  static const Color background = Color(0xFFF5F4FA);
 
   static const Color buttonGray = Color.fromARGB(255, 221, 221, 221);
   static const Color buttonWhiteText = Color(0xFFFFFFFF);
+  static const Color white = Color(0xFFFFFFFF);
+  static const Color black = Colors.black;
 }
 
 class Constants {

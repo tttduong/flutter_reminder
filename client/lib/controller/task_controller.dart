@@ -83,67 +83,67 @@ class TaskController extends GetxController {
     }
   }
 
-  Future<void> getTasksByCategory(int categoryId) async {
-    print("🔍 Getting tasks for category: $categoryId");
-    print("🔍 Current selectedCategoryId: $selectedCategoryId");
-    print("🔍 Current taskList count: ${taskList.length}");
-
-    // 🔥 LUÔN LUÔN clear và fetch lại khi switch category
-    if (selectedCategoryId != categoryId) {
-      print(
-          "📝 Category changed from $selectedCategoryId to $categoryId - clearing cache");
-      taskList.clear();
-      selectedCategoryId = categoryId;
-    } else {
-      print("📝 Same category but forcing refresh anyway");
-      taskList.clear(); // 👈 FORCE clear để đảm bảo
-    }
-
-    isLoading.value = true;
-
-    try {
-      print("🌐 Calling API for category: $categoryId");
-      final tasks = await TaskService.getTasksByCategoryId(categoryId);
-      print("📊 API returned ${tasks.length} tasks for category $categoryId");
-
-      // Debug: In ra từng task
-      for (int i = 0; i < tasks.length; i++) {
-        print(
-            "  Task $i: ${tasks[i].title} (Category: ${tasks[i].categoryId})");
-      }
-
-      taskList.value = tasks;
-      print("✅ TaskList updated with ${taskList.length} tasks");
-    } catch (e) {
-      print("❌ Error getting tasks for category $categoryId: $e");
-      taskList.clear();
-    } finally {
-      isLoading.value = false;
-    }
-  }
-
-  // Future<void> getTasksByCategory(int categoryId) async {
+  // Future<void> getTasksByCategory(int? categoryId) async {
   //   print("🔍 Getting tasks for category: $categoryId");
+  //   print("🔍 Current selectedCategoryId: $selectedCategoryId");
+  //   print("🔍 Current taskList count: ${taskList.length}");
 
-  //   // 👈 Nếu category khác, clear cache
+  //   // 🔥 LUÔN LUÔN clear và fetch lại khi switch category
   //   if (selectedCategoryId != categoryId) {
+  //     print(
+  //         "📝 Category changed from $selectedCategoryId to $categoryId - clearing cache");
   //     taskList.clear();
   //     selectedCategoryId = categoryId;
+  //   } else {
+  //     print("📝 Same category but forcing refresh anyway");
+  //     taskList.clear(); // 👈 FORCE clear để đảm bảo
   //   }
 
   //   isLoading.value = true;
 
   //   try {
+  //     print("🌐 Calling API for category: $categoryId");
   //     final tasks = await TaskService.getTasksByCategoryId(categoryId);
-  //     print("📊 API returned ${tasks.length} tasks");
+  //     print("📊 API returned ${tasks.length} tasks for category $categoryId");
+
+  //     // Debug: In ra từng task
+  //     for (int i = 0; i < tasks.length; i++) {
+  //       print(
+  //           "  Task $i: ${tasks[i].title} (Category: ${tasks[i].categoryId})");
+  //     }
 
   //     taskList.value = tasks;
+  //     print("✅ TaskList updated with ${taskList.length} tasks");
   //   } catch (e) {
-  //     print("❌ Error: $e");
+  //     print("❌ Error getting tasks for category $categoryId: $e");
+  //     taskList.clear();
   //   } finally {
   //     isLoading.value = false;
   //   }
   // }
+
+  Future<void> getTasksByCategory(int categoryId) async {
+    print("🔍 Getting tasks for category: $categoryId");
+
+    // 👈 Nếu category khác, clear cache
+    if (selectedCategoryId != categoryId) {
+      taskList.clear();
+      selectedCategoryId = categoryId;
+    }
+
+    isLoading.value = true;
+
+    try {
+      final tasks = await TaskService.getTasksByCategoryId(categoryId);
+      print("📊 API returned ${tasks.length} tasks");
+
+      taskList.value = tasks;
+    } catch (e) {
+      print("❌ Error: $e");
+    } finally {
+      isLoading.value = false;
+    }
+  }
 
   Future<void> addTask({Task? task}) async {
     print("call add task on controller");

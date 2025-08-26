@@ -23,7 +23,9 @@ class _SplashScreenState extends State<SplashScreen> {
     await Future.delayed(Duration(seconds: 1));
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(builder: (context) => const BottomNavBarScreen()),
+      MaterialPageRoute(
+          builder: (context) =>
+              BottomNavBarScreen(key: AppNavigation.bottomNavKey)),
       (route) => false,
     );
     // another way to impliment splash screen;
