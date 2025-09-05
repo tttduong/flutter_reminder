@@ -1,16 +1,17 @@
 from datetime import datetime, timedelta
 from typing import Any
-from sqlalchemy.ext.asyncio import AsyncSession
+# from app.core.session import get_session_user
+# from sqlalchemy.ext.asyncio import AsyncSession
 
 
-from fastapi import HTTPException, status, Depends
+from fastapi import HTTPException, status, Depends, Request
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from sqlalchemy.orm import Session 
-from sqlalchemy.future import select
-from app.db.db_structure import User
-from app.db.database import get_db 
+# from sqlalchemy.orm import Session 
+# from sqlalchemy.future import select
+# from app.db.db_structure import User
+# from app.db.database import get_db 
 
 from ..core.config import settings
 
@@ -51,35 +52,37 @@ def decode_access_token(token: str = Depends(oauth2_scheme)) -> dict:
 def get_user_by_token(payload: dict = Depends(decode_access_token)) -> str:
     return payload.get("sub")
 
-async def get_current_user(
-    payload: dict = Depends(decode_access_token),
-    db: Session = Depends(get_db),
-        ) -> User:
-    try:
-        user_email: str = payload.get("sub")
-        if user_email is None:
-            raise HTTPException(status_code=401, detail="Invalid token")
+# async def get_current_user(
+#     payload: dict = Depends(decode_access_token),
+#     db: Session = Depends(get_db),
+#         ) -> User:
+#     try:
+#         user_email: str = payload.get("sub")
+#         if user_email is None:
+#             raise HTTPException(status_code=401, detail="Invalid token")
 
-        user = await get_user_by_email(db, user_email)
-        if user is None:
-            raise HTTPException(status_code=404, detail="User not found")
+#         user = await get_user_by_email(db, user_email)
+#         if user is None:
+#             raise HTTPException(status_code=404, detail="User not found")
 
-        return user
+#         return user
 
-    except Exception:
-        raise HTTPException(status_code=401, detail="Invalid token")
+#     except Exception:
+#         raise HTTPException(status_code=401, detail="Invalid token")
+    
+
     
     
-async def get_user_by_email(db: AsyncSession, email: str) -> User | None:
-    result = await db.execute(select(User).where(User.email == email))
-    return result.scalars().first()
+# async def get_user_by_email(db: AsyncSession, email: str) -> User | None:
+#     result = await db.execute(select(User).where(User.email == email))
+#     return result.scalars().first()
 
-async def authenticate_user(db: AsyncSession, email: str, password: str):
-    result = await db.execute(select(User).where(User.email == email))
-    user = result.scalars().first()
+# async def authenticate_user(db: AsyncSession, email: str, password: str):
+#     result = await db.execute(select(User).where(User.email == email))
+#     user = result.scalars().first()
 
-    if not user:
-        return None
-    if not verify_password(password, user.hashed_password):
-        return None
-    return user
+#     if not user:
+#         return None
+#     if not verify_password(password, user.hashed_password):
+#         return None
+#     return user

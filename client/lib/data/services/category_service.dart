@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter_to_do_app/api.dart';
 import 'package:flutter_to_do_app/consts.dart';
 import 'package:flutter_to_do_app/data/models/category.dart';
 import 'package:http/http.dart' as http;
@@ -9,60 +10,24 @@ class CategoryService {
 
   // Lấy danh sách tất cả categories
   static Future<List<Category>> fetchCategories() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('access_token');
+    final response = await ApiService.dio.get('/categories/');
 
-    if (token == null) {
-      print("Chưa có token, bạn cần login trước");
-      // return false;
-    }
+    print("📦 Status: ${response.statusCode}");
+    print("📤 Data: ${response.data}");
 
-    final response = await http.get(
-      Uri.parse('$baseUrl/categories/'),
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer $token", // Nếu API cần token
-      },
-    );
-    // print("Loading categories...");
-
-    // print("📦 Status: ${response.statusCode}");
-    // print("📤 Raw body: ${response.body}");
-    // print("📤 Headers: ${response.headers}");
-    if (response.statusCode == 200) {
-      List<dynamic> jsonData = json.decode(response.body);
-      print("Successfully loaded categories");
-
-      return jsonData.map((category) => Category.fromJson(category)).toList();
-    } else {
-      throw Exception('Failed to load categories');
-    }
+    List<dynamic> jsonData = response.data;
+    return jsonData.map((cat) => Category.fromJson(cat)).toList();
   }
 
   // Xóa category theo ID
   static Future<void> deleteCategory(int categoryId) async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('access_token');
-
-    if (token == null) {
-      print("Chưa có token, bạn cần login trước");
-      // return false;
-    }
-
-    final url = Uri.parse('$baseUrl/categories/$categoryId/');
     try {
-      final response = await http.delete(
-        url,
-        headers: {
-          'Authorization': 'Bearer $token', // ← truyền token ở đây
-          'Content-Type': 'application/json',
-        },
-      );
+      final response = await ApiService.dio.delete('/categories/$categoryId/');
 
-      if (response.statusCode == 200) {
-        print("Category Deleted Successfully");
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        print("Category deleted successfully!");
       } else {
-        print("Failed to delete category: ${response.body}");
+        print("Failed to create category: ${response.data}");
       }
     } catch (e) {
       print("Error: $e");
@@ -72,37 +37,23 @@ class CategoryService {
   // Tạo category mới
   static Future<bool> createCategory({Category? category}) async {
     if (category == null) return false;
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('access_token');
-
-    if (token == null) {
-      print("Chưa có token, bạn cần login trước");
-      return false;
-    }
-
-    final url = Uri.parse('$baseUrl/categories/');
     try {
-      final response = await http.post(
-        url,
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
+      final response = await ApiService.dio.post(
+        '/categories/',
+        data: {
           "title": category.title,
           "color":
               "#${category.color.value.toRadixString(16).padLeft(8, '0').substring(2)}",
-
           "icon": category.icon.codePoint.toString(), // Lưu mã icon\
           "is_default": false
-        }),
+          // "is_default": category.isDefault ?? false,
+        },
       );
-
       if (response.statusCode == 201 || response.statusCode == 200) {
         print("Category created successfully!");
         return true;
       } else {
-        print("Failed to create category: ${response.body}");
+        print("Failed to create category: ${response.data}");
         return false;
       }
     } catch (e) {

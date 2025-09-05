@@ -1,14 +1,17 @@
+
+from app.core.session import get_current_user
+from app.db.repositories.user_repository import authenticate_user, get_user_by_id
 from ..models.category import CategoryOut
 from sqlalchemy import select 
 from typing import Annotated, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
 
 from ..models.user import UserCreate, UserOut, UserResponse
-from ...core.security import authenticate_user, get_current_user, get_password_hash, create_access_token, get_user_by_token, verify_password
+from ...core.security import get_password_hash, create_access_token, get_user_by_token, verify_password
 from ...db.database import get_db
 from ...db.db_structure import Category, User
 
@@ -46,24 +49,62 @@ async def register(user_create: UserCreate, db: Session = Depends(get_db)):
 
     return new_user
 
+# @router.post("/login")
+# async def login(request: Request,form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+#     user = await authenticate_user(db, form_data.username, form_data.password)
+#     if not user:
+#         raise HTTPException(status_code=400, detail="Incorrect username or password")
+
+#     # access_token = create_access_token(data={"sub": user.email})
+ 
+#     result = await db.execute(
+#         select(Category).where(
+#             (Category.owner_id == user.id) &
+#             (Category.is_default == True) & (Category.title == "Inbox")
+#         )
+#     )
+#     inbox_category = result.scalar_one_or_none()
+    
+#     request.session["user_id"] = user.id
+
+#     # return {
+#     #     "access_token": access_token,
+#     #     "token_type": "bearer",
+#     #     "user": {
+#     #         "id": user.id,
+#     #         "email": user.email,
+#     #         "username": user.username,
+#     #     },
+#     #     "default_category": {
+#     #         "id": inbox_category.id,
+#     #         "title": inbox_category.title,
+#     #         "color": inbox_category.color,
+#     #         "icon": inbox_category.icon,
+#     #     } if inbox_category else None
+#     # }
+#     return {
+#         "status": "logged_in",
+#         "user": {
+#             "id": user.id,
+#             "email": user.email,
+#             "username": user.username,
+#         },
+#         "default_category": {
+#             "id": inbox_category.id,
+#             "title": inbox_category.title,
+#             "color": inbox_category.color,
+#             "icon": inbox_category.icon,
+#         } if inbox_category else None
+#     }
 @router.post("/login")
-async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    user = await authenticate_user(db, form_data.username, form_data.password)
+async def login(request: Request, db=Depends(get_db)):
+    # check user (giả sử đã xong)
+    user = await get_user_by_id(db, 52)             #user id 52 default for test                                       
     if not user:
         raise HTTPException(status_code=400, detail="Incorrect username or password")
 
-    access_token = create_access_token(data={"sub": user.email})
-    # return {
-    #     "access_token": access_token,
-    #     "token_type": "bearer",
-    #     "user": {
-    #         "id": user.id,
-    #         "email": user.email,
-    #         "username": user.username,
-    #         # "mobile": user.mobile,
-    #         # "photo": user.photo,
-    #     }
-    # }
+    # access_token = create_access_token(data={"sub": user.email})
+ 
     result = await db.execute(
         select(Category).where(
             (Category.owner_id == user.id) &
@@ -71,10 +112,26 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
         )
     )
     inbox_category = result.scalar_one_or_none()
+    
+    request.session["user_id"] = user.id
 
+    # return {
+    #     "access_token": access_token,
+    #     "token_type": "bearer",
+    #     "user": {
+    #         "id": user.id,
+    #         "email": user.email,
+    #         "username": user.username,
+    #     },
+    #     "default_category": {
+    #         "id": inbox_category.id,
+    #         "title": inbox_category.title,
+    #         "color": inbox_category.color,
+    #         "icon": inbox_category.icon,
+    #     } if inbox_category else None
+    # }
     return {
-        "access_token": access_token,
-        "token_type": "bearer",
+        "status": "logged_in",
         "user": {
             "id": user.id,
             "email": user.email,
@@ -87,6 +144,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
             "icon": inbox_category.icon,
         } if inbox_category else None
     }
+
 
 
 

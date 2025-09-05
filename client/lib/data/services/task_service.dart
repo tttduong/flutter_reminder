@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
+import 'package:flutter_to_do_app/api.dart';
 import 'package:flutter_to_do_app/consts.dart';
 import 'package:flutter_to_do_app/data/models/task.dart';
 import 'package:http/http.dart' as http;
@@ -33,38 +34,6 @@ class TaskService {
   //   }
   // }
 
-  static Future<List<Task>> getTasksByDate(DateTime date) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('access_token');
-
-      if (token == null) {
-        throw Exception('Token not found');
-      }
-
-      // Format ngày theo chuẩn backend: YYYY-MM-DD
-      String formattedDate = DateFormat('yyyy-MM-dd').format(date);
-
-      final response = await http.get(
-        Uri.parse('$baseUrl/tasks/by-date/?date=$formattedDate'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        List<dynamic> jsonData = json.decode(response.body);
-        return jsonData.map((item) => Task.fromJson(item)).toList();
-      } else {
-        throw Exception(
-            'Failed to load tasks by date (${response.statusCode})');
-      }
-    } catch (e) {
-      throw Exception('Error fetching tasks by date: $e');
-    }
-  }
-
   //update tasks
   static Future<void> updateTask(Task updatedTask) async {
     final url = Uri.parse('$baseUrl/tasks/${updatedTask.id}/');
@@ -86,52 +55,6 @@ class TaskService {
       }
     } catch (e) {
       print("Error: $e");
-    }
-  }
-
-//get all tasks by date---------------------------------------------------------------
-  // static Future<List<Task>> getTasksByDate(String due_date) async {
-  //   final response =
-  //       await http.get(Uri.parse('$baseUrl/tasks/by_category/$due_date'));
-  //   print("loading in loading tasks");
-
-  //   if (response.statusCode == 200) {
-  //     List<dynamic> jsonData = json.decode(response.body);
-  //     print("successing in loading tasks");
-
-  //     return jsonData.map((task) => Task.fromJson(task)).toList();
-  //   } else {
-  //     throw Exception('Failed to load tasks');
-  //   }
-  // }
-
-  //get all tasks by category_id---------------------------------------------------------------
-  static Future<List<Task>> getTasksByCategoryId(int? categoryId) async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('access_token');
-
-    if (token == null) {
-      throw Exception('Token not found');
-    }
-
-    final queryParam = categoryId == null
-        ? '$baseUrl/tasks/by-category/'
-        : '$baseUrl/tasks/by-category/?category_id=$categoryId';
-
-    final response = await http.get(
-      Uri.parse(queryParam),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-    );
-
-    print("service load task from cate ID: $categoryId");
-    if (response.statusCode == 200) {
-      List<dynamic> jsonData = json.decode(response.body);
-      return jsonData.map((task) => Task.fromJson(task)).toList();
-    } else {
-      throw Exception('Failed to load tasks (${response.statusCode})');
     }
   }
 
@@ -172,33 +95,33 @@ class TaskService {
   }
 
 //get all tasks
-  static Future<List<Task>> fetchTasks() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('access_token');
+  // static Future<List<Task>> fetchTasks() async {
+  //   final prefs = await SharedPreferences.getInstance();
+  //   final token = prefs.getString('access_token');
 
-    if (token == null) {
-      print("Chưa có token, bạn cần login trước");
-      // return false;
-    }
+  //   if (token == null) {
+  //     print("Chưa có token, bạn cần login trước");
+  //     // return false;
+  //   }
 
-    final response = await http.get(
-      Uri.parse('$baseUrl/tasks/'),
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer $token", // Nếu API cần token
-      },
-    );
-    print("loading in loading tasks");
+  //   final response = await http.get(
+  //     Uri.parse('$baseUrl/tasks/'),
+  //     headers: {
+  //       "Content-Type": "application/json",
+  //       "Authorization": "Bearer $token", // Nếu API cần token
+  //     },
+  //   );
+  //   print("loading in loading tasks");
 
-    if (response.statusCode == 200) {
-      List<dynamic> jsonData = json.decode(response.body);
-      print("successing in loading tasks");
+  //   if (response.statusCode == 200) {
+  //     List<dynamic> jsonData = json.decode(response.body);
+  //     print("successing in loading tasks");
 
-      return jsonData.map((task) => Task.fromJson(task)).toList();
-    } else {
-      throw Exception('Failed to load tasks');
-    }
-  }
+  //     return jsonData.map((task) => Task.fromJson(task)).toList();
+  //   } else {
+  //     throw Exception('Failed to load tasks');
+  //   }
+  // }
 
 //get all completed tasks
   // static Future<List<Task>> fetchCompletedTasks() async {
@@ -216,30 +139,57 @@ class TaskService {
   //   }
   // }
 
-//delete tasks
-  static Future<void> deleteTask(int taskId) async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('access_token');
+//------------service đã chuyển đổi dùng session---------------------------------------------------------------
 
-    if (token == null) {
-      print("Chưa có token, bạn cần login trước");
-      // return false;
-    }
-
-    final url = Uri.parse('$baseUrl/tasks/${taskId}/');
+//get all tasks by category_id
+  static Future<List<Task>> getTasksByCategoryId(int? categoryId) async {
     try {
-      final response = await http.delete(
-        url,
-        headers: {
-          'Authorization': 'Bearer $token', // ← truyền token ở đây
-          'Content-Type': 'application/json',
-        },
+      final response = await ApiService.dio.get(
+        '/tasks/by-category/',
+        queryParameters:
+            categoryId != null ? {"category_id": categoryId} : null,
       );
 
+      print("service load task from cate ID: $categoryId");
+      print("📦 Status: ${response.statusCode}");
+      print("📤 Data: ${response.data}");
+
+      List<dynamic> jsonData = response.data;
+      return jsonData.map((task) => Task.fromJson(task)).toList();
+    } catch (e) {
+      print("🔥 Error loading tasks: $e");
+      throw Exception('Failed to load tasks');
+    }
+  }
+
+  static Future<List<Task>> getTasksByDate(DateTime date) async {
+    try {
+      String formattedDate = DateFormat('yyyy-MM-dd').format(date);
+      final response = await ApiService.dio
+          .get('$baseUrl/tasks/by-date/?date=$formattedDate');
+
+      if (response.statusCode == 200) {
+        // List<dynamic> jsonData = json.decode(response.data);
+        List<dynamic> jsonData = response.data;
+        return jsonData.map((item) => Task.fromJson(item)).toList();
+      } else {
+        throw Exception(
+            'Failed to load tasks by date (${response.statusCode})');
+      }
+    } catch (e) {
+      throw Exception('Error fetching tasks by date: $e');
+    }
+  }
+
+//delete tasks
+  static Future<void> deleteTask(int taskId) async {
+    final url = Uri.parse('$baseUrl/tasks/${taskId}/');
+    try {
+      final response = await ApiService.dio.delete('$baseUrl/tasks/${taskId}/');
       if (response.statusCode == 200) {
         print("Task Deleted Successfully");
       } else {
-        print("Failed to delete task: ${response.body}");
+        print("Failed to delete task: ${response.data}");
       }
     } catch (e) {
       print("Error: $e");
@@ -248,15 +198,7 @@ class TaskService {
 
 // Create task
   static Future<bool> createTask({Task? task}) async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('access_token');
-
-    if (token == null) {
-      print("Chưa có token, bạn cần login trước");
-      return false;
-    }
     if (task == null) return false;
-    // print("cat id in createTask in taskService: " + task.categoryId); // OK
 
     try {
       // Convert DateTime to UTC and format as ISO8601 string with timezone
@@ -266,32 +208,19 @@ class TaskService {
         return dateTime.toUtc().toIso8601String();
       }
 
-      // Tạo Map chứa nội dung body
-      final Map<String, dynamic> jsonBody = {
+      final response = await ApiService.dio.post('$baseUrl/tasks/', data: {
         "title": task.title,
         "description": task.description,
         "category_id": task.categoryId,
         "date": formatDateTimeToUTC(task.date),
         "due_date": formatDateTimeToUTC(task.dueDate),
-      };
-
-      // In JSON để kiểm tra
-      print("JSON body gửi đi: ${jsonEncode(jsonBody)}"); //OK
-
-      final response = await http.post(
-        Uri.parse("$baseUrl/tasks/"),
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token", // Nếu API cần token
-        },
-        body: jsonEncode(jsonBody), // id category OK
-      );
+      });
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         print("Task created successfully!");
         return true;
       } else {
-        print("Failed to create task: ${response.body}");
+        print("Failed to create task: ${response.data}");
         return false;
       }
     } catch (e) {
@@ -300,29 +229,25 @@ class TaskService {
     }
   }
 
+//update complete
   static Future<bool> updateTaskStatus(Task updatedTask, bool newStatus) async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('access_token');
+    try {
+      final response = await ApiService.dio.patch(
+        '/tasks/${updatedTask.id}/',
+        data: {
+          "completed": newStatus, // chỉ gửi field cần update
+        },
+      );
 
-    if (token == null) {
-      print("⚠️ Chưa có token, bạn cần login trước");
-      return false;
-    }
-
-    final response = await http.patch(
-      Uri.parse('$baseUrl/tasks/${updatedTask.id}/'),
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer $token",
-      },
-      body: jsonEncode({"completed": newStatus}),
-    );
-
-    if (response.statusCode == 200) {
-      print("✅ Updated task status successfully");
-      return true;
-    } else {
-      print("❌ Failed to update task status: ${response.body}");
+      if (response.statusCode == 200) {
+        print("✅ Updated task status successfully");
+        return true;
+      } else {
+        print("❌ Failed to update task status: ${response.data}");
+        return false;
+      }
+    } catch (e) {
+      print("🔥 Error updating task: $e");
       return false;
     }
   }

@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_to_do_app/api.dart';
 import 'package:flutter_to_do_app/consts.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
@@ -25,7 +26,7 @@ class _ChatPageState extends State<ChatPage> {
   Widget build(BuildContext context) {
     print("🎯 ChatPage build() called"); // Add this debug
     return Scaffold(
-      backgroundColor: Colors.red,
+      // backgroundColor: Colors.red,
       appBar: AppBar(
         leading: IconButton(
           icon: Icon(
@@ -54,10 +55,57 @@ class _ChatPageState extends State<ChatPage> {
       body: DashChat(
         currentUser: _currentUser,
         messages: _messages,
-        onSend: (ChatMessage m) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            getChatResponse(m);
+        // onSend: (ChatMessage m) {
+        //   // WidgetsBinding.instance.addPostFrameCallback((_) {
+        //   //   getChatResponse(m);
+        //   // });
+        //   getChatResponse(m);
+        // },
+        onSend: (ChatMessage m) async {
+          setState(() {
+            _messages.insert(0, m);
+            isLoading = true;
           });
+
+          _conversationHistory.add({"role": "user", "content": m.text});
+
+          try {
+            final responseData = await ApiService.sendChat(
+              message: m.text,
+              conversationHistory: _conversationHistory,
+              systemPrompt: systemPrompt,
+            );
+
+            print("Response data: $responseData"); // 👈 check ở đây
+
+            String reply = responseData['response'] ?? "Không có phản hồi";
+
+            _conversationHistory.add({"role": "assistant", "content": reply});
+
+            setState(() {
+              _messages.insert(
+                0,
+                ChatMessage(
+                  text: reply,
+                  user: _gptChatUser,
+                  createdAt: DateTime.now(),
+                ),
+              );
+              isLoading = false;
+            });
+          } catch (e) {
+            setState(() {
+              _messages.insert(
+                0,
+                ChatMessage(
+                  text: "Lỗi kết nối: ${e.toString()}",
+                  user: _gptChatUser,
+                  createdAt: DateTime.now(),
+                ),
+              );
+              isLoading = false;
+            });
+          }
         },
 
         // màu container và text
@@ -89,7 +137,7 @@ PERSONALITY & STYLE:
 - Casual, youthful tone - never stiff or formal
 
 ABSOLUTE RULES:
-- ALWAYS introduce yourself as "Lumiere" when asked about identity
+- ALWAYS introduce yourself as 'Lumiere' only when asked about your identity; do not introduce yourself otherwise
 - NEVER mention Groq, API, OpenAI, or any technical terms
 - NEVER say you're an "AI model" or "chatbot"
 - Refer to yourself as "AI friend" or "virtual assistant"
@@ -108,6 +156,7 @@ User feels sad/stressed → Comfort + encourage + ask if they need help
 User shares good news → Celebrate + emoji + encourage them to continue
 User asks technical questions → Answer simply, avoid jargon
 User says goodbye → Friendly farewell + invite them back anytime
+Whenever the user provides a goal, automatically suggest a daily schedule with 3–4 key time blocks and ask if they want a detailed schedule. Do not wait for the user to request it.
 """;
 
   Future<void> getChatResponse(ChatMessage m) async {
@@ -117,113 +166,191 @@ User says goodbye → Friendly farewell + invite them back anytime
     });
 
     try {
-      // Lấy token từ SharedPreferences
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('access_token');
-
-      if (token == null) {
-        setState(() {
-          _messages.insert(
-              0,
-              ChatMessage(
-                text: "Bạn cần đăng nhập để sử dụng chat bot",
-                user: _gptChatUser,
-                createdAt: DateTime.now(),
-              ));
-          isLoading = false;
-        });
-        return;
-      }
-      // 1. THÊM TIN NHẮN USER VÀO LỊCH SỬ
+      // 1. Thêm tin nhắn user vào lịch sử
       _conversationHistory.add({"role": "user", "content": m.text});
-
-      // 2. GIỚI HẠN LỊCH SỬ (giữ 20 tin nhắn gần nhất)
       if (_conversationHistory.length > 20) {
         _conversationHistory =
             _conversationHistory.sublist(_conversationHistory.length - 20);
       }
-      final url = Uri.parse("$baseUrl/chat/");
 
-      final response = await http.post(
-        url,
-        headers: {
-          'Authorization': 'Bearer $token', // ← Thêm token vào header
-          "Content-Type": "application/json; charset=utf-8", // ← Thêm charset
-          "Accept": "application/json; charset=utf-8", // ← Thêm Accept header
-        },
-
-        // body: jsonEncode({"message": m.text, "model": "llama3-70b-8192"}),
-        body: utf8.encode(jsonEncode({
-          // ← Đảm bảo encode UTF-8
+      final response = await ApiService.dio.post(
+        '/chat/',
+        data: {
           "message": m.text,
-          "model": "llama3-70b-8192",
+          "model": "llama-3.1-8b-instant",
           "conversation_history": _conversationHistory,
           "system_prompt": systemPrompt
-        })),
+        },
       );
 
-      if (response.statusCode == 200) {
-        final responseBody = utf8.decode(response.bodyBytes);
-        final responseData = jsonDecode(responseBody);
-        String reply = responseData['response'];
+      final responseData = response.data;
+      String reply = responseData['response'] ?? "Không có phản hồi";
 
-// 3. THÊM PHẢN HỒI CỦA BOT VÀO LỊCH SỬ
-        _conversationHistory.add({"role": "assistant", "content": reply});
+      // 2. Thêm phản hồi bot vào lịch sử
+      _conversationHistory.add({"role": "assistant", "content": reply});
 
-        // Optional: Log usage info
-        print("Tokens used: ${responseData['usage']['total_tokens']}");
-        print("Model: ${responseData['model']}");
-
-        setState(() {
-          _messages.insert(
-              0,
-              ChatMessage(
-                text: reply,
-                user: _gptChatUser,
-                createdAt: DateTime.now(),
-              ));
-        });
-      } else if (response.statusCode == 401) {
-        // Token hết hạn hoặc không hợp lệ
-        setState(() {
-          _messages.insert(
-              0,
-              ChatMessage(
-                text: "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
-                user: _gptChatUser,
-                createdAt: DateTime.now(),
-              ));
-        });
-      } else {
-        // Handle other errors
-        final errorData = jsonDecode(response.body);
-        setState(() {
-          _messages.insert(
-              0,
-              ChatMessage(
-                text: "Lỗi: ${errorData['detail'] ?? 'Không thể kết nối API'}",
-                user: _gptChatUser,
-                createdAt: DateTime.now(),
-              ));
-        });
-      }
-    } catch (e) {
-      // Handle network error
       setState(() {
         _messages.insert(
-            0,
-            ChatMessage(
-              text: "Lỗi kết nối: ${e.toString()}",
-              user: _gptChatUser,
-              createdAt: DateTime.now(),
-            ));
+          0,
+          ChatMessage(
+            text: reply,
+            user: _gptChatUser,
+            createdAt: DateTime.now(),
+          ),
+        );
+        isLoading = false;
       });
-    } finally {
+    } catch (e) {
       setState(() {
+        _messages.insert(
+          0,
+          ChatMessage(
+            text: "Lỗi kết nối: ${e.toString()}",
+            user: _gptChatUser,
+            createdAt: DateTime.now(),
+          ),
+        );
         isLoading = false;
       });
     }
   }
+
+//   Future<void> getChatResponse(ChatMessage m) async {
+//     setState(() {
+//       _messages.insert(0, m);
+//       isLoading = true;
+//     });
+
+//     try {
+//       // Lấy token từ SharedPreferences
+//       final prefs = await SharedPreferences.getInstance();
+//       final token = prefs.getString('access_token');
+
+//       if (token == null) {
+//         setState(() {
+//           _messages.insert(
+//               0,
+//               ChatMessage(
+//                 text: "Bạn cần đăng nhập để sử dụng chat bot",
+//                 user: _gptChatUser,
+//                 createdAt: DateTime.now(),
+//               ));
+//           isLoading = false;
+//         });
+//         return;
+//       }
+//       // 1. THÊM TIN NHẮN USER VÀO LỊCH SỬ
+//       _conversationHistory.add({"role": "user", "content": m.text});
+
+//       // 2. GIỚI HẠN LỊCH SỬ (giữ 20 tin nhắn gần nhất)
+//       if (_conversationHistory.length > 20) {
+//         _conversationHistory =
+//             _conversationHistory.sublist(_conversationHistory.length - 20);
+//       }
+//       // final url = Uri.parse("$baseUrl/chat/");
+
+//       final response = await ApiService.dio.post(
+//         // final response = await http.post(
+//         // url,
+//         '/chat/',
+//         data: {
+//           "message": m.text,
+//           // "model": "llama3-70b-8192",
+//           "model": "llama-3.1-8b-instant",
+//           "conversation_history": _conversationHistory,
+//           "system_prompt": systemPrompt
+//         },
+//         // headers: {
+//         //   'Authorization': 'Bearer $token', // ← Thêm token vào header
+//         //   "Content-Type": "application/json; charset=utf-8", // ← Thêm charset
+//         //   "Accept": "application/json; charset=utf-8", // ← Thêm Accept header
+//         // },
+
+//         // body: jsonEncode({"message": m.text, "model": "llama3-70b-8192"}),
+//         // body: utf8.encode(jsonEncode({
+//         //   // ← Đảm bảo encode UTF-8
+//         //   "message": m.text,
+//         //   "model": "llama3-70b-8192",
+//         //   "conversation_history": _conversationHistory,
+//         //   "system_prompt": systemPrompt
+//         // })),
+//       );
+//       if (response.statusCode == 200) {
+//         // Dio đã parse JSON tự động nếu content-type là application/json
+//         final responseData = response.data;
+//         String reply = responseData['response'];
+
+//         setState(() {
+//           _messages.insert(
+//               0,
+//               ChatMessage(
+//                 text: reply,
+//                 user: _gptChatUser,
+//                 createdAt: DateTime.now(),
+//               ));
+//           isLoading = false;
+//         });
+// //         final responseBody = utf8.decode(response.bodyBytes);
+// //         final responseData = jsonDecode(responseBody);
+// //         String reply = responseData['response'];
+
+// // // 3. THÊM PHẢN HỒI CỦA BOT VÀO LỊCH SỬ
+// //         _conversationHistory.add({"role": "assistant", "content": reply});
+
+// //         // Optional: Log usage info
+// //         print("Tokens used: ${responseData['usage']['total_tokens']}");
+// //         print("Model: ${responseData['model']}");
+
+// //         setState(() {
+// //           _messages.insert(
+// //               0,
+// //               ChatMessage(
+// //                 text: reply,
+// //                 user: _gptChatUser,
+// //                 createdAt: DateTime.now(),
+// //               ));
+// //         });
+// //       } else if (response.statusCode == 401) {
+// //         // Token hết hạn hoặc không hợp lệ
+// //         setState(() {
+// //           _messages.insert(
+// //               0,
+// //               ChatMessage(
+// //                 text: "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
+// //                 user: _gptChatUser,
+// //                 createdAt: DateTime.now(),
+// //               ));
+// //         });
+//       } else {
+//         // Handle other errors
+//         final errorData = jsonDecode(response.data);
+//         setState(() {
+//           _messages.insert(
+//               0,
+//               ChatMessage(
+//                 text: "Lỗi: ${errorData['detail'] ?? 'Không thể kết nối API'}",
+//                 user: _gptChatUser,
+//                 createdAt: DateTime.now(),
+//               ));
+//         });
+//       }
+//     } catch (e) {
+//       // Handle network error
+//       setState(() {
+//         _messages.insert(
+//             0,
+//             ChatMessage(
+//               text: "Lỗi kết nối: ${e.toString()}",
+//               user: _gptChatUser,
+//               createdAt: DateTime.now(),
+//             ));
+//       });
+//     } finally {
+//       setState(() {
+//         isLoading = false;
+//       });
+//     }
+//   }
 
   // 4. HÀM ĐỂ XÓA LỊCH SỬ KHI CẦN RESET
   void clearChatHistory() {

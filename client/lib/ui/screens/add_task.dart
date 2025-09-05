@@ -620,12 +620,6 @@ class _AddTaskPageState extends State<AddTaskPage> {
 
       // Navigate back with success
       Get.back();
-      if (_selectedCategoryId != null && listCategories.isNotEmpty) {
-        final category = listCategories.firstWhere(
-          (cat) => cat.id == _selectedCategoryId,
-        );
-        BottomNavBarScreenState.navigateToCategoryFromAnywhere(category);
-      }
 
       Get.snackbar(
         "Success",

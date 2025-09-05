@@ -47,14 +47,14 @@ class _AllTasksPageState extends State<CategoryTasksPage> {
       );
     }
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      appBar: CustomAppBar(
-        showSearchBar: false, // Set true nếu muốn hiện search bar
-        searchHint: 'Search tasks...',
-        onSearchChanged: _handleSearchChanged,
-        onNotificationTap: _handleNotificationTap,
-        onMoreTap: _handleMoreTap,
-      ),
+      backgroundColor: AppColors.background,
+      // appBar: CustomAppBar(
+      //   showSearchBar: false, // Set true nếu muốn hiện search bar
+      //   searchHint: 'Search tasks...',
+      //   onSearchChanged: _handleSearchChanged,
+      //   onNotificationTap: _handleNotificationTap,
+      //   onMoreTap: _handleMoreTap,
+      // ),
       body:
           // SafeArea(
           //   child:

@@ -13,6 +13,10 @@ import '../models/models.dart';
 import '../../ui/utils/error_handling.dart';
 import '../../ui/utils/utils.dart';
 
+import 'package:dio/dio.dart';
+import 'package:cookie_jar/cookie_jar.dart';
+import 'package:dio_cookie_manager/dio_cookie_manager.dart';
+
 class AuthService {
   /// A function for Sign-Up user account,
   /// Success : return User model,
@@ -60,57 +64,103 @@ class AuthService {
   /// A function for Sign-Up user account,
   /// Success : return User model,
   /// Fail : return null
+  // static Future<LoginModel?> signInUser({
+  //   required BuildContext context,
+  //   required String email,
+  //   required String password,
+  // }) async {
+  //   try {
+  //     UserAuth userAuth = UserAuth(email, password);
+
+  //     http.Response res = await http.post(
+  //       Uri.parse("${Constants.URI}/api/v1/login"),
+  //       body: {
+  //         'username': userAuth.email,
+  //         'password': userAuth.password,
+  //       },
+  //       headers: <String, String>{
+  //         'Content-Type': 'application/x-www-form-urlencoded',
+  //       },
+  //     );
+
+  //     bool hasError =
+  //         ErrorHandling.httpErrorHandling(response: res, context: context);
+  //     if (hasError) return null;
+
+  //     // if (res.statusCode == 200) {
+  //     //   final data = jsonDecode(res.body);
+  //     //   print("📦 Full login response: $data");
+  //     //   print("🔥 Default category: ${data['default_category']}");
+
+  //     //   final token = data['access_token'];
+
+  //     //   if (token != null) {
+  //     //     final prefs = await SharedPreferences.getInstance();
+  //     //     await prefs.setString('access_token', token);
+
+  //     //     // ✅ Tạo LoginModel từ toàn bộ response data
+  //     //     return LoginModel(
+  //     //       token: token,
+  //     //       user: data['user'] != null ? User.fromJson(data['user']) : null,
+  //     //       defaultCategory: data['default_category'] != null
+  //     //           ? Category.fromJson(data['default_category'])
+  //     //           : null,
+  //     //     );
+  //     //   }
+  //     // } else {
+  //     //   print("Đăng nhập thất bại: ${res.body}");
+  //     // }
+  //   } catch (e) {
+  //     Utils.showSnackBar(context, e.toString());
+  //   }
+
+  //   return null; // ✅ Thêm return null để tránh lỗi "might complete without returning"
+  // }
   static Future<LoginModel?> signInUser({
     required BuildContext context,
     required String email,
     required String password,
   }) async {
     try {
-      UserAuth userAuth = UserAuth(email, password);
+      // 1️⃣ Tạo Dio client + cookie jar
+      final dio = Dio();
+      final cookieJar = CookieJar();
+      dio.interceptors.add(CookieManager(cookieJar));
 
-      http.Response res = await http.post(
-        Uri.parse("${Constants.URI}/api/v1/login"),
-        body: {
-          'username': userAuth.email,
-          'password': userAuth.password,
+      // 2️⃣ Gửi request login (x-www-form-urlencoded hoặc JSON)
+      final res = await dio.post(
+        "${Constants.URI}/api/v1/login",
+        data: {
+          'username': email,
+          'password': password,
         },
-        headers: <String, String>{
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
+        options: Options(
+          contentType: Headers.formUrlEncodedContentType,
+        ),
       );
 
-      bool hasError =
-          ErrorHandling.httpErrorHandling(response: res, context: context);
-      if (hasError) return null;
-
+      // 3️⃣ Check response
       if (res.statusCode == 200) {
-        final data = jsonDecode(res.body);
+        final data = res.data;
         print("📦 Full login response: $data");
         print("🔥 Default category: ${data['default_category']}");
 
-        final token = data['access_token'];
-
-        if (token != null) {
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setString('access_token', token);
-
-          // ✅ Tạo LoginModel từ toàn bộ response data
-          return LoginModel(
-            token: token,
-            user: data['user'] != null ? User.fromJson(data['user']) : null,
-            defaultCategory: data['default_category'] != null
-                ? Category.fromJson(data['default_category'])
-                : null,
-          );
-        }
+        // 4️⃣ Tạo LoginModel từ response JSON (không cần token)
+        return LoginModel(
+          user: data['user'] != null ? User.fromJson(data['user']) : null,
+          defaultCategory: data['default_category'] != null
+              ? Category.fromJson(data['default_category'])
+              : null,
+          // token: không còn cần nữa
+        );
       } else {
-        print("Đăng nhập thất bại: ${res.body}");
+        print("Đăng nhập thất bại: ${res.data}");
       }
     } catch (e) {
       Utils.showSnackBar(context, e.toString());
     }
 
-    return null; // ✅ Thêm return null để tránh lỗi "might complete without returning"
+    return null;
   }
 
   /// A function for getting User account's datas via token,

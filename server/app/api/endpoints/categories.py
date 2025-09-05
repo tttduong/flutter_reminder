@@ -1,12 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException
 from app.core.utils import get_or_create_inbox_category
+from app.core.session import get_current_user
 from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 # from uuid import UUID
 from sqlalchemy import select
-
-from app.core.security import get_current_user
 
 from ...db.database import get_db
 from ...db.db_structure import Category, User
@@ -28,6 +27,7 @@ async def create_category(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+
     # Kiểm tra trùng tiêu đề (của người dùng hiện tại)
     result = await db.execute(
         select(Category).where(
@@ -61,7 +61,7 @@ async def get_user_categories(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    print(f"🔐 current_user: {current_user.id}")
+    print(f"🔐======================== current_user: {current_user.id}")
     await get_or_create_inbox_category(db, current_user.id)
     # result = await db.execute(
     #     select(Category).where(Category.owner_id == current_user.id)

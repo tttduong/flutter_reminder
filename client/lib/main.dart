@@ -66,6 +66,7 @@
 // }
 
 import 'package:flutter/material.dart';
+import 'package:flutter_to_do_app/api.dart';
 import 'package:flutter_to_do_app/app.dart';
 import 'package:flutter_to_do_app/controller/user_controller.dart';
 import 'package:get/get.dart';
@@ -78,27 +79,42 @@ import 'providers/user_provider.dart';
 // void main() {
 //   runApp(const TaskManagerApp());
 // }
+// void main() async {
+//   WidgetsFlutterBinding.ensureInitialized();
+//   await LocalStoreServices.init(); // đảm bảo SharedPreferences sẵn sàng
+//   Get.put(UserController());
+
+//   // final userProvider = UserProvider();
+
+//   // Gọi load user từ token
+//   // final token = await LocalStoreServices.getToken();
+//   // if (token != null) {
+//   //   final user = await AuthService.getUser(token: token);
+//   //   if (user != null) {
+//   //     userProvider.setUserFromModel(user);
+//   //     print("✅ User loaded from token: ${user.toJson()}");
+//   //   } else {
+//   //     print("⚠️ Token exists but failed to get user info");
+//   //   }
+//   // } else {
+//   //   print("ℹ️ No token found");
+//   // }
+
+//   ApiService.init();
+//   runApp(
+//     MultiProvider(
+//       providers: [
+//         ChangeNotifierProvider(create: (_) => UserProvider()),
+//         // Các Provider khác nếu cần
+//       ],
+//       child: const TaskManagerApp(),
+//     ),
+//   );
+// }
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await LocalStoreServices.init(); // đảm bảo SharedPreferences sẵn sàng
-  Get.put(UserController());
-
-  final userProvider = UserProvider();
-
-  // Gọi load user từ token
-  final token = await LocalStoreServices.getToken();
-  if (token != null) {
-    final user = await AuthService.getUser(token: token);
-    if (user != null) {
-      userProvider.setUserFromModel(user);
-      print("✅ User loaded from token: ${user.toJson()}");
-    } else {
-      print("⚠️ Token exists but failed to get user info");
-    }
-  } else {
-    print("ℹ️ No token found");
-  }
-
+  // ApiService.init("http://10.106.193.30:8000/api/v1");
+  await ApiService.init();
   runApp(
     MultiProvider(
       providers: [

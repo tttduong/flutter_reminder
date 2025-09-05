@@ -1,8 +1,8 @@
 from typing import List, Optional, Set
 
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
+from app.core.session import get_current_user
 from sqlalchemy.orm import Session
-from app.core.security import get_current_user
 from ..models.task import TaskCreate, TaskUpdate, TaskResponse
 from ...core.security import get_user_by_token
 from ...db.database import get_db

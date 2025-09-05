@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_to_do_app/api.dart';
 import 'package:flutter_to_do_app/controller/user_controller.dart';
 import 'package:flutter_to_do_app/data/models/login_model.dart';
 import 'package:flutter_to_do_app/data/models/user.dart';
@@ -101,7 +102,7 @@ class _SignInPageState extends State<SignInPage> {
 
     if (loginModel != null) {
       // ✅ 1. Lưu token
-      await LocalStoreServices.saveToken(loginModel.token!);
+      // await LocalStoreServices.saveToken(loginModel.token!);
 
       // ✅ 2. Set user vào Provider
       Provider.of<UserProvider>(context, listen: false)
@@ -174,12 +175,53 @@ class _SignInPageState extends State<SignInPage> {
             CustomElevatedButton(onPressfunc: _signIn, buttonText: 'Sign In'),
             const SizedBox(height: 10),
             TextButton(
-              onPressed: _changeToSignUp,
+              onPressed:
+                  // _changeToSignUp,
+                  //     () async {
+                  //   print("Login pressed");
+                  //   try {
+                  //     final res = await ApiService.dio.post('/login', data: {
+                  //       "username": _emailController.text,
+                  //       "password": _passwordController.text,
+                  //     });
+                  //     print("Login response: ${res.data}");
+                  //   } catch (e) {
+                  //     print("Login error: $e");
+                  //   }
+                  // },
+                  () async {
+                try {
+                  await ApiService.login(
+                      _emailController.text, _passwordController.text);
+
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => ChatPage()),
+                  );
+                } catch (e) {
+                  print("Login failed: $e");
+                }
+              },
               child: const Text(
                 'go to Create user accout',
                 style: TextStyle(fontSize: 16),
               ),
             ),
+            ElevatedButton(
+              onPressed: () async {
+                try {
+                  await ApiService.login(
+                      _emailController.text, _passwordController.text);
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => ChatPage()),
+                  );
+                } catch (e) {
+                  print("Login failed: $e");
+                }
+              },
+              child: Text("Login"),
+            )
           ],
         ),
       ),

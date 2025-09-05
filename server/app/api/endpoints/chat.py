@@ -4,13 +4,16 @@ import os
 from app.core.config import settings
 from app.services.llm_service import LLMService
 from typing import List, Dict, Optional
+
+from app.core.session import get_current_user
+from app.db.db_structure import User
 router = APIRouter()
 app = FastAPI(title="Groq LLM API", version="1.0.0")
 
 
 class ChatRequest(BaseModel):
     message: str
-    model: str = "llama3-70b-8192"  # Default Groq model
+    model: str = "llama-3.1-8b-instant"  # Default Groq model
     system_prompt: Optional[str] = None  # ← THÊM SYSTEM PROMPT
     conversation_history: Optional[List[Dict[str, str]]] = []  # ← THÊM LỊCH SỬ
 
@@ -32,7 +35,8 @@ async def get_llm_service():
 @router.post("/chat/", response_model=ChatResponse)
 async def chat_endpoint(
     request: ChatRequest, 
-    llm_service: LLMService = Depends(get_llm_service)
+    llm_service: LLMService = Depends(get_llm_service),
+    current_user: User = Depends(get_current_user)
 ):
     """
     Chat endpoint sử dụng Groq API với system prompt và lịch sử hội thoại
