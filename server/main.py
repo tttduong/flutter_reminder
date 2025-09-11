@@ -34,8 +34,6 @@ async def log_cookies(request: Request, call_next):
 
 app.include_router(tasks.router, prefix="/api/v1", tags=["Tasks"])
 app.include_router(users.router, prefix="/api/v1", tags=["Users"])
-# app.include_router(categories.router, prefix="/api/v1", tags=["Categories"], dependencies=[Depends(get_user_by_token)])
-# app.include_router(chat.router, prefix="/api/v1", tags=["Chat"], dependencies=[Depends(get_user_by_token)])
 app.include_router(categories.router, prefix="/api/v1", tags=["Categories"])
 app.include_router(chat.router, prefix="/api/v1", tags=["Chat"])
 

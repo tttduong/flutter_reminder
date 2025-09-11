@@ -74,4 +74,71 @@ class ApiService {
 
     return response.data;
   }
+
+  // Method gọi endpoint /chat/parse_task
+  static Future<Map<String, dynamic>> parseTask({
+    required String message,
+  }) async {
+    try {
+      final response = await dio.post('/chat/parse_task', data: {
+        'message': message,
+      });
+
+      print("🌐 Parse Task API Response: ${response.statusCode}");
+      print("📦 Response body: ${response.data}");
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = response.data;
+
+        // Validate response structure
+        if (data.containsKey('intent')) {
+          return data;
+        } else {
+          throw Exception('Invalid response format: missing intent field');
+        }
+      } else {
+        throw Exception('API Error: ${response.statusCode} - ${response.data}');
+      }
+    } catch (e) {
+      print("❌ Parse Task Error: $e");
+
+      // Fallback response
+      return {
+        // "intent": "small_talk",
+        // "title": "",
+        // "date": "",
+        // "time": "",
+        "intent": "small_talk",
+        "title": "",
+        "description": "",
+        "category_id": "",
+        "date": "",
+        "due_date": "",
+      };
+    }
+  }
+
+  static Future<Map<String, dynamic>> createTask({
+    required String title,
+    required String description,
+    required int categoryId,
+    required DateTime date,
+    DateTime? dueDate,
+  }) async {
+    final data = {
+      "title": title,
+      "description": description,
+      "category_id": categoryId,
+      "date": date.toUtc().toIso8601String(), // đảm bảo UTC ISO 8601
+      if (dueDate != null) "due_date": dueDate.toUtc().toIso8601String(),
+    };
+
+    final response = await dio.post("/tasks/", data: data);
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return response.data;
+    } else {
+      throw Exception("Failed to create task: ${response.data}");
+    }
+  }
 }
