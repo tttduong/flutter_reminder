@@ -39,99 +39,94 @@ class _SignInPageState extends State<SignInPage> {
     }
   }
 
-  // void _signIn() async {
-  //   final loginModel = await AuthService.signInUser(
-  //     context: context,
-  //     email: _emailController.text,
-  //     password: _passwordController.text,
-  //   );
-
-  //   if (loginModel != null) {
-  //     await LocalStoreServices.saveToken(loginModel.token!);
-
-  //     Provider.of<UserProvider>(context, listen: false)
-  //         .setUserFromModel(loginModel.user!);
-
-  //     // ✅ Sau khi login, load categories
-  //     final categoryController = Get.put(CategoryController());
-  //     await categoryController.getCategories();
-
-  //     // ✅ Tìm category có tên là "Inbox" hoặc id mặc định
-  //     final inboxCategory = categoryController.categoryList.firstWhereOrNull(
-  //       (cat) => cat.title.toLowerCase() == "inbox",
-  //     );
-
-  //     // ✅ Nếu có, set làm mặc định
-  //     if (inboxCategory != null) {
-  //       categoryController.selectedCategory.value = inboxCategory;
-  //     }
-
-  //     // ✅ Chuyển qua màn hình chính
-  //     Navigator.of(context).pushReplacement(
-  //       MaterialPageRoute(builder: (context) => const BottomNavBarScreen()),
-  //     );
-  //   }
-  // }
-
-  // void _signIn() async {
-  //   final loginModel = await AuthService.signInUser(
-  //     context: context,
-  //     email: _emailController.text,
-  //     password: _passwordController.text,
-  //   );
-
-  //   if (loginModel != null) {
-  //     await LocalStoreServices.saveToken(loginModel.token!);
-
-  //     Provider.of<UserProvider>(context, listen: false)
-  //         .setUserFromModel(loginModel.user!);
-  //     final categoryController = Get.find<CategoryController>();
-  //     categoryController.getCategories();
-  //     Navigator.of(context).pushReplacement(
-  //       MaterialPageRoute(builder: (context) => const BottomNavBarScreen()),
-  //     );
-  //   }
-  // }
-
   void _signIn() async {
-    final loginModel = await AuthService.signInUser(
-      context: context,
-      email: _emailController.text,
-      password: _passwordController.text,
-    );
+    final email = _emailController.text;
+    final password = _passwordController.text;
 
-    if (loginModel != null) {
-      // ✅ 1. Lưu token
-      // await LocalStoreServices.saveToken(loginModel.token!);
+    try {
+      // ✅ 1. Login qua ApiService (Dio + cookie)
+      final response = await ApiService.login(email, password);
+      print("📦 Login response: $response");
 
-      // ✅ 2. Set user vào Provider
-      Provider.of<UserProvider>(context, listen: false)
-          .setUserFromModel(loginModel.user!);
+      // ✅ 2. Debug cookies sau login
+      final cookies = await ApiService.cookieJar.loadForRequest(Uri.parse(
+              "http://10.106.193.30:8000/") // nếu server set path /api/v1, đổi thành /api/v1
+          );
+      print("🍪 Cookies after login: $cookies");
 
-      // ✅ 3. Get categories
+      // ✅ 3. Set user vào Provider
+      if (response['user'] != null) {
+        Provider.of<UserProvider>(context, listen: false)
+            .setUserFromModel(User.fromJson(response['user']));
+      }
+
+      // ✅ 4. Fetch categories
       final categoryController = Get.find<CategoryController>();
       await categoryController.getCategories();
 
-      // ✅ 4. Gán default category (Inbox)
-      if (loginModel.defaultCategory != null) {
-        categoryController.selectedCategory.value = loginModel.defaultCategory!;
+      // ✅ 5. Set default category (Inbox)
+      if (response['default_category'] != null) {
+        categoryController.selectedCategory.value =
+            Category.fromJson(response['default_category']);
       }
 
-      // ✅ 5. Điều hướng sang màn chính
-      // Navigator.of(context).pushReplacement(
-      //   MaterialPageRoute(builder: (context) => const BottomNavBarScreen()),
-      // );
-      print("📦 Default Category: ${loginModel.defaultCategory?.id}");
+      print("📦 Default Category: ${response['default_category']?['id']}");
 
+      // ✅ 6. Điều hướng sang màn chính
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (context) => BottomNavBarScreen(
-            initialCategory: loginModel.defaultCategory,
+            initialCategory: response['default_category'] != null
+                ? Category.fromJson(response['default_category'])
+                : null,
           ),
         ),
       );
+    } catch (e) {
+      print("❌ Login failed: $e");
+      // có thể show dialog alert lỗi
     }
   }
+
+  // void _signIn() async {
+  //   final loginModel = await AuthService.signInUser(
+  //     context: context,
+  //     email: _emailController.text,
+  //     password: _passwordController.text,
+  //   );
+
+  //   if (loginModel != null) {
+  //     // ✅ 1. Lưu token
+  //     // await LocalStoreServices.saveToken(loginModel.token!);
+
+  //     // ✅ 2. Set user vào Provider
+  //     Provider.of<UserProvider>(context, listen: false)
+  //         .setUserFromModel(loginModel.user!);
+
+  //     // ✅ 3. Get categories
+  //     final categoryController = Get.find<CategoryController>();
+  //     await categoryController.getCategories();
+
+  //     // ✅ 4. Gán default category (Inbox)
+  //     if (loginModel.defaultCategory != null) {
+  //       categoryController.selectedCategory.value = loginModel.defaultCategory!;
+  //     }
+
+  //     // ✅ 5. Điều hướng sang màn chính
+  //     // Navigator.of(context).pushReplacement(
+  //     //   MaterialPageRoute(builder: (context) => const BottomNavBarScreen()),
+  //     // );
+  //     print("📦 Default Category: ${loginModel.defaultCategory?.id}");
+
+  //     Navigator.of(context).pushReplacement(
+  //       MaterialPageRoute(
+  //         builder: (context) => BottomNavBarScreen(
+  //           initialCategory: loginModel.defaultCategory,
+  //         ),
+  //       ),
+  //     );
+  //   }
+  // }
 
   /// Change to SignUp Page
   void _changeToSignUp() {
@@ -193,7 +188,9 @@ class _SignInPageState extends State<SignInPage> {
                 try {
                   await ApiService.login(
                       _emailController.text, _passwordController.text);
-
+                  final cookies = await ApiService.cookieJar
+                      .loadForRequest(Uri.parse("http://10.106.193.30:8000/"));
+                  print("🍪 Cookies after login: $cookies");
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(builder: (context) => ChatPage()),

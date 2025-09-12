@@ -10,8 +10,8 @@ class CategoryService {
 
   // Lấy danh sách tất cả categories
   static Future<List<Category>> fetchCategories() async {
-    final response = await ApiService.dio.get('/categories/');
-
+    final response = await ApiService.dio.get('/api/v1/categories/');
+    print("Request URL: ${response.realUri}");
     print("📦 Status: ${response.statusCode}");
     print("📤 Data: ${response.data}");
 
