@@ -5,6 +5,7 @@ import 'package:flutter_to_do_app/data/models/category.dart';
 import 'package:flutter_to_do_app/ui/screens/add_list.dart';
 import 'package:flutter_to_do_app/ui/screens/bottom_navbar_screen.dart';
 import 'package:flutter_to_do_app/ui/screens/chat.dart';
+import 'package:flutter_to_do_app/ui/screens/report_screen.dart';
 import 'package:flutter_to_do_app/ui/widgets/appbar.dart';
 import 'package:flutter_to_do_app/ui/widgets/sidebar.dart';
 import 'package:get/get.dart';
@@ -12,7 +13,8 @@ import 'package:get/get_core/src/get_main.dart';
 
 class HomePage extends StatelessWidget {
   final Category? initialCategory;
-  final CategoryController _categoryController = Get.put(CategoryController());
+  // final CategoryController _categoryController = Get.put(CategoryController());
+  final CategoryController categoryController = Get.find();
 
   HomePage({super.key, this.initialCategory});
 
@@ -96,7 +98,12 @@ class HomePage extends StatelessWidget {
                         MaterialPageRoute(builder: (_) => const ChatPage()),
                       );
                     }),
-                    _buildCard("Report", Icons.bar_chart_outlined),
+                    _buildCard("Report", Icons.bar_chart_outlined, onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const ReportScreen()),
+                      );
+                    }),
                     _buildCard("Habit", Icons.track_changes),
                   ],
                 ),

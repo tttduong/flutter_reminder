@@ -11,6 +11,9 @@ class Category {
   final bool? isDefault;
   final List<Task>? tasks;
 
+  int totalCount;
+  int completedCount;
+
   Category({
     required this.id,
     required this.title,
@@ -19,11 +22,27 @@ class Category {
     this.ownerId,
     this.isDefault,
     this.tasks,
+    this.totalCount = 0,
+    this.completedCount = 0,
   });
 
   @override
   String toString() {
     return 'Category{id: $id, title: "$title"}';
+  }
+
+  void updateCategoryStats(Category category, List<Task> allTasks) {
+    final tasksInCategory = allTasks.where((t) => t.categoryId == category.id);
+
+    category.totalCount = tasksInCategory.length;
+    category.completedCount =
+        tasksInCategory.where((t) => t.isCompleted).length;
+  }
+
+  void updateStats(List<Task> allTasks) {
+    final tasksInCategory = allTasks.where((t) => t.categoryId == id);
+    totalCount = tasksInCategory.length;
+    completedCount = tasksInCategory.where((t) => t.isCompleted).length;
   }
 
   // Phương thức chuyển đổi từ JSON sang Category object
@@ -39,6 +58,8 @@ class Category {
               ?.map((taskJson) => Task.fromJson(taskJson))
               .toList() ??
           [],
+      totalCount: json['total_count'] ?? 0,
+      completedCount: json['completed_count'] ?? 0,
     );
   }
 

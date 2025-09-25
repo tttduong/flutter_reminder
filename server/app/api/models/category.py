@@ -29,3 +29,16 @@ class CategoryResponse(BaseModel):
     
     class Config:
         from_attributes = True
+
+class CategoryWithStats(BaseModel):
+    id: int
+    title: str
+    color: str
+    icon: str
+    is_default: bool
+    owner_id: int
+    total_count: int
+    completed_count: int
+
+    class Config:
+        orm_mode = True

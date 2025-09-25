@@ -23,6 +23,7 @@ class TaskUpdate(BaseModel):
     completed: Optional[bool] = None
     date: Optional[datetime] = None
     due_date: Optional[datetime] = None
+    completed: Optional[bool] = None 
 
 class TaskResponse(BaseModel):
     id: int

@@ -8,10 +8,10 @@ from ...core.security import get_user_by_token
 from ...db.database import get_db
 from ...db.db_structure import Category, Task, User
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, text, func, cast, Date
 from fastapi import Query
-from datetime import date, datetime, timezone
-from sqlalchemy import func, cast, Date
+from datetime import date, datetime, timezone, timedelta
+from calendar import monthrange
 router = APIRouter()
 
 active_connections: Set[WebSocket] = set()
@@ -110,7 +110,7 @@ def read_task(task_id: int, db: Session = Depends(get_db)):
     return task
 
 
-
+#update full task
 # @router.put("/tasks/{task_id}", response_model=TaskResponse)
 # def update_task(task_id: int, task_update: TaskUpdate, db: Session = Depends(get_db)):
 #     db_task = db.query(Task).filter(Task.id == task_id).first()
@@ -123,6 +123,10 @@ def read_task(task_id: int, db: Session = Depends(get_db)):
 #     for connection in active_connections:
 #         connection.send_text(f"Task {db_task.id} updated")
 #     return db_task
+
+
+
+# patch task
 
 @router.patch("/tasks/{task_id}/", response_model=TaskResponse)
 async def partial_update_task(
@@ -137,20 +141,54 @@ async def partial_update_task(
     )
     db_task = result.scalar_one_or_none()
 
-    # 2. Không tìm thấy task
     if db_task is None:
         raise HTTPException(status_code=404, detail="Task not found")
 
-    # 3. Cập nhật các field được truyền vào
+    # 2. Cập nhật các field được truyền vào
     update_data = task_update.dict(exclude_unset=True)
     for key, value in update_data.items():
         setattr(db_task, key, value)
 
-    # 4. Commit và trả về task mới
+    # 3. Nếu có update completed thì set completed_at
+    if "completed" in update_data:
+        if update_data["completed"] is True:
+            db_task.completed_at = datetime.utcnow()
+        else:
+            db_task.completed_at = None
+
+    # 4. Commit và refresh
     await db.commit()
     await db.refresh(db_task)
 
     return db_task
+
+# @router.patch("/tasks/{task_id}/", response_model=TaskResponse)
+# async def partial_update_task(
+#     task_id: int,
+#     task_update: TaskUpdate,
+#     db: AsyncSession = Depends(get_db),
+#     current_user: User = Depends(get_current_user)
+# ):
+#     # 1. Tìm task theo ID và người dùng hiện tại
+#     result = await db.execute(
+#         select(Task).where(Task.id == task_id, Task.owner_id == current_user.id)
+#     )
+#     db_task = result.scalar_one_or_none()
+
+#     # 2. Không tìm thấy task
+#     if db_task is None:
+#         raise HTTPException(status_code=404, detail="Task not found")
+
+#     # 3. Cập nhật các field được truyền vào
+#     update_data = task_update.dict(exclude_unset=True)
+#     for key, value in update_data.items():
+#         setattr(db_task, key, value)
+
+#     # 4. Commit và trả về task mới
+#     await db.commit()
+#     await db.refresh(db_task)
+
+#     return db_task
 
 @router.delete("/tasks/{task_id}/", response_model=TaskResponse)
 async def delete_task(

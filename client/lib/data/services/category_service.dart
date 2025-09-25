@@ -19,6 +19,12 @@ class CategoryService {
     return jsonData.map((cat) => Category.fromJson(cat)).toList();
   }
 
+  static Future<List<Category>> fetchCategoriesWithStats() async {
+    final response = await ApiService.dio.get('/api/v1/categories-with-stats/');
+    List<dynamic> jsonData = response.data;
+    return jsonData.map((cat) => Category.fromJson(cat)).toList();
+  }
+
   // Xóa category theo ID
   static Future<void> deleteCategory(int categoryId) async {
     try {

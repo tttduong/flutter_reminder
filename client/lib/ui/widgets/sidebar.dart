@@ -221,7 +221,7 @@ class CustomSidebar extends StatelessWidget {
           ),
         ),
         subtitle: Text(
-          "5/10",
+          "${category.completedCount}/${category.totalCount}",
           style: TextStyle(
             fontSize: 12,
             color: AppColors.primary.withOpacity(0.6),

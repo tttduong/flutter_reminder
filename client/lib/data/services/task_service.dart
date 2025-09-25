@@ -95,33 +95,34 @@ class TaskService {
   }
 
 //get all tasks
-  // static Future<List<Task>> fetchTasks() async {
-  //   final prefs = await SharedPreferences.getInstance();
-  //   final token = prefs.getString('access_token');
+  static Future<List<Task>> fetchTasks() async {
+    // final prefs = await SharedPreferences.getInstance();
+    // final token = prefs.getString('access_token');
 
-  //   if (token == null) {
-  //     print("Chưa có token, bạn cần login trước");
-  //     // return false;
-  //   }
+    // if (token == null) {
+    //   print("Chưa có token, bạn cần login trước");
+    //   // return false;
+    // }
+    final response = await http.get(Uri.parse('$baseUrl/tasks/'));
 
-  //   final response = await http.get(
-  //     Uri.parse('$baseUrl/tasks/'),
-  //     headers: {
-  //       "Content-Type": "application/json",
-  //       "Authorization": "Bearer $token", // Nếu API cần token
-  //     },
-  //   );
-  //   print("loading in loading tasks");
+    // final response = await http.get(
+    //   Uri.parse('$baseUrl/tasks/'),
+    //   headers: {
+    //     "Content-Type": "application/json",
+    //     "Authorization": "Bearer $token", // Nếu API cần token
+    //   },
+    // );
+    print("loading in loading tasks");
 
-  //   if (response.statusCode == 200) {
-  //     List<dynamic> jsonData = json.decode(response.body);
-  //     print("successing in loading tasks");
+    if (response.statusCode == 200) {
+      List<dynamic> jsonData = json.decode(response.body);
+      print("successing in loading tasks");
 
-  //     return jsonData.map((task) => Task.fromJson(task)).toList();
-  //   } else {
-  //     throw Exception('Failed to load tasks');
-  //   }
-  // }
+      return jsonData.map((task) => Task.fromJson(task)).toList();
+    } else {
+      throw Exception('Failed to load tasks');
+    }
+  }
 
 //get all completed tasks
   // static Future<List<Task>> fetchCompletedTasks() async {
@@ -144,8 +145,13 @@ class TaskService {
 //get all tasks by category_id
   static Future<List<Task>> getTasksByCategoryId(int? categoryId) async {
     try {
+      // final response = await ApiService.dio.get(
+      //   '/tasks/by-category/',
+      //   queryParameters:
+      //       categoryId != null ? {"category_id": categoryId} : null,
+      // );
       final response = await ApiService.dio.get(
-        '/tasks/by-category/',
+        '$baseUrl/tasks/by-category/',
         queryParameters:
             categoryId != null ? {"category_id": categoryId} : null,
       );
@@ -233,7 +239,7 @@ class TaskService {
   static Future<bool> updateTaskStatus(Task updatedTask, bool newStatus) async {
     try {
       final response = await ApiService.dio.patch(
-        '/tasks/${updatedTask.id}/',
+        '$baseUrl/tasks/${updatedTask.id}/',
         data: {
           "completed": newStatus, // chỉ gửi field cần update
         },

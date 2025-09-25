@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter_to_do_app/controller/category_controller.dart';
 import 'package:flutter_to_do_app/data/models/task.dart';
 import 'package:flutter_to_do_app/data/services/task_service.dart';
 import 'package:get/get.dart';
@@ -21,8 +22,18 @@ class TaskController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    // getTasks(); // Fetch task khi controller khởi tạo
+    getTasks(); // Fetch task khi controller khởi tạo
     // getTasksByCategory(selectedCategoryId);
+  }
+
+  Future<void> getTasks() async {
+    try {
+      final tasks = await TaskService.fetchTasks(); // gọi API
+      taskList.value = tasks;
+      print("Successfully loaded tasks: ${taskList.length}");
+    } catch (e) {
+      print("Failed to load tasks: $e");
+    }
   }
 
   // Toggle method với String key fix
@@ -33,7 +44,9 @@ class TaskController extends GetxController {
     task.isCompleted = newStatus;
     pendingUpdates[taskId!] = newStatus;
     taskList.refresh();
-
+    // Update category tương ứng
+    final categoryController = Get.find<CategoryController>();
+    categoryController.updateCategoryStatsByTask(task);
     try {
       await updateTaskStatus(task, newStatus);
       pendingUpdates.remove(taskId);

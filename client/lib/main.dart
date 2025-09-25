@@ -68,6 +68,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_to_do_app/api.dart';
 import 'package:flutter_to_do_app/app.dart';
+import 'package:flutter_to_do_app/controller/category_controller.dart';
+import 'package:flutter_to_do_app/controller/task_controller.dart';
 import 'package:flutter_to_do_app/controller/user_controller.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
@@ -114,7 +116,16 @@ import 'providers/user_provider.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // ApiService.init("http://10.106.193.30:8000/api/v1");
+
   await ApiService.init();
+  // Get.put(TaskController());
+  // Get.put(CategoryController());
+  final taskController = Get.put(TaskController());
+  await taskController.getTasks(); // load task trước
+
+  final categoryController = Get.put(CategoryController());
+  await categoryController.getCategories(); // sau đó mới load category
+
   runApp(
     MultiProvider(
       providers: [

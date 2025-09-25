@@ -41,7 +41,7 @@ async def register(user_create: UserCreate, db: Session = Depends(get_db)):
     await db.flush()  # 👈 Lấy ID user mới ngay sau khi add
 
     # ✅ Tạo category mặc định "Inbox"
-    inbox_category = Category(title="Inbox", color = "grey", icon = "58040", owner_id=new_user.id, is_default = True)
+    inbox_category = Category(title="Task List", color = "#ff9800", icon = "58040", owner_id=new_user.id, is_default = True)
     db.add(inbox_category)
 
     await db.commit()
@@ -108,7 +108,7 @@ async def login(request: Request, db=Depends(get_db)):
     result = await db.execute(
         select(Category).where(
             (Category.owner_id == user.id) &
-            (Category.is_default == True) & (Category.title == "Inbox")
+            (Category.is_default == True) & (Category.title == "Task List")
         )
     )
     inbox_category = result.scalar_one_or_none()
@@ -159,7 +159,7 @@ async def get_user_default_category(db: Session, user_id: int) -> Optional[Categ
         select(Category).where(
             (Category.owner_id == user_id) &
             (Category.is_default == True) & 
-            (Category.title == "Inbox")
+            (Category.title == "Task List")
         )
     )
     return result.scalar_one_or_none()

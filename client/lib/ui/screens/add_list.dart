@@ -14,7 +14,9 @@ class NewListBottomSheet extends StatefulWidget {
 }
 
 class _NewListBottomSheetState extends State<NewListBottomSheet> {
-  final CategoryController _categoryController = Get.put(CategoryController());
+  // final CategoryController _categoryController = Get.put(CategoryController());
+  final CategoryController categoryController = Get.find();
+
   final TextEditingController _titleController = TextEditingController();
   // Danh sách màu sắc (12 màu)
   final List<Color> colors = [
@@ -246,7 +248,7 @@ class _NewListBottomSheetState extends State<NewListBottomSheet> {
           icon: const Icon(Icons.check_circle, color: Colors.white));
 
       // Cập nhật danh sách category trong UI
-      _categoryController.getCategories();
+      categoryController.getCategories();
     } else {
       Get.snackbar("Error", "Failed to add category!",
           snackPosition: SnackPosition.BOTTOM,

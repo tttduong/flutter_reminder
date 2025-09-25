@@ -4,6 +4,7 @@ import 'package:flutter_to_do_app/controller/category_controller.dart';
 import 'package:flutter_to_do_app/data/models/category.dart';
 import 'package:flutter_to_do_app/ui/screens/add_task.dart';
 import 'package:flutter_to_do_app/ui/screens/category_tasks.dart';
+import 'package:flutter_to_do_app/ui/screens/eisenhower_matrix.dart';
 import 'package:flutter_to_do_app/ui/screens/screens.dart';
 import 'package:flutter_to_do_app/ui/widgets/appbar.dart';
 import 'package:flutter_to_do_app/ui/widgets/navbar.dart';
@@ -166,10 +167,9 @@ class BottomNavBarScreenState extends State<BottomNavBarScreen> {
       case 2:
         return const SignInPage();
       case 3:
-        return const ChatPage();
+        return EisenhowerMatrix();
       case 4:
-        print("   → Returning ChatPage (case 4)");
-        return const ChatPage();
+        return const UpdateProfileScreen();
       default:
         return const SignInPage();
     }

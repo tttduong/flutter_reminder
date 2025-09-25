@@ -411,7 +411,9 @@ class AddTaskPage extends StatefulWidget {
 }
 
 class _AddTaskPageState extends State<AddTaskPage> {
-  final TaskController _taskController = Get.put(TaskController());
+  // final TaskController _taskController = Get.put(TaskController());
+  final TaskController taskController = Get.find<TaskController>();
+
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _noteController = TextEditingController();
 
@@ -647,7 +649,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
       endDateTime = _combineDateTime(_selectedEndDate, _endTime);
     }
 
-    await _taskController.addTask(
+    await taskController.addTask(
       task: Task(
         title: _titleController.text,
         description: _noteController.text,
@@ -659,7 +661,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
 
     await Future.delayed(Duration(milliseconds: 500));
     if (_selectedCategoryId != null) {
-      _taskController.getTasksByCategory(_selectedCategoryId!);
+      taskController.getTasksByCategory(_selectedCategoryId!);
     }
   }
 

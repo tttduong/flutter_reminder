@@ -26,10 +26,11 @@ class Task(Base):
     completed = Column(Boolean, default=False)
     date = Column(TIMESTAMP(timezone=True), nullable=True)
     due_date = Column(TIMESTAMP(timezone=True), nullable=True)
+    completed_at = Column(DateTime, nullable=True)
 
     owner_id = Column(Integer, ForeignKey("user.id"))
     category_id = Column(Integer, ForeignKey("category.id", ondelete="CASCADE"), nullable=True)
-
+    
     owner = relationship("User", back_populates="tasks")
     category = relationship("Category", back_populates="tasks")
 

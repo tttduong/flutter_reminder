@@ -98,40 +98,40 @@ class _AllTasksPageState extends State<CategoryTasksPage> {
     );
   }
 
-  Future<void> _toggleTaskStatus(Task task, bool newStatus) async {
-    final taskId = task.id;
+  // Future<void> _toggleTaskStatus(Task task, bool newStatus) async {
+  //   final taskId = task.id;
 
-    // 1. Update local state immediately
-    setState(() {
-      task.isCompleted = newStatus;
-      _pendingUpdates[taskId] = newStatus; // Mark as pending
-    });
+  //   // 1. Update local state immediately
+  //   setState(() {
+  //     task.isCompleted = newStatus;
+  //     _pendingUpdates[taskId] = newStatus; // Mark as pending
+  //   });
 
-    try {
-      // 2. Call API
-      await taskController.updateTaskStatus(task, newStatus);
+  //   try {
+  //     // 2. Call API
+  //     await taskController.updateTaskStatus(task, newStatus);
 
-      // 3. Remove from pending after success
-      setState(() {
-        _pendingUpdates.remove(taskId);
-      });
-    } catch (e) {
-      // 4. Revert on error
-      setState(() {
-        task.isCompleted = !newStatus;
-        _pendingUpdates.remove(taskId);
-      });
+  //     // 3. Remove from pending after success
+  //     setState(() {
+  //       _pendingUpdates.remove(taskId);
+  //     });
+  //   } catch (e) {
+  //     // 4. Revert on error
+  //     setState(() {
+  //       task.isCompleted = !newStatus;
+  //       _pendingUpdates.remove(taskId);
+  //     });
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to update task'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
+  //     if (mounted) {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         const SnackBar(
+  //           content: Text('Failed to update task'),
+  //           backgroundColor: Colors.red,
+  //         ),
+  //       );
+  //     }
+  //   }
+  // }
 
 // 2. Improved Widget with better state management
   Widget _showTasksByCategory() {
@@ -227,14 +227,14 @@ class _AllTasksPageState extends State<CategoryTasksPage> {
                     color: task.isCompleted ? Colors.grey : null,
                   ),
                 ),
-                subtitle: task.description?.isNotEmpty == true
-                    ? Text(
-                        task.description!,
-                        style: TextStyle(
-                          color: task.isCompleted ? Colors.grey : null,
-                        ),
-                      )
-                    : null,
+                // subtitle: task.description?.isNotEmpty == true
+                //     ? Text(
+                //         task.description!,
+                //         style: TextStyle(
+                //           color: task.isCompleted ? Colors.grey : null,
+                //         ),
+                //       )
+                //     : null,
               ),
             );
           },
