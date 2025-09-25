@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_to_do_app/ui/theme.dart';
 
 class MyButton extends StatelessWidget {
   final String label;
@@ -14,7 +13,7 @@ class MyButton extends StatelessWidget {
       child: Container(
           padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20), color: primaryClr),
+              borderRadius: BorderRadius.circular(20), color: Colors.blue),
           alignment: Alignment.center,
           child: Text(
             label,

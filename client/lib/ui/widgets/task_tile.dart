@@ -1,27 +1,49 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_to_do_app/controller/task_controller.dart';
-import 'package:flutter_to_do_app/model/task.dart';
+import 'package:flutter_to_do_app/data/models/task.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+
+import '../../controller/category_controller.dart';
+import '../../data/models/category.dart';
 
 class TaskTile extends StatelessWidget {
   final Task? task;
   final Function()? onTap;
+  // final Category? category;
+
   const TaskTile({Key? key, required this.task, required this.onTap})
       : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     final TaskController taskController = Get.find();
+    final CategoryController categoryController = Get.find();
+    // 👈 Tìm category từ task.categoryId
+    Category? category = categoryController.categoryList.firstWhereOrNull(
+      (cat) => cat.id == task?.categoryId,
+    );
+    bool isSameDay = (task?.date != null) &&
+        (task?.dueDate != null) &&
+        (task!.date!.year == task!.dueDate!.year) &&
+        (task!.date!.month == task!.dueDate!.month) &&
+        (task!.date!.day == task!.dueDate!.day);
+
     return Column(
       children: [
         GestureDetector(
           onTap: onTap,
           child: Container(
-            padding: EdgeInsets.all(16),
+            padding: EdgeInsets.all(10),
             margin: EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
-              color: Colors.blueAccent.withOpacity(0.2), // Màu nền nhẹ
+              // color: category?.color.withOpacity(0.2) ??
+              //     Colors.blueAccent.withOpacity(0.2), // Màu nền nhẹ
+              // Kiểm tra cùng ngày
+
+              // Dynamic opacity
+              color: (category?.color ?? Colors.blueAccent)
+                  .withOpacity(isSameDay ? 0.5 : 0.15),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -31,12 +53,13 @@ class TaskTile extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start, // Căn trái
                     children: [
                       // Checkbox(
-                      //   value: task.status,
-                      //   onChanged: (int? newValue) {
-                      //     _taskController.updateTaskStatus(
-                      //         task.id, newValue ?? 0);
+                      //   value: task!.isCompleted == 1,
+                      //   onChanged: (bool? newValue) {
+                      //     final newStatus = (newValue ?? false) ? 1 : 0;
+                      //     // taskController.updateTaskStatus(task.id, newStatus);
                       //   },
                       // ),
+
                       Text(
                         task?.title ?? "No title",
                         style: GoogleFonts.lato(
@@ -59,16 +82,16 @@ class TaskTile extends StatelessWidget {
                     ],
                   ),
                 ),
-                IconButton(
-                  icon: Icon(Icons.delete, color: Colors.red),
-                  onPressed: () async {
-                    if (task?.id != null) {
-                      await taskController.deleteTask(task!.id!);
-                    } else {
-                      print("Task ID is null");
-                    }
-                  },
-                ),
+                // IconButton(
+                //   icon: Icon(Icons.delete, color: Colors.red),
+                //   onPressed: () async {
+                //     // if (task?.id != null) {
+                //     //   await taskController.deleteTask(task!.id!);
+                //     // } else {
+                //     //   print("Task ID is null");
+                //     // }
+                //   },
+                // ),
               ],
             ),
           ),
