@@ -10,6 +10,7 @@ class Category {
   final int? ownerId;
   final bool? isDefault;
   final List<Task>? tasks;
+  final DateTime? createdAt;
 
   int totalCount;
   int completedCount;
@@ -22,6 +23,7 @@ class Category {
     this.ownerId,
     this.isDefault,
     this.tasks,
+    this.createdAt,
     this.totalCount = 0,
     this.completedCount = 0,
   });
@@ -58,6 +60,9 @@ class Category {
               ?.map((taskJson) => Task.fromJson(taskJson))
               .toList() ??
           [],
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'])
+          : null,
       totalCount: json['total_count'] ?? 0,
       completedCount: json['completed_count'] ?? 0,
     );
@@ -100,6 +105,7 @@ class Category {
       'icon': icon.codePoint, // IconData => int
       'owner_id': ownerId,
       'is_default': isDefault,
+      'create_at': createdAt,
     };
   }
 }

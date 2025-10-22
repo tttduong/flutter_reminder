@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_to_do_app/data/models/category.dart';
 import 'package:flutter_to_do_app/data/models/task.dart';
 import 'package:flutter_to_do_app/ui/screens/add_task.dart';
+import 'package:flutter_to_do_app/ui/screens/base_app.dart';
+import 'package:flutter_to_do_app/ui/screens/bottom_navbar_screen.dart';
+import 'package:flutter_to_do_app/ui/screens/home.dart';
 import 'package:flutter_to_do_app/ui/widgets/appbar.dart';
+import 'package:flutter_to_do_app/ui/widgets/gradient_bg.dart';
 import 'package:get/get.dart';
 import 'package:flutter_to_do_app/consts.dart';
 import '../../controller/task_controller.dart';
@@ -32,11 +36,15 @@ class _AllTasksPageState extends State<CategoryTasksPage> {
     super.initState();
 
     // if (widget.category?.id != null) {
+    //   // Load tasks ngay khi vào trang
     //   WidgetsBinding.instance.addPostFrameCallback((_) {
-    //     taskController = Get.find<TaskController>();
     //     taskController.getTasksByCategory(widget.category!.id);
     //   });
     // }
+
+    if (widget.category?.id != null) {
+      taskController.getTasksByCategory(widget.category!.id);
+    }
   }
 
   @override
@@ -46,55 +54,57 @@ class _AllTasksPageState extends State<CategoryTasksPage> {
         child: Text('No category selected'),
       );
     }
+
     return Scaffold(
-      backgroundColor: AppColors.background,
-      // appBar: CustomAppBar(
-      //   showSearchBar: false, // Set true nếu muốn hiện search bar
-      //   searchHint: 'Search tasks...',
-      //   onSearchChanged: _handleSearchChanged,
-      //   onNotificationTap: _handleNotificationTap,
-      //   onMoreTap: _handleMoreTap,
-      // ),
-      body:
-          // SafeArea(
-          //   child:
-          Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-            child: Text(
-              widget.category!.title,
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon:
+              const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.black),
+          onPressed: () {
+            if (widget.onBackPressed != null) {
+              widget.onBackPressed!();
+            } else {
+              //tam thoi de click back thì nav to home, lam back bth kho quaa
+              //
+              // if (Navigator.of(context).canPop()) {
+              //   Navigator.of(context).pop();
+              // } else {
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(
+                    builder: (_) =>
+                        BottomNavBarScreen(key: AppNavigation.bottomNavKey)),
+              );
+              // }
+            }
+          },
+        ),
+        title: Text(
+          widget.category!.title,
+          style: const TextStyle(
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
           ),
-          Expanded(
+        ),
+      ),
+      extendBodyBehindAppBar: true, // Nếu bạn có gradient nền phía sau
+      body: Stack(
+        children: [
+          const GradientBackground(),
+          Padding(
+            padding: const EdgeInsets.only(top: 80.0),
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               children: [
                 _showTasksByCategory(),
                 const SizedBox(height: 16),
-                const SizedBox(height: 80), // Để tránh FAB che nội dung
+                const SizedBox(height: 80),
               ],
             ),
           ),
         ],
       ),
-      // ),
-      // floatingActionButton: FloatingActionButton(
-      //   onPressed: () async {
-      //     await Get.to(() => AddTaskPage());
-      //   },
-      //   shape: const CircleBorder(),
-      //   backgroundColor: AppColors.primary,
-      //   child: const Icon(
-      //     Icons.add,
-      //     color: Colors.white,
-      //   ),
-      // ),
     );
   }
 
@@ -175,7 +185,7 @@ class _AllTasksPageState extends State<CategoryTasksPage> {
     });
   }
 
-// 3. Reusable task section builder
+// // 3. Reusable task section builder
   Widget _buildTaskSection(String title, List<Task> tasks, bool isCompleted) {
     if (tasks.isEmpty && !isCompleted) return const SizedBox.shrink();
 
@@ -183,58 +193,195 @@ class _AllTasksPageState extends State<CategoryTasksPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (isCompleted) ...[
-          Text(
-            title,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            child: Text(
+              title,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
           ),
-          const SizedBox(height: 8),
         ],
-        // CHỈ MỘT Obx cho cả ListView
         ListView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          itemCount: tasks
-              .length, // Dùng tasks từ parameter, không phải taskController.taskList
+          padding: const EdgeInsets.symmetric(horizontal: 2),
+          itemCount: tasks.length,
           itemBuilder: (context, index) {
             final task = tasks[index];
 
             return AnimatedContainer(
               duration: const Duration(milliseconds: 300),
-              child: ListTile(
-                trailing: IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red),
-                  onPressed: taskController.isTaskPending(task.id!)
-                      ? null
-                      : () async {
-                          await taskController.deleteTask(task.id);
-                        },
-                ),
-                leading: Checkbox(
-                  value: task.isCompleted,
-                  onChanged: taskController.isTaskPending(task.id!)
-                      ? null
-                      : (bool? newValue) {
-                          final newStatus = newValue ?? false;
-                          taskController.toggleTaskStatus(task, newStatus);
-                        },
-                ),
-                title: Text(
-                  task.title,
-                  style: TextStyle(
-                    decoration: task.isCompleted
-                        ? TextDecoration.lineThrough
-                        : TextDecoration.none,
-                    color: task.isCompleted ? Colors.grey : null,
+              margin: const EdgeInsets.only(bottom: 12),
+              child: Dismissible(
+                key: Key('task_${task.id}'),
+                direction: DismissDirection.endToStart,
+                confirmDismiss: (direction) async {
+                  // Show delete confirmation
+                  return await showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        title: const Text('Delete Task'),
+                        content: const Text(
+                            'Are you sure you want to delete this task?'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(false),
+                            child: const Text('Cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(true),
+                            style: TextButton.styleFrom(
+                              foregroundColor: Colors.red,
+                            ),
+                            child: const Text('Delete'),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                },
+                onDismissed: (direction) async {
+                  await taskController.deleteTask(task.id);
+                },
+                background: Container(
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.only(right: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.red,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.delete_outline,
+                    color: Colors.white,
+                    size: 28,
                   ),
                 ),
-                // subtitle: task.description?.isNotEmpty == true
-                //     ? Text(
-                //         task.description!,
-                //         style: TextStyle(
-                //           color: task.isCompleted ? Colors.grey : null,
-                //         ),
-                //       )
-                //     : null,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: Column(
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Task content
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    task.title,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      decoration: task.isCompleted
+                                          ? TextDecoration.lineThrough
+                                          : TextDecoration.none,
+                                      color: task.isCompleted
+                                          ? Colors.grey
+                                          : Colors.black87,
+                                    ),
+                                  ),
+                                  if (task.description?.isNotEmpty == true) ...[
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      task.description!,
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: task.isCompleted
+                                            ? Colors.grey.shade400
+                                            : Colors.grey.shade600,
+                                      ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                  const SizedBox(height: 8),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            // Date and time row
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.access_time,
+                                  size: 14,
+                                  color: Colors.grey.shade500,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '8:00 AM - 5:30 PM',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Icon(
+                                  Icons.calendar_today,
+                                  size: 14,
+                                  color: Colors.grey.shade500,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '25 August 2021',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        // Complete button
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            TextButton(
+                              onPressed: taskController.isTaskPending(task.id!)
+                                  ? null
+                                  : () {
+                                      taskController.toggleTaskStatus(
+                                          task, !task.isCompleted);
+                                    },
+                              style: TextButton.styleFrom(
+                                backgroundColor: Colors.green,
+                                foregroundColor: Colors.white,
+                                minimumSize: Size.zero,
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 6, vertical: 4),
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: const Text('Complete'),
+                            ),
+                          ],
+                        )
+                      ],
+                    ),
+                  ),
+                ),
               ),
             );
           },
@@ -242,6 +389,175 @@ class _AllTasksPageState extends State<CategoryTasksPage> {
       ],
     );
   }
+
+  // Widget _buildTaskSection(String title, List<Task> tasks, bool isCompleted) {
+  //   if (tasks.isEmpty && !isCompleted) return const SizedBox.shrink();
+
+  //   return Column(
+  //     crossAxisAlignment: CrossAxisAlignment.start,
+  //     children: [
+  //       if (isCompleted) ...[
+  //         Padding(
+  //           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+  //           child: Text(
+  //             title,
+  //             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+  //           ),
+  //         ),
+  //       ],
+  //       ListView.builder(
+  //         shrinkWrap: true,
+  //         physics: const NeverScrollableScrollPhysics(),
+  //         padding: const EdgeInsets.symmetric(horizontal: 2),
+  //         itemCount: tasks.length,
+  //         itemBuilder: (context, index) {
+  //           final task = tasks[index];
+
+  //           return AnimatedContainer(
+  //             duration: const Duration(milliseconds: 300),
+  //             margin: const EdgeInsets.only(bottom: 12),
+  //             child: Container(
+  //               decoration: BoxDecoration(
+  //                 color: Colors.white,
+  //                 borderRadius: BorderRadius.circular(12),
+  //                 boxShadow: [
+  //                   BoxShadow(
+  //                     color: Colors.black.withOpacity(0.05),
+  //                     blurRadius: 8,
+  //                     offset: const Offset(0, 2),
+  //                   ),
+  //                 ],
+  //               ),
+  //               child: Padding(
+  //                 padding: const EdgeInsets.all(8),
+  //                 child: Column(
+  //                   children: [
+  //                     Row(
+  //                       crossAxisAlignment: CrossAxisAlignment.start,
+  //                       children: [
+  //                         // Task content
+  //                         Expanded(
+  //                           child: Column(
+  //                             crossAxisAlignment: CrossAxisAlignment.start,
+  //                             children: [
+  //                               Text(
+  //                                 task.title,
+  //                                 style: TextStyle(
+  //                                   fontSize: 14,
+  //                                   fontWeight: FontWeight.w600,
+  //                                   decoration: task.isCompleted
+  //                                       ? TextDecoration.lineThrough
+  //                                       : TextDecoration.none,
+  //                                   color: task.isCompleted
+  //                                       ? Colors.grey
+  //                                       : Colors.black87,
+  //                                 ),
+  //                               ),
+  //                               if (task.description?.isNotEmpty == true) ...[
+  //                                 const SizedBox(height: 4),
+  //                                 Text(
+  //                                   task.description!,
+  //                                   style: TextStyle(
+  //                                     fontSize: 14,
+  //                                     color: task.isCompleted
+  //                                         ? Colors.grey.shade400
+  //                                         : Colors.grey.shade600,
+  //                                   ),
+  //                                   maxLines: 2,
+  //                                   overflow: TextOverflow.ellipsis,
+  //                                 ),
+  //                               ],
+  //                               const SizedBox(height: 8),
+  //                             ],
+  //                           ),
+  //                         ),
+  //                         // Delete button
+  //                         // IconButton(
+  //                         //   icon: const Icon(Icons.delete_outline,
+  //                         //       color: Colors.red),
+  //                         //   iconSize: 20,
+  //                         //   onPressed: taskController.isTaskPending(task.id!)
+  //                         //       ? null
+  //                         //       : () async {
+  //                         //           await taskController.deleteTask(task.id);
+  //                         //         },
+  //                         // ),
+  //                       ],
+  //                     ),
+  //                     Row(
+  //                       children: [
+  //                         // Date and time row
+  //                         Row(
+  //                           children: [
+  //                             Icon(
+  //                               Icons.access_time,
+  //                               size: 14,
+  //                               color: Colors.grey.shade500,
+  //                             ),
+  //                             const SizedBox(width: 4),
+  //                             Text(
+  //                               '8:00 AM - 5:30 PM',
+  //                               style: TextStyle(
+  //                                 fontSize: 12,
+  //                                 color: Colors.grey.shade600,
+  //                               ),
+  //                             ),
+  //                             const SizedBox(width: 16),
+  //                             Icon(
+  //                               Icons.calendar_today,
+  //                               size: 14,
+  //                               color: Colors.grey.shade500,
+  //                             ),
+  //                             const SizedBox(width: 4),
+  //                             Text(
+  //                               '25 August 2021',
+  //                               style: TextStyle(
+  //                                 fontSize: 12,
+  //                                 color: Colors.grey.shade600,
+  //                               ),
+  //                             ),
+  //                           ],
+  //                         ),
+  //                       ],
+  //                     ),
+  //                     const SizedBox(height: 8),
+  //                     // Complete button
+  //                     Row(
+  //                       mainAxisAlignment: MainAxisAlignment.end,
+  //                       crossAxisAlignment: CrossAxisAlignment.end,
+  //                       children: [
+  //                         TextButton(
+  //                           onPressed: taskController.isTaskPending(task.id!)
+  //                               ? null
+  //                               : () {
+  //                                   taskController.toggleTaskStatus(
+  //                                       task, !task.isCompleted);
+  //                                 },
+  //                           style: TextButton.styleFrom(
+  //                             backgroundColor: Colors.green,
+  //                             foregroundColor: Colors.white,
+  //                             minimumSize: Size.zero,
+  //                             padding: const EdgeInsets.symmetric(
+  //                                 horizontal: 6, vertical: 4),
+  //                             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+  //                             shape: RoundedRectangleBorder(
+  //                               borderRadius: BorderRadius.circular(8),
+  //                             ),
+  //                           ),
+  //                           child: const Text('Complete'),
+  //                         ),
+  //                       ],
+  //                     )
+  //                   ],
+  //                 ),
+  //               ),
+  //             ),
+  //           );
+  //         },
+  //       ),
+  //     ],
+  //   );
+  // }
 
   _handleSearchChanged(String p1) {}
 

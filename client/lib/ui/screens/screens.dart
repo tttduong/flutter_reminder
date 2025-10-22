@@ -1,7 +1,7 @@
 export 'signup_screen.dart';
-export 'signin_screen.dart';
+// export 'signin_screen.dart';
 export 'home.dart';
-export 'add_task_screen.dart';
+export 'add_task.dart';
 export 'bottom_navbar_screen.dart';
 export 'cancelled_task_screen.dart';
 export 'completed_task_screen.dart';

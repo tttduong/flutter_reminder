@@ -12,6 +12,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_local_notifications: ^17.2.2
+  timezone: ^0.9.4
   flutter_web_plugins:
     sdk: flutter
   get_storage: 
@@ -32,7 +34,7 @@ dependencies:
   cookie_jar: ^4.0.8   
   dio_cookie_manager: ^3.0.0
   path_provider: ^2.1.2 
-  
+  permission_handler: ^11.3.1
 
 dev_dependencies:
   flutter_test:

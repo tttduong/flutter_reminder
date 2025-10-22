@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_to_do_app/ui/screens/screens.dart';
+import 'package:flutter_to_do_app/ui/screens/welcome_page.dart';
 import '../../data/models/auth_utility.dart';
 import '../widgets/screen_background.dart';
 import 'bottom_navbar_screen.dart';
@@ -25,7 +26,8 @@ class _SplashScreenState extends State<SplashScreen> {
       context,
       MaterialPageRoute(
           builder: (context) =>
-              BottomNavBarScreen(key: AppNavigation.bottomNavKey)),
+              // BottomNavBarScreen(key: AppNavigation.bottomNavKey)),
+              WelcomePage()),
       (route) => false,
     );
     // another way to impliment splash screen;

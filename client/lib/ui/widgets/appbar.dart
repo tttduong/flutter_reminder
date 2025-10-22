@@ -23,12 +23,14 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.transparent,
       elevation: 0,
       leading: Builder(
         builder: (context) => IconButton(
           icon: const Icon(Icons.menu, color: AppColors.primary),
-          onPressed: onMenuTap ?? () => Scaffold.of(context).openDrawer(),
+          // onPressed: onMenuTap ?? () => Scaffold.of(context).openDrawer(),
+          onPressed: onMenuTap,
+          // onPressed: () => Scaffold.of(context).openDrawer()
         ),
       ),
 
@@ -40,7 +42,6 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           icon: const Icon(Icons.notifications, color: AppColors.primary),
           onPressed: onNotificationTap ?? () {},
         ),
-        const SizedBox(width: 16),
         IconButton(
           icon: const Icon(Icons.more_vert, color: AppColors.primary),
           onPressed: onMoreTap ?? () {},

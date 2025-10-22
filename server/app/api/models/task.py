@@ -8,6 +8,8 @@ class TaskCreate(BaseModel):
     category_id: int
     date: Optional[datetime] = None
     due_date: Optional[datetime] = None
+    priority: Optional[int] = None
+    completed: Optional[bool] = False
     @validator("date")
     def ensure_timezone_aware(cls, v):
         if v and v.tzinfo is None:
@@ -23,7 +25,7 @@ class TaskUpdate(BaseModel):
     completed: Optional[bool] = None
     date: Optional[datetime] = None
     due_date: Optional[datetime] = None
-    completed: Optional[bool] = None 
+    priority: Optional[int] = None
 
 class TaskResponse(BaseModel):
     id: int
@@ -33,5 +35,6 @@ class TaskResponse(BaseModel):
     completed: bool
     date: Optional[datetime] = None
     due_date: Optional[datetime] = None
+    priority: Optional[int] = None
     class Config:
             from_attributes = True  # Để Pydantic có thể convert từ SQLAlchemy model

@@ -10,7 +10,7 @@ class User(Base):
     __tablename__ = "user"
 
     id = Column(Integer, primary_key=True, index=True)
-    username = Column(String, unique=True, index=True)
+    username = Column(String, index=True)
     email = Column(String, unique=True, index=True, nullable=True)
     hashed_password = Column(String)
     
@@ -26,7 +26,9 @@ class Task(Base):
     completed = Column(Boolean, default=False)
     date = Column(TIMESTAMP(timezone=True), nullable=True)
     due_date = Column(TIMESTAMP(timezone=True), nullable=True)
-    completed_at = Column(DateTime, nullable=True)
+    # completed_at = Column(DateTime, nullable=True)\
+    completed = Column(Boolean, default=False, nullable=False) 
+    priority = Column(Integer, nullable=True) 
 
     owner_id = Column(Integer, ForeignKey("user.id"))
     category_id = Column(Integer, ForeignKey("category.id", ondelete="CASCADE"), nullable=True)

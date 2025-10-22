@@ -29,3 +29,5 @@ venv\Scripts\activate
 python main.py
 flutter run
 
+https://claude.ai/chat/a6977722-41e0-4352-a8b6-8685cc2b883f
+

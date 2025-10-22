@@ -1,3 +1,4 @@
+from datetime import datetime
 from pydantic import BaseModel
 
 class CategoryBase(BaseModel):
@@ -15,6 +16,7 @@ class CategoryOut(BaseModel):
     title: str
     color: str
     icon: str
+    created_at: datetime 
     
     class Config:
         from_attributes = True
@@ -26,6 +28,8 @@ class CategoryResponse(BaseModel):
     icon: str
     is_default: bool
     owner_id: int
+    created_at: datetime 
+    
     
     class Config:
         from_attributes = True

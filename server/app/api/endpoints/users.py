@@ -1,31 +1,79 @@
 
+from fastapi.responses import JSONResponse
 from app.core.session import get_current_user
 from app.db.repositories.user_repository import authenticate_user, get_user_by_id
 from ..models.category import CategoryOut
 from sqlalchemy import select 
 from typing import Annotated, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-
-
-from ..models.user import UserCreate, UserOut, UserResponse
+# from passlib.context import CryptContext
+from sqlalchemy.ext.asyncio import AsyncSession
+from ..models.user import LoginSchema, UserCreate, UserOut, UserResponse
 from ...core.security import get_password_hash, create_access_token, get_user_by_token, verify_password
 from ...db.database import get_db
 from ...db.db_structure import Category, User
 
 
 router = APIRouter()
+# pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+@router.post("/logout")
+async def logout(request: Request):
+    request.session.clear()
+    return {"message": "Logged out successfully"}
+
+@router.post("/login")
+async def login(
+    request: Request, 
+    data: LoginSchema, 
+    db: AsyncSession = Depends(get_db)
+):
+    email = data.email
+    password = data.password
+
+    result = await db.execute(select(User).where(User.email == email))
+    user = result.scalar_one_or_none()
+    if not user or not verify_password(password, user.hashed_password):
+        raise HTTPException(status_code=400, detail="Incorrect email or password")
+
+    result = await db.execute(
+        select(Category).where(
+            (Category.owner_id == user.id)
+            & (Category.is_default == True)
+            & (Category.title == "Task List")
+        )
+    )
+    inbox_category = result.scalar_one_or_none()
+
+    # ✅ Chỉ cần set session, SessionMiddleware sẽ tự động tạo cookie
+    request.session["user_id"] = user.id
+
+    print("✅ Session set:", request.session)
+
+    response = JSONResponse(content={"message": "Login successful"})
+    print("🍪 Cookies sent:", response.raw_headers)
+
+    # ✅ Trả kết quả JSON
+    return {
+        "status": "logged_in",
+        "user": {
+            "id": user.id,
+            "email": user.email,
+            "username": user.username,
+        },
+        "default_category": {
+            "id": inbox_category.id,
+            "title": inbox_category.title,
+            "color": inbox_category.color,
+            "icon": inbox_category.icon,
+        } if inbox_category else None
+    }
 
 
-# @router.post("/register", response_model=UserResponse)
-# def create_user(user: UserCreate, db: Session = Depends(get_db)):
-#     db_user = User(username=user.username, email=user.email, hashed_password=get_password_hash(user.password))
-#     db.add(db_user)
-#     db.commit()
-#     db.refresh(db_user)
-#     return db_user
+
 @router.post("/register", response_model=UserOut)
 async def register(user_create: UserCreate, db: Session = Depends(get_db)):
     # Check if user exists
@@ -96,54 +144,54 @@ async def register(user_create: UserCreate, db: Session = Depends(get_db)):
 #             "icon": inbox_category.icon,
 #         } if inbox_category else None
 #     }
-@router.post("/login")
-async def login(request: Request, db=Depends(get_db)):
-    # check user (giả sử đã xong)
-    user = await get_user_by_id(db, 52)             #user id 52 default for test                                       
-    if not user:
-        raise HTTPException(status_code=400, detail="Incorrect username or password")
+# @router.post("/login")
+# async def login(request: Request, db=Depends(get_db)):
+#     # check user (giả sử đã xong)
+#     user = await get_user_by_id(db, 52)             #user id 52 default for test                                       
+#     if not user:
+#         raise HTTPException(status_code=400, detail="Incorrect username or password")
 
-    # access_token = create_access_token(data={"sub": user.email})
+#     # access_token = create_access_token(data={"sub": user.email})
  
-    result = await db.execute(
-        select(Category).where(
-            (Category.owner_id == user.id) &
-            (Category.is_default == True) & (Category.title == "Task List")
-        )
-    )
-    inbox_category = result.scalar_one_or_none()
+#     result = await db.execute(
+#         select(Category).where(
+#             (Category.owner_id == user.id) &
+#             (Category.is_default == True) & (Category.title == "Task List")
+#         )
+#     )
+#     inbox_category = result.scalar_one_or_none()
     
-    request.session["user_id"] = user.id
+#     request.session["user_id"] = user.id
 
-    # return {
-    #     "access_token": access_token,
-    #     "token_type": "bearer",
-    #     "user": {
-    #         "id": user.id,
-    #         "email": user.email,
-    #         "username": user.username,
-    #     },
-    #     "default_category": {
-    #         "id": inbox_category.id,
-    #         "title": inbox_category.title,
-    #         "color": inbox_category.color,
-    #         "icon": inbox_category.icon,
-    #     } if inbox_category else None
-    # }
-    return {
-        "status": "logged_in",
-        "user": {
-            "id": user.id,
-            "email": user.email,
-            "username": user.username,
-        },
-        "default_category": {
-            "id": inbox_category.id,
-            "title": inbox_category.title,
-            "color": inbox_category.color,
-            "icon": inbox_category.icon,
-        } if inbox_category else None
-    }
+#     # return {
+#     #     "access_token": access_token,
+#     #     "token_type": "bearer",
+#     #     "user": {
+#     #         "id": user.id,
+#     #         "email": user.email,
+#     #         "username": user.username,
+#     #     },
+#     #     "default_category": {
+#     #         "id": inbox_category.id,
+#     #         "title": inbox_category.title,
+#     #         "color": inbox_category.color,
+#     #         "icon": inbox_category.icon,
+#     #     } if inbox_category else None
+#     # }
+#     return {
+#         "status": "logged_in",
+#         "user": {
+#             "id": user.id,
+#             "email": user.email,
+#             "username": user.username,
+#         },
+#         "default_category": {
+#             "id": inbox_category.id,
+#             "title": inbox_category.title,
+#             "color": inbox_category.color,
+#             "icon": inbox_category.icon,
+#         } if inbox_category else None
+#     }
 
 
 

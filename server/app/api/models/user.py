@@ -1,23 +1,23 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr,  Field, validator
 from typing import Optional
-
 from app.api.models.category import CategoryOut
 
 class UserCreate(BaseModel):
-    username: str
-    email: EmailStr = None
-    password: str
+    username: str = Field(..., min_length=3, max_length=50)
+    email: EmailStr
+    password: str = Field(..., min_length=6)
+    confirm_password: str = Field(..., min_length=6)
 
+    @validator("confirm_password")
+    def passwords_match(cls, v, values):
+        if "password" in values and v != values["password"]:
+            raise ValueError("Passwords do not match")
+        return v
 
 class UserResponse(BaseModel):
     id: int
     username: str
     email: str
-
-
-
-
-
 
 class UserOut(BaseModel):
     id: int
@@ -42,3 +42,7 @@ class LoginResponse(BaseModel):
     
     class Config:
         from_attributes = True
+
+class LoginSchema(BaseModel):
+    email: str
+    password: str

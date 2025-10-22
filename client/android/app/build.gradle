@@ -39,6 +39,7 @@ android {
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
+        coreLibraryDesugaringEnabled true
     }
 
     kotlinOptions {
@@ -54,6 +55,8 @@ android {
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib:1.9.0"
+
+    coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:2.0.4"
 }
 
 rootProject.buildDir = '../build'
@@ -63,7 +66,3 @@ subprojects {
 subprojects {
     project.evaluationDependsOn(':app')
 }
-
-// tasks.register("clean", Delete) {
-//     delete rootProject.buildDir
-// }

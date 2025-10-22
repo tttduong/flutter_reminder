@@ -71,66 +71,38 @@ import 'package:flutter_to_do_app/app.dart';
 import 'package:flutter_to_do_app/controller/category_controller.dart';
 import 'package:flutter_to_do_app/controller/task_controller.dart';
 import 'package:flutter_to_do_app/controller/user_controller.dart';
+import 'package:flutter_to_do_app/data/services/permission_service.dart';
 import 'package:get/get.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 
 import 'data/services/auth_services.dart';
 import 'data/services/local_store_services.dart';
 import 'providers/user_provider.dart';
 
-// void main() {
-//   runApp(const TaskManagerApp());
-// }
-// void main() async {
-//   WidgetsFlutterBinding.ensureInitialized();
-//   await LocalStoreServices.init(); // đảm bảo SharedPreferences sẵn sàng
-//   Get.put(UserController());
+import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:timezone/data/latest.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
+// import 'data/services/notification_service.dart';
 
-//   // final userProvider = UserProvider();
+// final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+//     FlutterLocalNotificationsPlugin();
 
-//   // Gọi load user từ token
-//   // final token = await LocalStoreServices.getToken();
-//   // if (token != null) {
-//   //   final user = await AuthService.getUser(token: token);
-//   //   if (user != null) {
-//   //     userProvider.setUserFromModel(user);
-//   //     print("✅ User loaded from token: ${user.toJson()}");
-//   //   } else {
-//   //     print("⚠️ Token exists but failed to get user info");
-//   //   }
-//   // } else {
-//   //   print("ℹ️ No token found");
-//   // }
-
-//   ApiService.init();
-//   runApp(
-//     MultiProvider(
-//       providers: [
-//         ChangeNotifierProvider(create: (_) => UserProvider()),
-//         // Các Provider khác nếu cần
-//       ],
-//       child: const TaskManagerApp(),
-//     ),
-//   );
-// }
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // ApiService.init("http://10.106.193.30:8000/api/v1");
 
-  await ApiService.init();
-  // Get.put(TaskController());
-  // Get.put(CategoryController());
-  final taskController = Get.put(TaskController());
-  await taskController.getTasks(); // load task trước
+  // Init timezone
+  tz.initializeTimeZones();
 
-  final categoryController = Get.put(CategoryController());
-  await categoryController.getCategories(); // sau đó mới load category
+  Get.put(TaskController(), permanent: true);
+  Get.put(CategoryController(), permanent: true);
 
+  ApiService.init();
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => UserProvider()),
-        // Các Provider khác nếu cần
       ],
       child: const TaskManagerApp(),
     ),

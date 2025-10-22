@@ -13,6 +13,8 @@ class Task {
   DateTime? createdAt;
   DateTime? updatedAt;
   bool isDeleted;
+  int? priority;
+  DateTime? completedAt;
 
   Task({
     this.id,
@@ -27,6 +29,8 @@ class Task {
     this.createdAt,
     this.updatedAt,
     this.isDeleted = false,
+    this.priority,
+    this.completedAt,
   });
 
   /// Chuyển đổi từ JSON sang `Task` object
@@ -41,14 +45,16 @@ class Task {
           json['completed'] == 1 ||
           json['completed'] == 'true',
 
-      // isCompleted: json['is_completed'] ?? false,
+      // date: json['date'] != null ? DateTime.parse(json['date']) : null,
       // dueDate:
       //     json['due_date'] != null ? DateTime.parse(json['due_date']) : null,
-      // dueDate: json['due_date'],
-      date: json['date'] != null ? DateTime.parse(json['date']) : null,
-      dueDate:
-          json['due_date'] != null ? DateTime.parse(json['due_date']) : null,
-      // dueDate: json['due_date'] != null ? DateTime.parse(json['due_date']) : null,
+
+      date:
+          json['date'] != null ? DateTime.parse(json['date']).toLocal() : null,
+      dueDate: json['due_date'] != null
+          ? DateTime.parse(json['due_date']).toLocal()
+          : null,
+
       time: json['time'], // dạng chuỗi, ví dụ: "08:30"
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'])
@@ -56,6 +62,8 @@ class Task {
       updatedAt: json['updated_at'] != null
           ? DateTime.parse(json['updated_at'])
           : null,
+      priority: json['priority'],
+
       isDeleted: json['is_deleted'] ?? false,
     );
   }
@@ -79,6 +87,7 @@ class Task {
       'time': time,
       'created_at': createdAt?.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
+      'priority': priority,
       'is_deleted': isDeleted,
     };
   }

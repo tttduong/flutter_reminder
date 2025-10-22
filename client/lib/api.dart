@@ -6,64 +6,89 @@ import 'package:flutter_to_do_app/data/models/task_intent_response.dart';
 import 'package:path_provider/path_provider.dart';
 
 class ApiService {
-  // static final Dio dio = Dio()..interceptors.add(CookieManager(CookieJar()));
-  // Optionally, bạn có thể đặt base URL mặc định
-  // static void init(String baseUrl) {
-  //   dio.options.baseUrl = baseUrl;
-  //   dio.options.followRedirects = true;
-  //   dio.options.validateStatus = (status) => status! < 400;
-  // }
+  // static late Dio dio;
+  // static late PersistCookieJar cookieJar;
+  static final Dio dio = Dio(BaseOptions(
+    baseUrl: "http://10.121.205.30:8000", // đổi theo BE của bạn
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  ));
 
-  // static final CookieJar cookieJar = CookieJar();
-  // static final Dio dio = Dio(BaseOptions(
-  //   baseUrl: "http://10.106.193.30:8000/api/v1", // base URL của backend
-  // ))
-  //   ..interceptors.add(CookieManager(cookieJar));
-
-  static late Dio dio;
-  static late PersistCookieJar cookieJar;
-
-  static Future<void> init() async {
-    final dir = await getApplicationDocumentsDirectory();
-    cookieJar = PersistCookieJar(
-      storage: FileStorage("${dir.path}/.cookies/"),
-    );
-    dio = Dio(BaseOptions(
-      baseUrl: "http://10.106.193.30:8000",
-    ))
-      ..interceptors.add(CookieManager(cookieJar));
-    print("✅ ApiService initialized with baseUrl: ${dio.options.baseUrl}");
-    print("📌 Cookies sent for request: $cookieJar");
+  static final cookieJar = CookieJar();
+  static void init() {
+    dio.interceptors.add(CookieManager(cookieJar));
   }
+  // static Future<void> init() async {
+  //   final dir = await getApplicationDocumentsDirectory();
 
-  // Login
-  // static Future<void> login(String username, String password) async {
-  //   final response = await dio.post('/api/v1/login', data: {
-  //     "username": username,
-  //     "password": password,
-  //   });
-  //   print("-------------------------------Login response: ${response.data}");
+  //   // ⭐ Sử dụng PersistCookieJar với config tốt hơn
+  //   cookieJar = PersistCookieJar(
+  //     storage: FileStorage("${dir.path}/.cookies/"),
+  //     ignoreExpires: true, // Cho phép cookie không expire (dev only)
+  //   );
+
+  //   dio = Dio(BaseOptions(
+  //     baseUrl: "http://10.121.205.30:8000",
+  //     connectTimeout: const Duration(seconds: 10),
+  //     receiveTimeout: const Duration(seconds: 10),
+  //     followRedirects: true,
+  //     validateStatus: (status) => status! < 500, // ⭐ Cho phép handle 4xx
+  //     headers: {
+  //       'Content-Type': 'application/json',
+  //       'Accept': 'application/json',
+  //     },
+  //   ))
+  //     ..interceptors.add(CookieManager(cookieJar))
+  //     ..interceptors.add(LogInterceptor(
+  //       requestHeader: true,
+  //       requestBody: true,
+  //       responseHeader: true,
+  //       responseBody: true,
+  //       error: true,
+  //       logPrint: (obj) => print('🔍 DIO: $obj'),
+  //     ))
+  //     // ⭐ THÊM: Interceptor để debug cookies được gửi
+  //     ..interceptors.add(InterceptorsWrapper(
+  //       onRequest: (options, handler) async {
+  //         final cookies = await cookieJar.loadForRequest(options.uri);
+  //         print('📤 Sending request to: ${options.uri}');
+  //         print(
+  //             '🍪 Cookies being sent: ${cookies.map((c) => '${c.name}=${c.value}').join('; ')}');
+  //         return handler.next(options);
+  //       },
+  //       onResponse: (response, handler) async {
+  //         final cookies =
+  //             await cookieJar.loadForRequest(response.requestOptions.uri);
+  //         print('📥 Response from: ${response.requestOptions.uri}');
+  //         print(
+  //             '🍪 Cookies after response: ${cookies.map((c) => '${c.name}=${c.value}').join('; ')}');
+  //         return handler.next(response);
+  //       },
+  //     ));
+
+  //   print("✅ ApiService initialized with baseUrl: ${dio.options.baseUrl}");
+
+  //   // Debug: Xem có cookies nào được lưu không
   //   final cookies =
-  //       await cookieJar.loadForRequest(Uri.parse(dio.options.baseUrl!));
+  //       await cookieJar.loadForRequest(Uri.parse(dio.options.baseUrl));
   //   print(
-  //       "===========================================Cookies after login: $cookies");
+  //       "📌 Initial saved cookies: ${cookies.map((c) => '${c.name}=${c.value}').join('; ')}");
   // }
-  static Future<Map<String, dynamic>> login(
-      String username, String password) async {
-    final response = await dio.post('/api/v1/login', data: {
-      "username": username,
-      "password": password,
-    });
 
-    print("Login response: ${response.data}");
-
-    final cookies =
-        await cookieJar.loadForRequest(Uri.parse(dio.options.baseUrl!));
-    print("Cookies after login: $cookies");
-
-    return Map<String, dynamic>.from(response.data);
+  // ⭐ Thêm method để clear cookies (khi logout)
+  static Future<void> clearCookies() async {
+    await cookieJar.deleteAll();
+    print("🗑️ All cookies cleared");
   }
 
+  // ⭐ Thêm method để check login status
+  static Future<bool> hasValidSession() async {
+    final cookies = await cookieJar
+        .loadForRequest(Uri.parse("${dio.options.baseUrl}/api/v1/categories/"));
+    // Django session thường có cookie name là 'sessionid'
+    return cookies.any((c) => c.name == 'sessionid' || c.name == 'csrftoken');
+  }
   // Gửi chat
 
   static Future<Map<String, dynamic>> sendChat({
@@ -130,6 +155,46 @@ class ApiService {
     }
   }
 
+  static Future<Map<String, dynamic>> createTask({
+    required String title,
+    required String description,
+    required int categoryId,
+    required DateTime date,
+    DateTime? dueDate,
+  }) async {
+    final data = {
+      "title": title,
+      "description": description,
+      "category_id": categoryId,
+      "date": date.toUtc().toIso8601String(), // đảm bảo UTC ISO 8601
+      if (dueDate != null) "due_date": dueDate.toUtc().toIso8601String(),
+    };
+
+    final response = await dio.post("/api/v1/tasks/", data: data);
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return response.data;
+    } else {
+      throw Exception("Failed to create task: ${response.data}");
+    }
+  }
+  // Login
+  // static Future<Map<String, dynamic>> login(
+  //     String username, String password) async {
+  //   final response = await dio.post('/api/v1/login', data: {
+  //     "username": username,
+  //     "password": password,
+  //   });
+
+  //   print("Login response: ${response.data}");
+
+  //   final cookies =
+  //       await cookieJar.loadForRequest(Uri.parse(dio.options.baseUrl!));
+  //   print("Cookies after login: $cookies");
+
+  //   return Map<String, dynamic>.from(response.data);
+  // }
+
   // Method gọi endpoint /chat/parse_task
   // static Future<Map<String, dynamic>> parseTask({
   //   required String message,
@@ -172,28 +237,4 @@ class ApiService {
   //     };
   //   }
   // }
-
-  static Future<Map<String, dynamic>> createTask({
-    required String title,
-    required String description,
-    required int categoryId,
-    required DateTime date,
-    DateTime? dueDate,
-  }) async {
-    final data = {
-      "title": title,
-      "description": description,
-      "category_id": categoryId,
-      "date": date.toUtc().toIso8601String(), // đảm bảo UTC ISO 8601
-      if (dueDate != null) "due_date": dueDate.toUtc().toIso8601String(),
-    };
-
-    final response = await dio.post("/api/v1/tasks/", data: data);
-
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      return response.data;
-    } else {
-      throw Exception("Failed to create task: ${response.data}");
-    }
-  }
 }

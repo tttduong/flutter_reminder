@@ -14,6 +14,7 @@ class TaskManagerApp extends StatelessWidget {
       title: "Task Manager",
       theme: ThemeData(
         primarySwatch: Colors.green,
+        scaffoldBackgroundColor: const Color.fromARGB(255, 255, 255, 255),
         inputDecorationTheme: const InputDecorationTheme(
           filled: true,
           fillColor: Colors.white,

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_to_do_app/app.dart';
 import 'package:flutter_to_do_app/data/models/auth_utility.dart';
 import 'package:flutter_to_do_app/data/models/network_response.dart';
+import 'package:flutter_to_do_app/ui/screens/login_page.dart';
 import 'package:http/http.dart';
 
 import '../../ui/screens/screens.dart';
@@ -73,6 +74,7 @@ void moveToLogin() async {
   // ignore: use_build_context_synchronously
   Navigator.pushAndRemoveUntil(
       TaskManagerApp.globalKey.currentState!.context,
-      MaterialPageRoute(builder: (context) => const SignInPage()),
+      // MaterialPageRoute(builder: (context) => const SignInPage()),
+      MaterialPageRoute(builder: (context) => const LoginPage()),
       (route) => false);
 }

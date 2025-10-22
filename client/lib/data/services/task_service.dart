@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_to_do_app/api.dart';
 import 'package:flutter_to_do_app/consts.dart';
 import 'package:flutter_to_do_app/data/models/task.dart';
+import 'package:flutter_to_do_app/data/services/notification_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -94,34 +95,40 @@ class TaskService {
     }
   }
 
-//get all tasks
+// //get all tasks
+//   static Future<List<Task>> fetchTasks() async {
+//     // final prefs = await SharedPreferences.getInstance();
+//     // final token = prefs.getString('access_token');
+
+//     // if (token == null) {
+//     //   print("Chưa có token, bạn cần login trước");
+//     //   // return false;
+//     // }
+//     final response = await http.get(Uri.parse('$baseUrl/tasks/'));
+
+//     // final response = await http.get(
+//     //   Uri.parse('$baseUrl/tasks/'),
+//     //   headers: {
+//     //     "Content-Type": "application/json",
+//     //     "Authorization": "Bearer $token", // Nếu API cần token
+//     //   },
+//     // );
+//     print("loading in loading tasks");
+//     print("ApiService initialized with baseUrl: $baseUrl");
+
+//     if (response.statusCode == 200) {
+//       List<dynamic> jsonData = json.decode(response.body);
+//       print("successing in loading tasks--- SERVICE----");
+
+//       return jsonData.map((task) => Task.fromJson(task)).toList();
+//     } else {
+//       throw Exception('Failed to load tasks --- SERVICE----');
+//     }
+//   }
   static Future<List<Task>> fetchTasks() async {
-    // final prefs = await SharedPreferences.getInstance();
-    // final token = prefs.getString('access_token');
-
-    // if (token == null) {
-    //   print("Chưa có token, bạn cần login trước");
-    //   // return false;
-    // }
-    final response = await http.get(Uri.parse('$baseUrl/tasks/'));
-
-    // final response = await http.get(
-    //   Uri.parse('$baseUrl/tasks/'),
-    //   headers: {
-    //     "Content-Type": "application/json",
-    //     "Authorization": "Bearer $token", // Nếu API cần token
-    //   },
-    // );
-    print("loading in loading tasks");
-
-    if (response.statusCode == 200) {
-      List<dynamic> jsonData = json.decode(response.body);
-      print("successing in loading tasks");
-
-      return jsonData.map((task) => Task.fromJson(task)).toList();
-    } else {
-      throw Exception('Failed to load tasks');
-    }
+    final response = await ApiService.dio.get('/api/v1/tasks/');
+    List<dynamic> jsonData = response.data;
+    return jsonData.map((task) => Task.fromJson(task)).toList();
   }
 
 //get all completed tasks
@@ -202,7 +209,71 @@ class TaskService {
     }
   }
 
-// Create task
+// // Create task
+//   static Future<bool> createTask({Task? task}) async {
+//     if (task == null) return false;
+
+//     try {
+//       // Convert DateTime to UTC and format as ISO8601 string with timezone
+//       String? formatDateTimeToUTC(DateTime? dateTime) {
+//         if (dateTime == null) return null;
+//         // Convert to UTC if not already, then format with 'Z' suffix
+//         return dateTime.toUtc().toIso8601String();
+//       }
+
+//       final response = await ApiService.dio.post('$baseUrl/tasks/', data: {
+//         "title": task.title,
+//         "description": task.description,
+//         "category_id": task.categoryId,
+//         "date": formatDateTimeToUTC(task.date),
+//         "due_date": formatDateTimeToUTC(task.dueDate),
+//       });
+
+//       if (response.statusCode == 201 || response.statusCode == 200) {
+//         print("Task created successfully!");
+//         return true;
+//       } else {
+//         print("Failed to create task: ${response.data}");
+//         return false;
+//       }
+//     } catch (e) {
+//       print("Error: $e");
+//       return false;
+//     }
+//   }
+// // Create task
+//   static Future<bool> createTask({Task? task}) async {
+//     if (task == null) return false;
+
+//     try {
+//       // Convert DateTime to UTC and format as ISO8601 string with timezone
+//       String? formatDateTimeToUTC(DateTime? dateTime) {
+//         if (dateTime == null) return null;
+//         // Convert to UTC if not already, then format with 'Z' suffix
+//         return dateTime.toUtc().toIso8601String();
+//       }
+
+//       final response = await ApiService.dio.post('$baseUrl/tasks/', data: {
+//         "title": task.title,
+//         "description": task.description,
+//         "category_id": task.categoryId,
+//         "date": formatDateTimeToUTC(task.date),
+//         "due_date": formatDateTimeToUTC(task.dueDate),
+//         "priority": task.priority, // Thêm trường priority nullable
+//       });
+
+//       if (response.statusCode == 201 || response.statusCode == 200) {
+//         print("Task created successfully!");
+//         return true;
+//       } else {
+//         print("Failed to create task: ${response.data}");
+//         return false;
+//       }
+//     } catch (e) {
+//       print("Error: $e");
+//       return false;
+//     }
+//   }
   static Future<bool> createTask({Task? task}) async {
     if (task == null) return false;
 
@@ -210,7 +281,6 @@ class TaskService {
       // Convert DateTime to UTC and format as ISO8601 string with timezone
       String? formatDateTimeToUTC(DateTime? dateTime) {
         if (dateTime == null) return null;
-        // Convert to UTC if not already, then format with 'Z' suffix
         return dateTime.toUtc().toIso8601String();
       }
 
@@ -220,10 +290,23 @@ class TaskService {
         "category_id": task.categoryId,
         "date": formatDateTimeToUTC(task.date),
         "due_date": formatDateTimeToUTC(task.dueDate),
+        "priority": task.priority,
       });
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         print("Task created successfully!");
+
+        // 🟢 Schedule notification ngay sau khi tạo task
+// Nếu có startTime trong tương lai thì schedule notification
+        if (task.date != null && task.date!.isAfter(DateTime.now())) {
+          await notificationService.scheduleNotification(
+            id: task.id!, // id task làm id notification
+            title: "Nhắc nhở công việc",
+            body: task.title,
+            dateTime: task.date!,
+          );
+        }
+
         return true;
       } else {
         print("Failed to create task: ${response.data}");

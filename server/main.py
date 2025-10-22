@@ -1,36 +1,78 @@
+import os
 from fastapi import FastAPI, Depends, Request
 from fastapi.responses import JSONResponse
 
 from app.api.endpoints import tasks, users, categories, chat, report
-from app.api.middleware.middleware import logging_middleware, logger
+from app.api.middleware.middleware import AuthMiddleware, logging_middleware, logger
 from app.core.security import get_user_by_token
 from app.db.database import Base, engine
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 from app.db.database import init_models
+from fastapi.responses import JSONResponse 
+from dotenv import load_dotenv
 
+# 🔹 Load biến môi trường từ file .env
+load_dotenv()
+
+# 🔹 Lấy SECRET_KEY
+SECRET_KEY = os.getenv("SECRET_KEY")
+
+if not SECRET_KEY:
+    raise ValueError("❌ SECRET_KEY not found in .env file!")
 app = FastAPI()
 
-app.add_middleware(
-    SessionMiddleware,
-    secret_key="your-secret-key",
-    same_site="lax",  # hoặc "none" nếu FE khác domain
-    https_only=False, # true nếu chạy HTTPS
-)
-# app.add_middleware(SessionMiddleware, secret_key="your-secret-key")
+# 🔹 1. AuthMiddleware - ĐẶT TRƯỚC TIÊN (sẽ chạy SAU CÙNG)
+app.add_middleware(AuthMiddleware)
+
+# 🔹 2. CORSMiddleware
 app.add_middleware(
     CORSMiddleware,
-    # allow_origins=["*"],  # hoặc thay bằng ["http://localhost:52322"]
-    allow_origins=["http://localhost:52322"],
+    allow_origins=[
+        "http://localhost:52322",
+        "http://127.0.0.1:52322",
+        "http://10.121.205.30:52322"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-@app.middleware("http")
-async def log_cookies(request: Request, call_next):
-    print("👉 client cookies:", request.cookies)
-    response = await call_next(request)
-    return response
+
+# 🔹 3. SessionMiddleware - ĐẶT CUỐI CÙNG (sẽ chạy TRƯỚC TIÊN)
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=SECRET_KEY,
+    session_cookie="sessionid",
+    max_age=1209600,
+    same_site="lax",
+    https_only=False,
+)
+
+# # 🔹 1. SessionMiddleware - ĐẶT TRƯỚC TIÊN
+# app.add_middleware(
+#     SessionMiddleware,
+#     secret_key= SECRET_KEY,
+#     session_cookie="sessionid",
+#     max_age=1209600,  # 14 days
+#     same_site="lax",  # ⭐ "lax" cho HTTP, "none" cho HTTPS
+#     https_only=False,  # False vì đang dùng HTTP
+# )
+
+# # 🔹 2. CORSMiddleware
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=[
+#         "http://localhost:52322",
+#         "http://127.0.0.1:52322",
+#         "http://10.121.205.30:52322"  # IP của máy tính
+#     ],
+#     allow_credentials=True,  # ⭐ BẮT BUỘC để gửi cookie
+#     allow_methods=["*"],
+#     allow_headers=["*"],
+# )
+
+# # 🔹 3. AuthMiddleware - cuối cùng
+# app.add_middleware(AuthMiddleware)
 
 app.include_router(tasks.router, prefix="/api/v1", tags=["Tasks"])
 app.include_router(users.router, prefix="/api/v1", tags=["Users"])
@@ -38,7 +80,7 @@ app.include_router(categories.router, prefix="/api/v1", tags=["Categories"])
 app.include_router(chat.router, prefix="/api/v1", tags=["Chat"])
 app.include_router(report.router, prefix="/api/v1", tags=["Report"])
 
-app.middleware("http")(logging_middleware)
+# app.middleware("http")(logging_middleware)
 
 
 # @app.on_event("startup")

@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_to_do_app/app.dart';
 import 'package:flutter_to_do_app/data/auth_utils.dart';
 import 'package:flutter_to_do_app/data/urls.dart';
-import 'package:flutter_to_do_app/ui/screens/signin_screen.dart';
+import 'package:flutter_to_do_app/ui/screens/login_page.dart';
 import 'package:http/http.dart' as http;
 import '../ui/utils/snack_bar_message.dart';
 import '/main.dart';
@@ -98,6 +98,7 @@ moveToLogin() async {
 
   Navigator.pushAndRemoveUntil(
       TaskManagerApp.globalKey.currentContext!,
-      MaterialPageRoute(builder: (context) => const SignInPage()),
+      // MaterialPageRoute(builder: (context) => const SignInPage()),
+      MaterialPageRoute(builder: (context) => const LoginPage()),
       (route) => false);
 }
