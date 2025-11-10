@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_to_do_app/controller/task_controller.dart';
 import 'package:flutter_to_do_app/data/models/task.dart';
+import 'package:flutter_to_do_app/ui/screens/bottom_navbar_screen.dart';
 import 'package:flutter_to_do_app/ui/widgets/task_tile.dart';
 
 // class EisenhowerMatrix extends StatefulWidget {
@@ -334,6 +335,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class EisenhowerMatrix extends StatefulWidget {
+  final VoidCallback? onBackPressed;
+
+  const EisenhowerMatrix({super.key, this.onBackPressed});
   @override
   _EisenhowerMatrixState createState() => _EisenhowerMatrixState();
 }
@@ -412,10 +416,38 @@ class _EisenhowerMatrixState extends State<EisenhowerMatrix> {
     return Scaffold(
         backgroundColor: Colors.grey[100],
         appBar: AppBar(
-          title: Text('Eisenhower Matrix'),
-          backgroundColor: Colors.white,
-          foregroundColor: Colors.black,
+          backgroundColor: Colors.transparent,
           elevation: 0,
+          // leading: IconButton(
+          //   icon: const Icon(Icons.arrow_back_ios_new_rounded,
+          //       color: Colors.black),
+          //   onPressed: () {
+          //     if (widget.onBackPressed != null) {
+          //       widget.onBackPressed!();
+          //     } else {
+          //       //tam thoi de click back thì nav to home, lam back bth kho quaa
+          //       //
+          //       // if (Navigator.of(context).canPop()) {
+          //       //   Navigator.of(context).pop();
+          //       // } else {
+          //       Navigator.of(context).pushReplacement(
+          //         MaterialPageRoute(
+          //             builder: (_) =>
+          //                 BottomNavBarScreen(key: AppNavigation.bottomNavKey)),
+          //       );
+          //       // }
+          //     }
+          //   },
+          // ),
+          leadingWidth: 0,
+          automaticallyImplyLeading: false,
+          title: Text(
+            'Eisenhower Matrix',
+            style: const TextStyle(
+              color: Colors.black,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           actions: [
             IconButton(
               icon: Icon(Icons.refresh),
@@ -425,6 +457,20 @@ class _EisenhowerMatrixState extends State<EisenhowerMatrix> {
             ),
           ],
         ),
+        // appBar: AppBar(
+        //   title: Text('Eisenhower Matrix'),
+        //   backgroundColor: Colors.white,
+        //   foregroundColor: Colors.black,
+        //   elevation: 0,
+        //   actions: [
+        //     IconButton(
+        //       icon: Icon(Icons.refresh),
+        //       onPressed: () {
+        //         _loadMatrixTasks(); // Use matrix-specific reload
+        //       },
+        //     ),
+        //   ],
+        // ),
         body: isLoading
             ? Center(
                 child: CircularProgressIndicator(),

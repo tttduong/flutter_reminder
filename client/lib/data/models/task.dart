@@ -62,6 +62,9 @@ class Task {
       updatedAt: json['updated_at'] != null
           ? DateTime.parse(json['updated_at'])
           : null,
+      completedAt: json['completed_at'] != null
+          ? DateTime.parse(json['completed_at']).toLocal()
+          : null,
       priority: json['priority'],
 
       isDeleted: json['is_deleted'] ?? false,
@@ -84,6 +87,7 @@ class Task {
       // 'due_date': dueDate?.toIso8601String(),
       'date': date,
       'due_date': dueDate,
+      'completed_at': completedAt,
       'time': time,
       'created_at': createdAt?.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),

@@ -198,7 +198,7 @@ class _ReportScreenState extends State<ReportScreen> {
     required IconData icon,
   }) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -216,7 +216,7 @@ class _ReportScreenState extends State<ReportScreen> {
           Row(
             children: [
               Icon(icon, color: color, size: 20),
-              const SizedBox(width: 8),
+              const SizedBox(width: 4),
               Text(title,
                   style: TextStyle(
                     color: Colors.grey[600],
@@ -225,14 +225,14 @@ class _ReportScreenState extends State<ReportScreen> {
                   )),
             ],
           ),
-          const SizedBox(height: 8),
+          // const SizedBox(height: 8),
           Text(value,
               style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: Colors.black87,
+                color: Colors.black,
               )),
-          const SizedBox(height: 4),
+          // const SizedBox(height: 4),
           Text(subtitle,
               style: TextStyle(
                 fontSize: 10,
@@ -561,7 +561,10 @@ class _ReportScreenState extends State<ReportScreen> {
       Colors.green[600]!,
       Colors.green[800]!,
     ];
-    return colors[intensity];
+
+    // Giới hạn intensity trong khoảng hợp lệ (0 → colors.length - 1)
+    final safeIndex = intensity.clamp(0, colors.length - 1);
+    return colors[safeIndex];
   }
 
   // Widget _buildCategoryStats() {
@@ -663,14 +666,46 @@ class _ReportScreenState extends State<ReportScreen> {
         ]),
       );
     }
+    // final total = categoryStats.fold<int>(0, (sum, e) => sum + e.completed);
+
+    // final List<CategoryData> categories = categoryStats
+    //     .map((e) => CategoryData(
+    //           e.name ?? 'Unknown',
+    //           total > 0 ? ((e.completed / total) * 100).toDouble() : 0.0,
+    //           parseColor(e.color ?? '#000000'),
+    //         ))
+    //     .toList();
+
     final total = categoryStats.fold<int>(0, (sum, e) => sum + e.completed);
 
-    final List<CategoryData> categories = categoryStats
-        .map((e) => CategoryData(
-              e.name ?? 'Unknown',
-              total > 0 ? ((e.completed / total) * 100).toDouble() : 0.0,
-              parseColor(e.color ?? '#000000'),
+// Bước 1: Tính tỉ lệ phần trăm thô
+    final List<_TempCategory> raw = categoryStats
+        .map((e) => _TempCategory(
+              name: e.name ?? 'Unknown',
+              color: parseColor(e.color ?? '#000000'),
+              rawPercent: total > 0 ? (e.completed / total * 100) : 0.0,
             ))
+        .toList();
+
+// Bước 2: Làm tròn xuống & tính phần dư
+    int sumInt = 0;
+    for (var item in raw) {
+      item.intPercent = item.rawPercent.floor();
+      item.remainder = item.rawPercent - item.intPercent;
+      sumInt += item.intPercent;
+    }
+
+// Bước 3: Nếu tổng < 100, phân bổ phần dư còn lại
+    int remainderToAdd = 100 - sumInt;
+    raw.sort(
+        (a, b) => b.remainder.compareTo(a.remainder)); // Ưu tiên phần dư lớn
+    for (int i = 0; i < remainderToAdd && i < raw.length; i++) {
+      raw[i].intPercent += 1;
+    }
+
+// Bước 4: Convert sang CategoryData để hiển thị
+    final List<CategoryData> categories = raw
+        .map((e) => CategoryData(e.name, e.intPercent.toDouble(), e.color))
         .toList();
 
     return Container(
@@ -986,6 +1021,20 @@ class _ReportScreenState extends State<ReportScreen> {
       ],
     );
   }
+}
+
+class _TempCategory {
+  final String name;
+  final Color color;
+  final double rawPercent;
+  int intPercent = 0;
+  double remainder = 0;
+
+  _TempCategory({
+    required this.name,
+    required this.color,
+    required this.rawPercent,
+  });
 }
 
 // Custom Data Classes

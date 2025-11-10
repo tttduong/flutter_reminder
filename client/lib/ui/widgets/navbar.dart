@@ -27,8 +27,9 @@ class Navbar extends StatelessWidget {
       children: [
         // Bottom Navigation Bar
         BottomNavigationBar(
-          // backgroundColor: Colors.white.withOpacity(0.2),
-          backgroundColor: Colors.white, // Màu trắng mờ
+          backgroundColor: Colors.white.withOpacity(0.3),
+          // backgroundColor: Colors.white, // Màu trắng mờ
+          // backgroundColor: Colors.transparent,
           elevation: 0,
           // currentIndex: currentIndex,
           currentIndex: displayIndex,

@@ -90,6 +90,29 @@ async def get_tasks_by_date(
         stmt = stmt.where(cast(Task.date, Date) == cast(Task.due_date, Date))
     result = await db.execute(stmt)
     return result.scalars().all()
+@router.get("/tasks/single-day/", response_model=List[TaskResponse])
+async def get_single_day_tasks(
+    date: date = Query(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    🗓️ Lấy tất cả task chỉ có ngày bắt đầu (date) mà không có due_date,
+    và thuộc về user hiện tại, trùng với ngày được chọn.
+    """
+    stmt = (
+        select(Task)
+        .where(
+            Task.owner_id == current_user.id,
+            cast(Task.date, Date) == date,
+            Task.due_date.is_(None)
+        )
+        .order_by(Task.date)
+    )
+
+    result = await db.execute(stmt)
+    tasks = result.scalars().all()
+    return tasks
 
 @router.get("/tasks/by-category/", response_model=List[TaskResponse])
 async def get_tasks_by_category(

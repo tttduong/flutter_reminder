@@ -185,6 +185,7 @@ import 'package:flutter_to_do_app/ui/screens/chat.dart';
 import 'package:flutter_to_do_app/ui/screens/report_screen.dart';
 import 'package:flutter_to_do_app/ui/widgets/add_list_button.dart';
 import 'package:flutter_to_do_app/ui/widgets/appbar.dart';
+import 'package:flutter_to_do_app/ui/widgets/chat_floating_button.dart';
 import 'package:flutter_to_do_app/ui/widgets/gradient_bg.dart';
 import 'package:flutter_to_do_app/ui/widgets/sidebar.dart';
 import 'package:get/get.dart';
@@ -332,7 +333,9 @@ class _HomePageState extends State<HomePage> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (_) => const ChatPage()),
+                                    builder: (_) => const ChatPage(
+                                          conversationId: 5,
+                                        )),
                               );
                             }),
                             _buildGradientCard(
@@ -374,13 +377,45 @@ class _HomePageState extends State<HomePage> {
                         final tasks = _taskController.taskList;
                         final now = DateTime.now();
 
+                        // final categoriesWithIncompleteTasksToday =
+                        //     categories.where((category) {
+                        //   final createdToday = category.createdAt != null &&
+                        //       category.createdAt!.year == now.year &&
+                        //       category.createdAt!.month == now.month &&
+                        //       category.createdAt!.day == now.day;
+
+                        //   final hasIncompleteTaskToday = tasks.any((task) =>
+                        //       task.categoryId == category.id &&
+                        //       !task.isCompleted &&
+                        //       task.date != null &&
+                        //       task.date!.year == now.year &&
+                        //       task.date!.month == now.month &&
+                        //       task.date!.day == now.day);
+
+                        //   return createdToday || hasIncompleteTaskToday;
+                        // }).toList();
+                        // 🔍 DEBUG: In ra tất cả categories
+                        print("=" * 50);
+                        print(
+                            "🔍 DEBUG: Total categories: ${categories.length}");
+                        for (var category in categories) {
+                          print("📁 Category: ${category.title}");
+                          print("   - ID: ${category.id}");
+                          print("   - Created at: ${category.createdAt}");
+                          print(
+                              "   - Is today? ${category.createdAt != null && category.createdAt!.year == now.year && category.createdAt!.month == now.month && category.createdAt!.day == now.day}");
+                        }
                         final categoriesWithIncompleteTasksToday =
                             categories.where((category) {
-                          final createdToday = category.createdAt != null &&
-                              category.createdAt!.year == now.year &&
-                              category.createdAt!.month == now.month &&
-                              category.createdAt!.day == now.day;
+                          final createdAtLocal = category.createdAt?.toLocal();
+                          final createdToday = createdAtLocal != null &&
+                              createdAtLocal.year == now.year &&
+                              createdAtLocal.month == now.month &&
+                              createdAtLocal.day == now.day;
+                          // Nếu category được tạo hôm nay, luôn hiển thị
+                          if (createdToday) return true;
 
+                          // Nếu không, chỉ hiển thị khi có task chưa hoàn thành hôm nay
                           final hasIncompleteTaskToday = tasks.any((task) =>
                               task.categoryId == category.id &&
                               !task.isCompleted &&
@@ -389,9 +424,11 @@ class _HomePageState extends State<HomePage> {
                               task.date!.month == now.month &&
                               task.date!.day == now.day);
 
-                          return createdToday || hasIncompleteTaskToday;
+                          return hasIncompleteTaskToday;
                         }).toList();
-
+                        print(
+                            "✅ Categories to show: ${categoriesWithIncompleteTasksToday.length}");
+                        print("=" * 50);
                         if (categoriesWithIncompleteTasksToday.isEmpty) {
                           return Center(
                             child: Padding(
@@ -455,25 +492,13 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
+      floatingActionButton: const ChatFloatingButton(
+        showBadge: true,
+        unreadCount: 3,
+      ),
     );
   }
 
-  // Widget _buildFloatingAddButton() {
-  //   return FloatingActionButton.extended(
-  //     onPressed: _showNewListBottomSheet,
-  //     backgroundColor: AppColors.primary,
-  //     elevation: 4,
-  //     icon: const Icon(Icons.add, color: Colors.white),
-  //     label: const Text(
-  //       'New List',
-  //       style: TextStyle(
-  //         color: Colors.white,
-  //         fontWeight: FontWeight.w600,
-  //         fontSize: 15,
-  //       ),
-  //     ),
-  //   );
-  // }
   Widget _buildNewListButton() {
     return SizedBox(
       width: double.infinity,
@@ -575,6 +600,58 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
           ),
+          // ListView.builder(
+          //   shrinkWrap: true,
+          //   physics: const NeverScrollableScrollPhysics(),
+          //   itemCount: tasks.length,
+          //   itemBuilder: (context, index) {
+          //     final task = tasks[index];
+          //     return Padding(
+          //       padding: const EdgeInsets.fromLTRB(16, 4, 4, 4),
+          //       child: InkWell(
+          //         onTap: () {
+          //           // Toggle task completion
+          //           _taskController.toggleTaskCompletion(task);
+          //         },
+          //         borderRadius: BorderRadius.circular(8),
+          //         child: Padding(
+          //           padding: const EdgeInsets.symmetric(vertical: 4),
+          //           child: Row(
+          //             crossAxisAlignment: CrossAxisAlignment.start,
+          //             children: [
+          //               Padding(
+          //                 padding: const EdgeInsets.only(top: 2),
+          //                 child: Icon(
+          //                   task.isCompleted
+          //                       ? Icons.check_circle
+          //                       : Icons.radio_button_unchecked,
+          //                   color: task.isCompleted
+          //                       ? Colors.green
+          //                       : AppColors.primary,
+          //                   size: 22,
+          //                 ),
+          //               ),
+          //               const SizedBox(width: 12),
+          //               Expanded(
+          //                 child: Text(
+          //                   task.title,
+          //                   style: TextStyle(
+          //                     fontSize: 16,
+          //                     decoration: task.isCompleted
+          //                         ? TextDecoration.lineThrough
+          //                         : null,
+          //                     color:
+          //                         task.isCompleted ? Colors.grey : Colors.black,
+          //                   ),
+          //                 ),
+          //               ),
+          //             ],
+          //           ),
+          //         ),
+          //       ),
+          //     );
+          //   },
+          // )
           ListView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -583,18 +660,75 @@ class _HomePageState extends State<HomePage> {
               final task = tasks[index];
               return Padding(
                 padding: const EdgeInsets.fromLTRB(16, 4, 4, 4),
-                child: InkWell(
-                  onTap: () {
-                    // Toggle task completion
-                    _taskController.toggleTaskCompletion(task);
-                  },
-                  borderRadius: BorderRadius.circular(8),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Vòng tròn toggle
+                      GestureDetector(
+                        onTap: () {
+                          final wasCompleted = task.isCompleted;
+
+                          _taskController.toggleTaskCompletion(task);
+                          if (!wasCompleted) {
+                            // Hiển thị nút undo lơ lửng
+                            showDialog(
+                              context: context,
+                              barrierDismissible: true,
+                              barrierColor: Colors.transparent,
+                              builder: (BuildContext context) {
+                                // Tự động đóng sau 3 giây
+                                Future.delayed(const Duration(seconds: 1), () {
+                                  if (context.mounted) {
+                                    Navigator.of(context).pop();
+                                  }
+                                });
+
+                                return Align(
+                                  alignment: Alignment.bottomLeft,
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(
+                                        left: 20, bottom: 80),
+                                    child: Material(
+                                      color: Colors.transparent,
+                                      child: InkWell(
+                                        onTap: () {
+                                          Navigator.of(context).pop();
+                                          _taskController
+                                              .toggleTaskCompletion(task);
+                                        },
+                                        borderRadius: BorderRadius.circular(30),
+                                        child: Container(
+                                          width: 50,
+                                          height: 50,
+                                          decoration: BoxDecoration(
+                                            color: Colors.orange,
+                                            shape: BoxShape.circle,
+                                            // boxShadow: [
+                                            //   BoxShadow(
+                                            //     color: Colors.black
+                                            //         .withOpacity(0.3),
+                                            //     blurRadius: 8,
+                                            //     offset: const Offset(0, 4),
+                                            //   ),
+                                            // ],
+                                          ),
+                                          child: const Icon(
+                                            Icons.undo,
+                                            color: Colors.white,
+                                            size: 28,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            );
+                          }
+                        },
+                        child: Padding(
                           padding: const EdgeInsets.only(top: 2),
                           child: Icon(
                             task.isCompleted
@@ -606,22 +740,24 @@ class _HomePageState extends State<HomePage> {
                             size: 22,
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            task.title,
-                            style: TextStyle(
-                              fontSize: 16,
-                              decoration: task.isCompleted
-                                  ? TextDecoration.lineThrough
-                                  : null,
-                              color:
-                                  task.isCompleted ? Colors.grey : Colors.black,
-                            ),
+                      ),
+                      const SizedBox(width: 12),
+
+                      // Tiêu đề task (không bấm được)
+                      Expanded(
+                        child: Text(
+                          task.title,
+                          style: TextStyle(
+                            fontSize: 16,
+                            decoration: task.isCompleted
+                                ? TextDecoration.lineThrough
+                                : null,
+                            color:
+                                task.isCompleted ? Colors.grey : Colors.black,
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               );

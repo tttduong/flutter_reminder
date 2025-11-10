@@ -208,3 +208,4 @@ async def get_completed_per_day_current_week(db: AsyncSession = Depends(get_db))
         data.append({"day": str(d), "completed": found.completed if found else 0})
 
     return data
+

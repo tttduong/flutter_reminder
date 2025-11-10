@@ -1,21 +1,28 @@
 from http.client import HTTPException
 import json
-from fastapi import FastAPI, Depends, BackgroundTasks, APIRouter
+from fastapi import FastAPI, Depends, BackgroundTasks, APIRouter,  HTTPException, status
 from pydantic import BaseModel
 import os
+
+from sqlalchemy import select
 from app.core.config import settings
 from app.services.llm_service import LLMService
 from typing import List, Dict, Optional
-
+from app.db.db_structure import Conversation, Message
 from app.core.session import get_current_user
 from app.db.db_structure import User
 from datetime import datetime, date
 import json
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.db.database import get_db
+from app.api.models.conversation import ConversationResponse
 router = APIRouter()
 app = FastAPI(title="Groq LLM API", version="1.0.0")
 
 
 class ChatRequest(BaseModel):
+    conversation_id: Optional[int] = None
     message: str
     model: str = "llama-3.1-8b-instant"  # Default Groq model
     system_prompt: Optional[str] = None  # ← THÊM SYSTEM PROMPT
@@ -238,96 +245,120 @@ async def parse_task(
 #             date=now,
 #             due_date=None   
 #         )
+#--------------Get all conversation--------------
+@router.get("/conversations/", response_model=List[ConversationResponse])
+async def get_all_conversations(
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_db),
+):
+    # 🔹 Lấy tất cả cuộc trò chuyện của user hiện tại
+    conversations = (await session.scalars(
+        select(Conversation)
+        .where(Conversation.user_id == current_user.id)
+        .order_by(Conversation.updated_at.desc())  # sắp xếp theo thời gian gần nhất
+    )).all()
+
+    return conversations
+#-------------Get message of the conversation-------
+@router.get("/conversations/{conversation_id}/messages")
+async def get_messages(
+    conversation_id: int,
+    session: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user)
+):
+    # --- 1️⃣ Kiểm tra conversation có tồn tại không ---
+    result = await session.execute(
+        select(Conversation).where(Conversation.id == conversation_id)
+    )
+    conversation = result.scalar_one_or_none()
+
+    if not conversation:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Conversation not found"
+        )
+
+    # --- 2️⃣ Kiểm tra quyền truy cập ---
+    if conversation.user_id != user.id:  # chỉ cho phép chủ sở hữu conversation
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not allowed to access this conversation"
+        )
+
+    # --- 3️⃣ Trả về messages ---
+    result = await session.execute(
+        select(Message)
+        .where(Message.conversation_id == conversation_id)
+        .order_by(Message.created_at)
+    )
+    messages = result.scalars().all()
+    return messages
+
+#--------------SEND MESSAGE----------------------
 @router.post("/chat/", response_model=ChatResponse)
 async def chat_endpoint(
-    request: ChatRequest, 
+    request: ChatRequest,
     llm_service: LLMService = Depends(get_llm_service),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    # session: AsyncSession = Depends(get_async_session),
+    session: AsyncSession = Depends(get_db),
 ):
-    """
-    Chat endpoint sử dụng Groq API với system prompt và lịch sử hội thoại
-    """
-    
-    # Tạo messages array cho OpenAI format
+    # 1️⃣ Lấy hoặc tạo mới conversation
+    conversation = await session.scalar(
+        select(Conversation).where(Conversation.id == request.conversation_id, Conversation.user_id == current_user.id )
+    )
+    if not conversation:
+        conversation = Conversation(user_id=current_user.id, title="New Chat")
+        session.add(conversation)
+        await session.flush()  # để có conversation.id
+
+    # 2️⃣ Tạo danh sách messages (system + lịch sử từ DB + user message)
     messages = []
-    
-    # 1. THÊM SYSTEM MESSAGE NẾU CÓ
+
+    # Thêm system prompt nếu có
     if request.system_prompt:
-        messages.append({
-            "role": "system",
-            "content": request.system_prompt
-        })
-    
-    # 2. THÊM LỊCH SỬ HỘI THOẠI
-    if request.conversation_history:
-        messages.extend(request.conversation_history)
-    
-    # 3. THÊM MESSAGE HIỆN TẠI
-    messages.append({
-        "role": "user", 
-        "content": request.message
-    })
-    
-    # Debug log
-    print("=== MESSAGES SENT TO GROQ ===")
-    for msg in messages:
-        print(f"{msg['role']}: {msg['content']}")
-    print("============================")
-    
-    # 4. GỬI TỚI LLM SERVICE
+        messages.append({"role": "system", "content": request.system_prompt})
+
+    # Lấy lịch sử tin nhắn từ DB
+    db_messages = (await session.scalars(
+        select(Message)
+        .where(Message.conversation_id == conversation.id)
+        .order_by(Message.created_at)
+    )).all()
+    for msg in db_messages:
+        messages.append({"role": msg.role, "content": msg.content})
+
+    # Thêm tin nhắn user mới
+    user_message = Message(
+        conversation_id=conversation.id,
+        role="user",
+        content=request.message
+    )
+    session.add(user_message)
+    messages.append({"role": "user", "content": request.message})
+
+    # 3️⃣ Gọi LLM
     result = await llm_service.generate_response_with_messages(
-        messages=messages, 
+        messages=messages,
         model=request.model
     )
-    
+
+    # 4️⃣ Lưu phản hồi của AI
+    ai_message = Message(
+        conversation_id=conversation.id,
+        role="assistant",
+        content=result["response"]
+    )
+    session.add(ai_message)
+    await session.commit()
+
+    # 5️⃣ Trả về response
     return ChatResponse(
         response=result["response"],
         usage=result["usage"],
         model=result["model"]
     )
-# # Dependency để tạo LLM service
-# async def get_llm_service():
-    
-#     llm_service = LLMService(
-#         api_key= settings.CHAT_KEY,
-#         base_url="https://api.groq.com/openai/v1"
-#     )
-#     try:
-#         yield llm_service  
-#     finally:
-#         await llm_service.close()
 
-# @router.post("/chat/", response_model=ChatResponse)
-# async def chat_endpoint(
-#     request: ChatRequest, 
-#     llm_service: LLMService = Depends(get_llm_service)
-# ):
-#     """
-#     Chat endpoint sử dụng Groq API
-#     """
-#     result = await llm_service.generate_response(request.message, request.model)
-    
-#     return ChatResponse(
-#         response=result["response"],
-#         usage=result["usage"],
-#         model=result["model"]
-#     )
 
-# @router.get("/health/")
-# async def health_check():
-#     return {"status": "healthy", "service": "groq-llm-api"}
 
-# @router.get("/models/")
-# async def get_available_models():
-#     """
-#     Danh sách các models có sẵn trên Groq
-#     """
-#     return {
-#         "models": [
-#             "llama-3.1-70b-versatile",
-#             "llama-3.1-8b-instant", 
-#             "mixtral-8x7b-32768",
-#             "gemma2-9b-it",
-#             "meta-llama/llama-4-scout-17b-16e-instruct"
-#         ]
-#     }
+

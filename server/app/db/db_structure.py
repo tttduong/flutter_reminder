@@ -16,6 +16,7 @@ class User(Base):
     
     tasks = relationship("Task", back_populates="owner")
     categories = relationship("Category", back_populates="owner")
+    conversations = relationship("Conversation", back_populates="user", cascade="all, delete")
 
 class Task(Base):
     __tablename__ = "task"
@@ -26,7 +27,7 @@ class Task(Base):
     completed = Column(Boolean, default=False)
     date = Column(TIMESTAMP(timezone=True), nullable=True)
     due_date = Column(TIMESTAMP(timezone=True), nullable=True)
-    # completed_at = Column(DateTime, nullable=True)\
+    completed_at = Column(DateTime(timezone=True), nullable=True)
     completed = Column(Boolean, default=False, nullable=False) 
     priority = Column(Integer, nullable=True) 
 
@@ -55,3 +56,39 @@ class Category(Base):
     tasks = relationship("Task", back_populates="category", cascade="all, delete", passive_deletes=True)
     is_default = Column(Boolean, default=False)
 #  tasks = relationship("Task", back_populates="category", cascade="all, delete")
+
+# class Conversation(Base):
+#     __tablename__ = "conversations"
+
+#     id = Column(Integer, primary_key=True, index=True)
+#     user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
+#     title = Column(String, default="New Chat")
+#     created_at = Column(DateTime, default=datetime.utcnow)
+
+#     messages = relationship("Message", back_populates="conversation", cascade="all, delete")
+
+
+
+class Conversation(Base):
+    __tablename__ = "conversations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("user.id", ondelete="CASCADE"))
+    title = Column(String, nullable=False)
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())  # ✅ thêm dòng này
+
+    user = relationship("User", back_populates="conversations")
+    messages = relationship("Message", back_populates="conversation", cascade="all, delete")
+
+class Message(Base):
+    __tablename__ = "messages"
+
+    id = Column(Integer, primary_key=True, index=True)
+    conversation_id = Column(Integer, ForeignKey("conversations.id"))
+    role = Column(String, nullable=False)  # "user", "assistant", "system"
+    content = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    conversation = relationship("Conversation", back_populates="messages")

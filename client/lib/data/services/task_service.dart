@@ -149,14 +149,29 @@ class TaskService {
 
 //------------service đã chuyển đổi dùng session---------------------------------------------------------------
 
+// Lấy các task full day (chỉ có date, không có due_date)
+  static Future<List<Task>> getSingleDayTasks(DateTime date) async {
+    try {
+      final dateStr = DateFormat('yyyy-MM-dd').format(date);
+      final response = await ApiService.dio.get(
+        '$baseUrl/tasks/single-day/',
+        queryParameters: {'date': dateStr},
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data;
+        return data.map((json) => Task.fromJson(json)).toList();
+      }
+      return [];
+    } catch (e) {
+      print('Error getting single day tasks: $e');
+      return [];
+    }
+  }
+
 //get all tasks by category_id
   static Future<List<Task>> getTasksByCategoryId(int? categoryId) async {
     try {
-      // final response = await ApiService.dio.get(
-      //   '/tasks/by-category/',
-      //   queryParameters:
-      //       categoryId != null ? {"category_id": categoryId} : null,
-      // );
       final response = await ApiService.dio.get(
         '$baseUrl/tasks/by-category/',
         queryParameters:
@@ -209,71 +224,6 @@ class TaskService {
     }
   }
 
-// // Create task
-//   static Future<bool> createTask({Task? task}) async {
-//     if (task == null) return false;
-
-//     try {
-//       // Convert DateTime to UTC and format as ISO8601 string with timezone
-//       String? formatDateTimeToUTC(DateTime? dateTime) {
-//         if (dateTime == null) return null;
-//         // Convert to UTC if not already, then format with 'Z' suffix
-//         return dateTime.toUtc().toIso8601String();
-//       }
-
-//       final response = await ApiService.dio.post('$baseUrl/tasks/', data: {
-//         "title": task.title,
-//         "description": task.description,
-//         "category_id": task.categoryId,
-//         "date": formatDateTimeToUTC(task.date),
-//         "due_date": formatDateTimeToUTC(task.dueDate),
-//       });
-
-//       if (response.statusCode == 201 || response.statusCode == 200) {
-//         print("Task created successfully!");
-//         return true;
-//       } else {
-//         print("Failed to create task: ${response.data}");
-//         return false;
-//       }
-//     } catch (e) {
-//       print("Error: $e");
-//       return false;
-//     }
-//   }
-// // Create task
-//   static Future<bool> createTask({Task? task}) async {
-//     if (task == null) return false;
-
-//     try {
-//       // Convert DateTime to UTC and format as ISO8601 string with timezone
-//       String? formatDateTimeToUTC(DateTime? dateTime) {
-//         if (dateTime == null) return null;
-//         // Convert to UTC if not already, then format with 'Z' suffix
-//         return dateTime.toUtc().toIso8601String();
-//       }
-
-//       final response = await ApiService.dio.post('$baseUrl/tasks/', data: {
-//         "title": task.title,
-//         "description": task.description,
-//         "category_id": task.categoryId,
-//         "date": formatDateTimeToUTC(task.date),
-//         "due_date": formatDateTimeToUTC(task.dueDate),
-//         "priority": task.priority, // Thêm trường priority nullable
-//       });
-
-//       if (response.statusCode == 201 || response.statusCode == 200) {
-//         print("Task created successfully!");
-//         return true;
-//       } else {
-//         print("Failed to create task: ${response.data}");
-//         return false;
-//       }
-//     } catch (e) {
-//       print("Error: $e");
-//       return false;
-//     }
-//   }
   static Future<bool> createTask({Task? task}) async {
     if (task == null) return false;
 
@@ -318,13 +268,44 @@ class TaskService {
     }
   }
 
-//update complete
+// //update complete
+//   static Future<bool> updateTaskStatus(Task updatedTask, bool newStatus) async {
+//     try {
+//       final response = await ApiService.dio.patch(
+//         '$baseUrl/tasks/${updatedTask.id}/',
+//         data: {
+//           "completed": newStatus, // chỉ gửi field cần update
+//           "completed_at": .....
+//         },
+//       );
+
+//       if (response.statusCode == 200) {
+//         print("✅ Updated task status successfully");
+//         return true;
+//       } else {
+//         print("❌ Failed to update task status: ${response.data}");
+//         return false;
+//       }
+//     } catch (e) {
+//       print("🔥 Error updating task: $e");
+//       return false;
+//     }
+//   }
+// }
+
+// update complete
   static Future<bool> updateTaskStatus(Task updatedTask, bool newStatus) async {
     try {
+      // Nếu vừa đánh dấu hoàn thành -> gửi thời gian hiện tại (UTC)
+      // Nếu bỏ đánh dấu -> gửi null
+      final completedAt =
+          newStatus ? DateTime.now().toUtc().toIso8601String() : null;
+
       final response = await ApiService.dio.patch(
         '$baseUrl/tasks/${updatedTask.id}/',
         data: {
-          "completed": newStatus, // chỉ gửi field cần update
+          "completed": newStatus,
+          "completed_at": completedAt, // ✅ gửi completed_at cùng completed
         },
       );
 

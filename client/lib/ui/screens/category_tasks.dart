@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_to_do_app/data/models/category.dart';
 import 'package:flutter_to_do_app/data/models/task.dart';
-import 'package:flutter_to_do_app/ui/screens/add_task.dart';
-import 'package:flutter_to_do_app/ui/screens/base_app.dart';
 import 'package:flutter_to_do_app/ui/screens/bottom_navbar_screen.dart';
-import 'package:flutter_to_do_app/ui/screens/home.dart';
-import 'package:flutter_to_do_app/ui/widgets/appbar.dart';
 import 'package:flutter_to_do_app/ui/widgets/gradient_bg.dart';
 import 'package:get/get.dart';
 import 'package:flutter_to_do_app/consts.dart';
 import '../../controller/task_controller.dart';
+import 'package:intl/intl.dart';
 
 class CategoryTasksPage extends StatefulWidget {
   final Category? category;
@@ -186,13 +183,17 @@ class _AllTasksPageState extends State<CategoryTasksPage> {
   }
 
 // // 3. Reusable task section builder
+// 🧩 Reusable Task Section
   Widget _buildTaskSection(String title, List<Task> tasks, bool isCompleted) {
     if (tasks.isEmpty && !isCompleted) return const SizedBox.shrink();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (isCompleted) ...[
+        SizedBox(
+          height: 10,
+        ),
+        if (isCompleted)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
             child: Text(
@@ -200,7 +201,6 @@ class _AllTasksPageState extends State<CategoryTasksPage> {
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
           ),
-        ],
         ListView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
@@ -216,7 +216,6 @@ class _AllTasksPageState extends State<CategoryTasksPage> {
                 key: Key('task_${task.id}'),
                 direction: DismissDirection.endToStart,
                 confirmDismiss: (direction) async {
-                  // Show delete confirmation
                   return await showDialog(
                     context: context,
                     builder: (BuildContext context) {
@@ -272,11 +271,42 @@ class _AllTasksPageState extends State<CategoryTasksPage> {
                   child: Padding(
                     padding: const EdgeInsets.all(8),
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // 🟢 Header row (checkbox + title)
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Task content
+                            GestureDetector(
+                              onTap: taskController.isTaskPending(task.id!)
+                                  ? null
+                                  : () {
+                                      taskController.toggleTaskStatus(
+                                          task, !task.isCompleted);
+                                    },
+                              child: Container(
+                                width: 22,
+                                height: 22,
+                                margin:
+                                    const EdgeInsets.only(right: 10, top: 2),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: task.isCompleted
+                                        ? Colors.transparent
+                                        : AppColors.primary,
+                                    width: 2,
+                                  ),
+                                  color: task.isCompleted
+                                      ? AppColors.primary
+                                      : Colors.white,
+                                ),
+                                child: task.isCompleted
+                                    ? const Icon(Icons.check,
+                                        size: 14, color: Colors.white)
+                                    : null,
+                              ),
+                            ),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -308,76 +338,51 @@ class _AllTasksPageState extends State<CategoryTasksPage> {
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   ],
-                                  const SizedBox(height: 8),
                                 ],
                               ),
                             ),
                           ],
                         ),
-                        Row(
-                          children: [
-                            // Date and time row
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.access_time,
-                                  size: 14,
-                                  color: Colors.grey.shade500,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '8:00 AM - 5:30 PM',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey.shade600,
-                                  ),
-                                ),
-                                const SizedBox(width: 16),
-                                Icon(
-                                  Icons.calendar_today,
-                                  size: 14,
-                                  color: Colors.grey.shade500,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '25 August 2021',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey.shade600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        // Complete button
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            TextButton(
-                              onPressed: taskController.isTaskPending(task.id!)
-                                  ? null
-                                  : () {
-                                      taskController.toggleTaskStatus(
-                                          task, !task.isCompleted);
-                                    },
-                              style: TextButton.styleFrom(
-                                backgroundColor: Colors.green,
-                                foregroundColor: Colors.white,
-                                minimumSize: Size.zero,
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 6, vertical: 4),
-                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
+                        const SizedBox(height: 4),
+
+                        // 🕒 Time & Date Row (ẩn nếu không có time)
+                        if (_hasTime(task.date, task.dueDate))
+                          Row(
+                            children: [
+                              const SizedBox(width: 30),
+                              Icon(Icons.access_time,
+                                  size: 14, color: Colors.grey.shade500),
+                              const SizedBox(width: 4),
+                              Text(
+                                _formatTimeRange(task.date, task.dueDate),
+                                style: TextStyle(
+                                    fontSize: 12, color: Colors.grey.shade600),
                               ),
-                              child: const Text('Complete'),
-                            ),
-                          ],
-                        )
+                              const SizedBox(width: 16),
+                              Icon(Icons.calendar_today,
+                                  size: 14, color: Colors.grey.shade500),
+                              const SizedBox(width: 4),
+                              Text(
+                                _formatDateRange(task.date, task.dueDate),
+                                style: TextStyle(
+                                    fontSize: 12, color: Colors.grey.shade600),
+                              ),
+                            ],
+                          )
+                        else
+                          Row(
+                            children: [
+                              const SizedBox(width: 30),
+                              Icon(Icons.calendar_today,
+                                  size: 14, color: Colors.grey.shade500),
+                              const SizedBox(width: 4),
+                              Text(
+                                _formatDateRange(task.date, task.dueDate),
+                                style: TextStyle(
+                                    fontSize: 12, color: Colors.grey.shade600),
+                              ),
+                            ],
+                          ),
                       ],
                     ),
                   ),
@@ -389,6 +394,35 @@ class _AllTasksPageState extends State<CategoryTasksPage> {
       ],
     );
   }
+
+  bool _hasTime(DateTime? start, DateTime? end) {
+    if (start == null) return false;
+    // Nếu cả giờ và phút = 0 → xem như không có thời gian
+    final hasStartTime = start.hour != 0 || start.minute != 0;
+    final hasEndTime = end != null && (end.hour != 0 || end.minute != 0);
+    return hasStartTime || hasEndTime;
+  }
+
+  String _formatTimeRange(DateTime? start, DateTime? end) {
+    if (!_hasTime(start, end)) return '';
+    final ctx = Get.context!;
+    final startTime = TimeOfDay.fromDateTime(start!).format(ctx);
+    final endTime = end != null ? TimeOfDay.fromDateTime(end).format(ctx) : '';
+    return endTime.isNotEmpty ? '$startTime - $endTime' : startTime;
+  }
+
+  String _formatDateRange(DateTime? start, DateTime? end) {
+    if (start == null) return '';
+    final startDate = DateFormat('d MMM yyyy').format(start);
+    if (end != null && !isSameDay(start, end)) {
+      final endDate = DateFormat('d MMM yyyy').format(end);
+      return '$startDate - $endDate';
+    }
+    return startDate;
+  }
+
+  bool isSameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
 
   // Widget _buildTaskSection(String title, List<Task> tasks, bool isCompleted) {
   //   if (tasks.isEmpty && !isCompleted) return const SizedBox.shrink();

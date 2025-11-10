@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 async def get_or_create_inbox_category(db: AsyncSession, user_id: int) -> Category:
     result = await db.execute(
         select(Category).where(
-            Category.title == "Inbox",
+            Category.title == "My Notes",
             Category.owner_id == user_id
         )
     )
@@ -20,9 +20,9 @@ async def get_or_create_inbox_category(db: AsyncSession, user_id: int) -> Catego
 
     if inbox is None:
         inbox = Category(
-        title="Inbox",
+        title="My Notes",
         owner_id=user_id,
-        color="grey",           # hoặc giá trị mặc định khác
+        color="#575DFB",           # hoặc giá trị mặc định khác
         icon="58040"            # hoặc bất kỳ string nào
     )
         

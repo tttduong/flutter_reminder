@@ -20,6 +20,8 @@ class TaskController extends GetxController {
   final RxList<Task> taskList = <Task>[].obs;
   final RxMap<int, bool> pendingUpdates = <int, bool>{}.obs;
   RxList<Task> matrixTasks = <Task>[].obs;
+  final RxList<Task> fullDayTaskList = <Task>[].obs;
+  final RxBool isFullDayExpanded = true.obs;
 
   @override
   void onInit() {
@@ -84,6 +86,30 @@ class TaskController extends GetxController {
     }
   }
 
+  // Lấy full day tasks theo ngày
+  Future<void> getFullDayTasks(DateTime date) async {
+    try {
+      isLoading.value = true;
+      final tasks = await TaskService.getSingleDayTasks(date);
+      fullDayTaskList.assignAll(tasks);
+    } catch (e) {
+      print('Error getting full day tasks: $e');
+      fullDayTaskList.clear();
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  // Helper: Lấy full day tasks cho một ngày cụ thể từ list hiện tại
+  List<Task> getFullDayTasksForDate(DateTime date) {
+    return fullDayTaskList.where((task) {
+      if (task.date == null) return false;
+      return task.date!.year == date.year &&
+          task.date!.month == date.month &&
+          task.date!.day == date.day &&
+          task.dueDate == null; // Chỉ lấy task không có due_date
+    }).toList();
+  }
 // Trong task_controller.dart
 // // Trong task_controller.dart
 // void toggleTaskCompletion(Task task) async {
@@ -116,7 +142,8 @@ class TaskController extends GetxController {
 //     Get.snackbar('Error', 'Failed to update task');
 //   }
 // }
-// Trong task_controller.dart
+
+// Trong task_controller.dart ----đang dùng trong homepage
   void toggleTaskCompletion(Task task) async {
     final taskId = task.id;
     final newStatus = !task.isCompleted;
@@ -149,7 +176,7 @@ class TaskController extends GetxController {
     }
   }
 
-  // Toggle method với String key fix
+  // Toggle method với String key fix  --- đnag dùng trong category task page
   Future<void> toggleTaskStatus(Task task, bool newStatus) async {
     final taskId = task.id;
 
