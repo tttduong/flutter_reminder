@@ -1,5 +1,6 @@
 from http.client import HTTPException
 import json
+import uuid
 from fastapi import FastAPI, Depends, BackgroundTasks, APIRouter,  HTTPException, status
 from pydantic import BaseModel
 import os
@@ -17,16 +18,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import get_db
 from app.api.models.conversation import ConversationResponse
+from app.api.prompts import DEFAULT_CHAT_PROMPT, DEFAULT_TASK_PARSER_PROMPT
 router = APIRouter()
 app = FastAPI(title="Groq LLM API", version="1.0.0")
 
 
 class ChatRequest(BaseModel):
-    conversation_id: Optional[int] = None
+    conversation_id: Optional[str] = None
     message: str
     model: str = "llama-3.1-8b-instant"  # Default Groq model
-    system_prompt: Optional[str] = None  # ← THÊM SYSTEM PROMPT
-    conversation_history: Optional[List[Dict[str, str]]] = []  # ← THÊM LỊCH SỬ
+    # system_prompt: Optional[str] = None  
+    conversation_history: Optional[List[Dict[str, str]]] = []  
 
 class ChatResponse(BaseModel):
     response: str
@@ -61,34 +63,7 @@ async def parse_task(
     current_user: User = Depends(get_current_user)
 ):
     try:
-        system_prompt = """
-            You are a task parser assistant.
-            Extract structured task information from user messages.
-
-            Rules:
-            - If the input contains a schedule or a list of tasks with times, return an array of tasks (JSON list).
-            - If the user asks to create or schedule something, always return "intent": "create_task".
-            - If the user says anything with "task", "reminder", "schedule", "wake up", "meet", "plan", etc → always "create_task".
-            - If the user just chats, return "intent": "small_talk".
-            - If input is a schedule or a list of activities (e.g., "2:00 PM - 2:30 PM: Coding Project"), treat each entry as a task with "intent": "create_task".
-            - Always prefer "create_task" over "small_talk" if there are action items, times, or tasks mentioned.
-            - If no date/time is given, use the current datetime (YYYY-MM-DDTHH:MM:SS).
-            - "due_date" can be null.
-
-            Return ONLY valid JSON.
-            If multiple tasks exist, return an array of objects in this format:
-            [
-              {
-                "intent": "create_task",
-                "title": "...",
-                "description": "...",
-                "category_id": 57,
-                "date": "YYYY-MM-DDTHH:MM:SS",
-                "due_date": null
-              },
-              ...
-            ]
-        """
+        system_prompt = DEFAULT_TASK_PARSER_PROMPT
 
         messages = [
             {"role": "system", "content": system_prompt},
@@ -112,7 +87,7 @@ async def parse_task(
         tasks: List[TaskIntentResponse] = []
         for task_data in parsed:
             intent = task_data.get("intent", "small_talk")
-            title = task_data.get("title", "")
+            title = task_data.get("title", "None Title")
             description = task_data.get("description", "")
             category_id = task_data.get("category_id", 57)
 
@@ -262,13 +237,13 @@ async def get_all_conversations(
 #-------------Get message of the conversation-------
 @router.get("/conversations/{conversation_id}/messages")
 async def get_messages(
-    conversation_id: int,
+    conversation_id: str,
     session: AsyncSession = Depends(get_db),
     user=Depends(get_current_user)
 ):
     # --- 1️⃣ Kiểm tra conversation có tồn tại không ---
     result = await session.execute(
-        select(Conversation).where(Conversation.id == conversation_id)
+        select(Conversation).where(Conversation.id == str(conversation_id))
     )
     conversation = result.scalar_one_or_none()
 
@@ -288,7 +263,7 @@ async def get_messages(
     # --- 3️⃣ Trả về messages ---
     result = await session.execute(
         select(Message)
-        .where(Message.conversation_id == conversation_id)
+        .where(Message.conversation_id == str(conversation_id))
         .order_by(Message.created_at)
     )
     messages = result.scalars().all()
@@ -307,17 +282,30 @@ async def chat_endpoint(
     conversation = await session.scalar(
         select(Conversation).where(Conversation.id == request.conversation_id, Conversation.user_id == current_user.id )
     )
+    # if not conversation:
+    #     conversation = Conversation(user_id=current_user.id, title="New Chat")
+    #     session.add(conversation)
+    #     await session.flush()  # để có conversation.id
     if not conversation:
-        conversation = Conversation(user_id=current_user.id, title="New Chat")
-        session.add(conversation)
-        await session.flush()  # để có conversation.id
+        conversation = Conversation(
+            id=str(uuid.uuid4()),  
+            user_id=current_user.id,
+            title="New Chat",
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow()
+        )
+            
+    session.add(conversation)
+    await session.flush()
+
 
     # 2️⃣ Tạo danh sách messages (system + lịch sử từ DB + user message)
     messages = []
 
     # Thêm system prompt nếu có
-    if request.system_prompt:
-        messages.append({"role": "system", "content": request.system_prompt})
+    # if request.system_prompt:
+    #     messages.append({"role": "system", "content": DEFAULT_CHAT_PROMPT})
+    messages.append({"role": "system", "content": DEFAULT_CHAT_PROMPT})
 
     # Lấy lịch sử tin nhắn từ DB
     db_messages = (await session.scalars(

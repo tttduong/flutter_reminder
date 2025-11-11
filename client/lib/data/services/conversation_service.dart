@@ -32,7 +32,7 @@ class ConversationService {
     }
   }
 
-  static Future<List<dynamic>> fetchMessages(int conversationId) async {
+  static Future<List<dynamic>> fetchMessages(String conversationId) async {
     try {
       final response = await ApiService.dio.get(
         '/api/v1/conversations/$conversationId/messages/',

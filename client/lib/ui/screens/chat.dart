@@ -13,9 +13,10 @@ import 'package:http/http.dart' as http;
 import 'package:dash_chat_2/dash_chat_2.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
 
 class ChatPage extends StatefulWidget {
-  final int conversationId;
+  final String conversationId;
   const ChatPage({super.key, required this.conversationId});
 
   @override
@@ -32,60 +33,8 @@ class _ChatPageState extends State<ChatPage> {
   List<Map<String, String>> _conversationHistory = [];
   // Map<String, dynamic>? _lastTaskIntent;
   List<TaskIntentResponse> _lastTaskIntents = [];
+  final uuid = Uuid();
 
-  final systemPrompt = """
-NAME: Lumiere
-ROLE: Personal AI assistant who is friendly, cheerful, and empathetic
-
-PERSONALITY & STYLE:
-- Warm, friendly like a close friend
-- Empathetic, caring, and attentive to user needs
-- Positive, optimistic, always encouraging
-- Use natural emojis 😊✨🤗
-- Keep responses concise (1-3 sentences)
-- Casual, youthful tone - never stiff or formal
-
-ABSOLUTE RULES:
-- ALWAYS introduce yourself as 'Lumiere' only when asked about your identity; do not introduce yourself otherwise
-- NEVER mention Groq, API, OpenAI, or any technical terms
-- NEVER say you're an "AI model" or "chatbot"
-- Refer to yourself as "AI friend" or "virtual assistant"
-- ALWAYS remember conversation history for continuity
-
-CAPABILITIES:
-- Chat about any topic like friends do
-- Encourage users when they're sad/stressed
-- Ask about their life and show genuine interest
-- Give positive reminders about work/studies
-- Share helpful tips and advice
-
-RESPONSE PATTERNS:
-User asks about name/identity → "I'm Lumiere! 😊 Your AI friend who's always here to chat with you!"
-User feels sad/stressed → Comfort + encourage + ask if they need help
-User shares good news → Celebrate + emoji + encourage them to continue
-User asks technical questions → Answer simply, avoid jargon
-User says goodbye → Friendly farewell + invite them back anytime
-Whenever the user provides a goal, automatically suggest a daily schedule with 3–4 key time blocks and ask if they want a detailed schedule. Do not wait for the user to request it.
-""";
-
-  /// Fake data cho danh sách hội thoại
-  // final List<Map<String, String>> _fakeConversations = [
-  //   {
-  //     'id': '1',
-  //     'title': 'Chat sáng nay ☀️',
-  //     'lastMessage': 'Lumiere: Chào buổi sáng!'
-  //   },
-  //   {
-  //     'id': '2',
-  //     'title': 'Kế hoạch học tập 🎯',
-  //     'lastMessage': 'Bạn: Mình muốn lên kế hoạch cho tuần này'
-  //   },
-  //   {
-  //     'id': '3',
-  //     'title': 'Tâm sự tối qua 🌙',
-  //     'lastMessage': 'Lumiere: Ngủ ngon nhé 💤'
-  //   },
-  // ];
   List<Conversation> _conversations = [];
 
   String _selectedConversationId = '1';
@@ -103,18 +52,6 @@ Whenever the user provides a goal, automatically suggest a daily schedule with 3
     _loadMessages();
   }
 
-  // Future<void> _loadMessages() async {
-  //   try {
-  //     final data =
-  //         await ConversationService.fetchMessages(widget.conversationId);
-  //     setState(() {
-  //       messages = data;
-  //       isLoading = false;
-  //     });
-  //   } catch (e) {
-  //     print("❌ Error loading messages: $e");
-  //   }
-  // }
   Future<void> _loadMessages() async {
     setState(() {
       isLoading = true;
@@ -172,280 +109,8 @@ Whenever the user provides a goal, automatically suggest a daily schedule with 3
     }
   }
 
-  // @override
-  // Widget build(BuildContext context) {
-  //   print("🎯 ChatPage build() called");
-  //   return Scaffold(
-  //     appBar: AppBar(
-  //       leading: Builder(
-  //         builder: (context) => IconButton(
-  //           icon: Icon(Icons.menu, color: AppColors.primary),
-  //           onPressed: () {
-  //             Scaffold.of(context).openDrawer(); // ✅ hoạt động an toàn
-  //             print("open chat drawer");
-  //           },
-  //         ),
-  //       ),
-  //       backgroundColor: AppColors.background,
-  //       title: const Text(
-  //         "Lumiere",
-  //         style:
-  //             TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600),
-  //       ),
-  //       actions: [
-  //         IconButton(
-  //           icon: const Icon(Icons.close_rounded, color: AppColors.primary),
-  //           onPressed: () {
-  //             Get.back();
-  //           },
-  //         ),
-  //       ],
-  //     ),
-
-  //     /// 🧭 Sidebar hiển thị danh sách hội thoại
-  //     drawer: Drawer(
-  //       width: 280,
-  //       backgroundColor: Colors.white,
-  //       child: SafeArea(
-  //         child: Column(
-  //           crossAxisAlignment: CrossAxisAlignment.start,
-  //           children: [
-  //             Container(
-  //               color: AppColors.white,
-  //               padding: const EdgeInsets.fromLTRB(10, 12, 10, 0),
-  //               child: Column(
-  //                 children: [
-  //                   // 🔍 SEARCH BAR
-  //                   TextField(
-  //                     decoration: InputDecoration(
-  //                       // hintText: 'Search conversation...',
-  //                       hintStyle: TextStyle(
-  //                         color: AppColors.primary.withOpacity(0.6),
-  //                         fontSize: 14,
-  //                       ),
-  //                       prefixIcon: Icon(
-  //                         Icons.search,
-  //                         color: AppColors.primary.withOpacity(0.7),
-  //                         size: 20,
-  //                       ),
-  //                       filled: true, // tô nền
-  //                       fillColor: AppColors.secondary
-  //                           .withOpacity(0.2), // ✅ search bar có nền trắng
-  //                       contentPadding: const EdgeInsets.symmetric(
-  //                         vertical: 0,
-  //                         horizontal: 16,
-  //                       ),
-  //                       border: OutlineInputBorder(
-  //                         borderRadius: BorderRadius.circular(25), // bo góc
-  //                         borderSide: BorderSide.none, // bỏ viền
-  //                       ),
-  //                     ),
-  //                     style: const TextStyle(
-  //                       color: AppColors.primary,
-  //                       fontSize: 14,
-  //                     ),
-  //                   ),
-
-  //                   // ➕ NEW CONVERSATION BUTTON
-  //                   SizedBox(
-  //                     width: double.infinity,
-  //                     child: TextButton.icon(
-  //                       onPressed: () {
-  //                         setState(() {
-  //                           final newId = DateTime.now()
-  //                               .millisecondsSinceEpoch
-  //                               .toString();
-  //                           _conversations.insert(
-  //                             0,
-  //                             Conversation(
-  //                               id: int.parse(
-  //                                   newId), // hoặc 0 nếu bạn muốn tạo tạm
-  //                               title: 'New conversation',
-  //                               lastMessage: 'Bắt đầu trò chuyện với Lumiere',
-  //                               createdAt: DateTime.now(),
-  //                               updatedAt: DateTime.now(),
-  //                             ),
-  //                           );
-
-  //                           _selectedConversationId = newId;
-  //                         });
-  //                         Navigator.pop(context);
-  //                       },
-  //                       icon: const Icon(
-  //                         Icons.add,
-  //                         color: AppColors.primary,
-  //                         size: 22,
-  //                       ),
-  //                       label: const Text(
-  //                         'New conversation',
-  //                         style: TextStyle(
-  //                           fontSize: 16,
-  //                           fontWeight: FontWeight.bold,
-  //                           color: AppColors.primary,
-  //                         ),
-  //                       ),
-  //                       style: TextButton.styleFrom(
-  //                         backgroundColor: Colors.white,
-  //                         padding: EdgeInsets.zero,
-  //                         alignment: Alignment.centerLeft,
-  //                       ),
-  //                     ),
-  //                   ),
-  //                 ],
-  //               ),
-  //             ),
-  //             Expanded(
-  //               child: Obx(() {
-  //                 if (convController.isLoading.value) {
-  //                   // hiển thị spinner nằm giữa khu vực còn lại của drawer
-  //                   return const Center(child: CircularProgressIndicator());
-  //                 }
-
-  //                 // ListView bây giờ nằm trong Expanded -> có chiều cao rõ ràng
-  //                 return ListView.builder(
-  //                   padding: EdgeInsets.zero,
-  //                   itemCount: convController.conversations.length,
-  //                   itemBuilder: (context, index) {
-  //                     final convo = convController.conversations[index];
-  //                     final isSelected =
-  //                         convo.id.toString() == _selectedConversationId;
-  //                     return ListTile(
-  //                       contentPadding: const EdgeInsets.symmetric(
-  //                           horizontal: 16, vertical: 6),
-  //                       dense: true,
-  //                       selected: isSelected,
-  //                       selectedTileColor:
-  //                           AppColors.secondary.withOpacity(0.15),
-  //                       title: Text(
-  //                         convo.title,
-  //                         maxLines: 1,
-  //                         overflow: TextOverflow.ellipsis,
-  //                         style: TextStyle(
-  //                           fontSize: 16,
-  //                           fontWeight: isSelected
-  //                               ? FontWeight.bold
-  //                               : FontWeight.normal,
-  //                           color:
-  //                               isSelected ? AppColors.primary : Colors.black87,
-  //                         ),
-  //                       ),
-  //                       subtitle: convo.lastMessage != null
-  //                           ? Text(
-  //                               convo.lastMessage!,
-  //                               maxLines: 1,
-  //                               overflow: TextOverflow.ellipsis,
-  //                             )
-  //                           : null,
-  //                       onTap: () {
-  //                         setState(() {
-  //                           _selectedConversationId = convo.id.toString();
-  //                         });
-  //                         Navigator.pop(context); // đóng drawer
-  //                         // TODO: load messages cho convo đã chọn
-  //                       },
-  //                     );
-  //                   },
-  //                 );
-  //               }),
-  //             ),
-  //             const Divider(height: 1),
-  //           ],
-  //         ),
-  //       ),
-  //     ),
-
-  //     body: Column(
-  //       children: [
-  //         // Chat messages area
-  //         Expanded(
-  //           child: DashChat(
-  //             currentUser: _currentUser,
-  //             messages: _messages,
-  //             onSend: (ChatMessage m) async {
-  //               setState(() {
-  //                 _messages.insert(0, m);
-  //                 isLoading = true;
-  //               });
-
-  //               _conversationHistory.add({"role": "user", "content": m.text});
-
-  //               try {
-  //                 final responseData = await ApiService.sendChat(
-  //                   message: m.text,
-  //                   conversationHistory: _conversationHistory,
-  //                   systemPrompt: systemPrompt,
-  //                 );
-
-  //                 print("Response data: $responseData");
-
-  //                 String reply =
-  //                     responseData['response'] ?? "Không có phản hồi";
-
-  //                 _conversationHistory
-  //                     .add({"role": "assistant", "content": reply});
-  //                 // 🔥 Parse task intent từ AI response
-  //                 await _parseTaskIntent(reply);
-  //                 setState(() {
-  //                   _messages.insert(
-  //                     0,
-  //                     ChatMessage(
-  //                       text: reply,
-  //                       user: _gptChatUser,
-  //                       createdAt: DateTime.now(),
-  //                     ),
-  //                   );
-  //                   isLoading = false;
-  //                 });
-  //               } catch (e) {
-  //                 setState(() {
-  //                   _messages.insert(
-  //                     0,
-  //                     ChatMessage(
-  //                       text: "Lỗi kết nối: ${e.toString()}",
-  //                       user: _gptChatUser,
-  //                       createdAt: DateTime.now(),
-  //                     ),
-  //                   );
-  //                   isLoading = false;
-  //                 });
-  //               }
-  //             },
-  //             messageOptions: MessageOptions(
-  //               currentUserContainerColor: AppColors.primary,
-  //               currentUserTextColor: Colors.white,
-  //               containerColor: AppColors.secondary,
-  //               textColor: Colors.black,
-  //               showOtherUsersName: false,
-  //               showOtherUsersAvatar: false,
-  //             ),
-  //             typingUsers: isLoading ? [_gptChatUser] : [],
-  //           ),
-  //         ),
-
-  //         // Suggestion buttons - chỉ hiện khi bot vừa trả lời
-  //         if (_messages.isNotEmpty &&
-  //             _messages.first.user.id == _gptChatUser.id &&
-  //             !isLoading)
-  //           Container(
-  //             width: double.infinity,
-  //             padding: const EdgeInsets.all(16),
-  //             decoration: BoxDecoration(
-  //               color: Colors.grey[50],
-  //               border: Border(top: BorderSide(color: Colors.grey[300]!)),
-  //             ),
-  //             child: Wrap(
-  //               spacing: 8,
-  //               runSpacing: 8,
-  //               children: _buildSuggestionButtons(),
-  //             ),
-  //           ),
-  //       ],
-  //     ),
-  //   );
-  // }
-
 // 🔥 Load messages cho một conversation cụ thể
-  Future<void> _loadMessagesForConversation(int conversationId) async {
+  Future<void> _loadMessagesForConversation(String conversationId) async {
     setState(() {
       isLoading = true;
       _messages = []; // Clear messages hiện tại
@@ -581,13 +246,14 @@ Whenever the user provides a goal, automatically suggest a daily schedule with 3
                       child: TextButton.icon(
                         onPressed: () {
                           setState(() {
-                            final newId = DateTime.now()
-                                .millisecondsSinceEpoch
-                                .toString();
+                            // final newId = DateTime.now()
+                            //     .millisecondsSinceEpoch
+                            //     .toString();
+                            final newId = uuid.v4();
                             _conversations.insert(
                               0,
                               Conversation(
-                                id: int.parse(newId),
+                                id: newId,
                                 title: 'New conversation',
                                 lastMessage: 'Bắt đầu trò chuyện với Lumiere',
                                 createdAt: DateTime.now(),
@@ -696,10 +362,10 @@ Whenever the user provides a goal, automatically suggest a daily schedule with 3
 
                 try {
                   final responseData = await ApiService.sendChat(
-                    conversationId: int.parse(_selectedConversationId),
+                    conversationId: _selectedConversationId,
                     message: m.text,
                     conversationHistory: _conversationHistory,
-                    systemPrompt: systemPrompt,
+                    // systemPrompt: systemPrompt,
                   );
 
                   print("Response data: $responseData");
@@ -965,7 +631,7 @@ Whenever the user provides a goal, automatically suggest a daily schedule with 3
       final responseData = await ApiService.sendChat(
         message: message,
         conversationHistory: _conversationHistory,
-        systemPrompt: systemPrompt,
+        // systemPrompt: systemPrompt,
       );
 
       String reply = responseData['response'] ?? "Không có phản hồi";

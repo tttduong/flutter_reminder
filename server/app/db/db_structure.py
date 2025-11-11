@@ -72,7 +72,7 @@ class Category(Base):
 class Conversation(Base):
     __tablename__ = "conversations"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(String, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("user.id", ondelete="CASCADE"))
     title = Column(String, nullable=False)
     
@@ -86,7 +86,7 @@ class Message(Base):
     __tablename__ = "messages"
 
     id = Column(Integer, primary_key=True, index=True)
-    conversation_id = Column(Integer, ForeignKey("conversations.id"))
+    conversation_id = Column(String, ForeignKey("conversations.id"))
     role = Column(String, nullable=False)  # "user", "assistant", "system"
     content = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)

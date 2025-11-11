@@ -40,7 +40,7 @@ class ApiService {
     required List<Map<String, String>> conversationHistory,
     String? systemPrompt,
     String model = "llama-3.1-8b-instant",
-    int? conversationId,
+    String? conversationId,
   }) async {
     final cookies =
         await cookieJar.loadForRequest(Uri.parse(dio.options.baseUrl));
