@@ -1,3 +1,10 @@
+// UserProvider = Global state manager để:
+
+// Lưu user hiện tại trong memory
+// Chia sẻ user data cho toàn app
+// Auto-rebuild UI khi user thay đổi
+// Check authentication status
+
 import 'package:flutter/material.dart';
 
 import '../data/models/login_model.dart';

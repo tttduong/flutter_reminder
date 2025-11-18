@@ -54,14 +54,7 @@ class AuthService {
 
       http.Response res = await http.post(
         Uri.parse("${Constants.URI}/api/v1/register"),
-        // body: userAuth.toJson(),
-        // body: jsonEncode(userAuth.toJson()),
         body: jsonEncode(userAuth.toMap()),
-        // body: jsonEncode({
-        //   "email": email,
-        //   "password": password,
-        //   "username": username,
-        // }),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8'
         },
@@ -84,103 +77,12 @@ class AuthService {
     }
   }
 
-  // static Future<LoginModel?> signInUser({
-  //   required BuildContext context,
-  //   required String email,
-  //   required String password,
-  // }) async {
-  //   try {
-  //     // 1️⃣ Tạo Dio client + cookie jar
-  //     final dio = Dio();
-  //     final cookieJar = CookieJar();
-  //     dio.interceptors.add(CookieManager(cookieJar));
-
-  //     // 2️⃣ Gửi request login (x-www-form-urlencoded hoặc JSON)
-  //     final res = await dio.post(
-  //       "${Constants.URI}/api/v1/login",
-  //       data: {
-  //         'username': email,
-  //         'password': password,
-  //       },
-  //       options: Options(
-  //         contentType: Headers.formUrlEncodedContentType,
-  //       ),
-  //     );
-
-  //     // 3️⃣ Check response
-  //     if (res.statusCode == 200) {
-  //       final data = res.data;
-  //       print("📦 Full login response: $data");
-  //       print("🔥 Default category: ${data['default_category']}");
-
-  //       // 4️⃣ Tạo LoginModel từ response JSON (không cần token)
-  //       return LoginModel(
-  //         user: data['user'] != null ? User.fromJson(data['user']) : null,
-  //         defaultCategory: data['default_category'] != null
-  //             ? Category.fromJson(data['default_category'])
-  //             : null,
-  //         // token: không còn cần nữa
-  //       );
-  //     } else {
-  //       print("Đăng nhập thất bại: ${res.data}");
-  //     }
-  //   } catch (e) {
-  //     Utils.showSnackBar(context, e.toString());
-  //   }
-
-  //   return null;
-  // }
-  // static Future<LoginModel?> signInUser({
-  //   required BuildContext context,
-  //   required String email,
-  //   required String password,
-  // }) async {
-  //   try {
-  //     final dio = Dio();
-  //     final cookieJar = CookieJar();
-  //     dio.interceptors.add(CookieManager(cookieJar));
-
-  //     // ✅ Gửi JSON body
-  //     final res = await dio.post(
-  //       "${Constants.URI}/api/v1/login",
-  //       data: {
-  //         'email': email,
-  //         'password': password,
-  //       },
-  //       options: Options(
-  //         contentType: Headers.jsonContentType, // JSON
-  //       ),
-  //     );
-
-  //     if (res.statusCode == 200) {
-  //       final data = res.data;
-  //       print("📦 Full login response: $data");
-
-  //       return LoginModel(
-  //         user: data['user'] != null ? User.fromJson(data['user']) : null,
-  //         defaultCategory: data['default_category'] != null
-  //             ? Category.fromJson(data['default_category'])
-  //             : null,
-  //       );
-  //     } else {
-  //       print("Đăng nhập thất bại: ${res.data}");
-  //     }
-  //   } catch (e) {
-  //     Utils.showSnackBar(context, e.toString());
-  //   }
-
-  //   return null;
-  // }
   static Future<LoginModel?> signInUser({
     required BuildContext context,
     required String email,
     required String password,
   }) async {
     try {
-      // final dio = Dio();
-      // final cookieJar = CookieJar();
-      // dio.interceptors.add(CookieManager(cookieJar));
-
       // ✅ Gửi JSON body
       final res = await ApiService.dio.post(
         "${Constants.URI}/api/v1/login",
@@ -213,33 +115,6 @@ class AuthService {
     return null;
   }
 
-  /// A function for getting User account's datas via token,
-  /// Success : return User model,
-  /// Fail : return null
-  // static Future<User?> getUser({
-  //   required BuildContext context,
-  //   required String token,
-  // }) async {
-  //   try {
-  //     http.Response res = await http.get(
-  //       Uri.parse("${Constants.URI}/api/v1/me"),
-  //       headers: <String, String>{
-  //         'Content-Type': 'application/json; charset=UTF-8',
-  //         'Authorization': 'Bearer $token',
-  //       },
-  //     );
-
-  //     if (res.statusCode != 200) return null;
-
-  //     // return User.fromJson(res.body);
-  //     final userJson = jsonDecode(res.body);
-  //     print("📦 userJson from BE: $userJson");
-  //     return User.fromJson(userJson);
-  //   } catch (e) {
-  //     Utils.showSnackBar(context, e.toString());
-  //     return null;
-  //   }
-  // }
   static Future<User?> getUser({
     // required BuildContext context,
     required String token,

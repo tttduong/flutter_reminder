@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
+from uuid import uuid4
 from sqlalchemy.dialects.postgresql import TIMESTAMP
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime
+from sqlalchemy import ARRAY, UUID, Column, Integer, String, Boolean, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.db.database import Base
@@ -92,3 +93,20 @@ class Message(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     conversation = relationship("Conversation", back_populates="messages")
+
+
+class GoalDraft(Base):
+    __tablename__ = "goal_drafts"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    user_id = Column(Integer, ForeignKey("user.id"))
+    
+    goal_title = Column(String, nullable=True)          # maps to "goal_title"
+    measurable_target = Column(String, nullable=True)   # maps to "measurable_target"
+    daily_action = Column(String, nullable=True)        # maps to "daily_action"
+    start_date = Column(DateTime, nullable=True)        # maps to "start_date"
+    duration = Column(String, nullable=True)
+    end_date = Column(DateTime, nullable=True)          # maps to "end_date"
+    
+    fields_missing = Column(ARRAY(String), nullable=True)  # list of missing fields
+    status = Column(String, default="collecting")         # collecting | ready | confirmed

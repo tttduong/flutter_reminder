@@ -9,7 +9,7 @@ from sqlalchemy import select
 from app.core.config import settings
 from app.services.llm_service import LLMService
 from typing import List, Dict, Optional
-from app.db.db_structure import Conversation, Message
+from app.db.db_structure import Category, Conversation, GoalDraft, Message
 from app.core.session import get_current_user
 from app.db.db_structure import User
 from datetime import datetime, date
@@ -18,7 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import get_db
 from app.api.models.conversation import ConversationResponse
-from app.api.prompts import DEFAULT_CHAT_PROMPT, DEFAULT_TASK_PARSER_PROMPT
+from app.api.prompts import DEFAULT_CHAT_PROMPT, DEFAULT_TASK_PARSER_PROMPT, GOAL_ANALYZER_PROMPT
 router = APIRouter()
 app = FastAPI(title="Groq LLM API", version="1.0.0")
 
@@ -27,6 +27,7 @@ class ChatRequest(BaseModel):
     conversation_id: Optional[str] = None
     message: str
     model: str = "llama-3.1-8b-instant"  # Default Groq model
+    # model: str = "openai/gpt-oss-120b"
     # system_prompt: Optional[str] = None  
     conversation_history: Optional[List[Dict[str, str]]] = []  
 
@@ -56,11 +57,154 @@ async def get_llm_service():
         yield llm_service  
     finally:
         await llm_service.close()
+
+@router.post("/chat/goal", response_model=ChatResponse)
+async def chat_goal(
+    req: ChatRequest,
+    llm_service: LLMService = Depends(get_llm_service),
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_db)
+):
+    # 1️⃣ Lấy hoặc tạo Conversation
+    conversation = await session.scalar(
+        select(Conversation)
+        .where(Conversation.id == req.conversation_id, Conversation.user_id == current_user.id)
+    )
+    if not conversation:
+        conversation = Conversation(
+            id=str(uuid.uuid4()),
+            user_id=current_user.id,
+            title="Goal Chat",
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow()
+        )
+        session.add(conversation)
+        await session.flush()
+
+    # 2️⃣ Lấy hoặc tạo GoalDraft
+    draft = await session.scalar(
+        select(GoalDraft)
+        .where(GoalDraft.user_id == current_user.id, GoalDraft.status == "collecting")
+    )
+    if not draft:
+        draft = GoalDraft(
+            user_id=current_user.id,
+            goal_title=None,
+            measurable_target=None,
+            daily_action=None,
+            start_date=None,
+            duration=None,
+            end_date=None,
+            status="collecting"
+        )
+        # Tính fields_missing dựa trên field thực sự còn trống
+        draft.fields_missing = [
+            f for f in ["goal_title","measurable_target","daily_action","start_date","duration","end_date"]
+            if getattr(draft, f) is None
+        ]
+        session.add(draft)
+        await session.flush()
+
+
+    # 3️⃣ Tạo danh sách messages (system + lịch sử + user)
+    # messages = [{"role": "system", "content": DEFAULT_CHAT_PROMPT}]
+    messages = [{"role": "system", "content": GOAL_ANALYZER_PROMPT}]
+    db_messages = (await session.scalars(
+        select(Message)
+        .where(Message.conversation_id == conversation.id)
+        .order_by(Message.created_at)
+    )).all()
+    for msg in db_messages:
+        messages.append({"role": msg.role, "content": msg.content})
+
+    # Thêm user message mới
+    user_message = Message(
+        conversation_id=conversation.id,
+        role="user",
+        content=req.message
+    )
+    session.add(user_message)
+    messages.append({"role": "user", "content": req.message})
+
+    # 4️⃣ Gọi LLM
+    result = await llm_service.generate_response_with_messages(
+        messages=messages,
+        model=req.model
+    )
+    print(f"LLM Response: {result['response']}")
+    # 5️⃣ Lưu phản hồi AI
+    ai_message = Message(
+        conversation_id=conversation.id,
+        role="assistant",
+        content=result["response"]
+    )
+    session.add(ai_message)
+    await session.commit()
+
+    # 6️⃣ Cập nhật draft với JSON từ LLM
+    try:
+        # json_line = result["response"].splitlines()[-1]
+        # parsed = json.loads(json_line)
+        # lấy đoạn nằm giữa hai dấu ```
+        text = result["response"]
+        if "```" in text:
+            json_part = text.split("```")[1]
+        else:
+            json_part = text
+
+        parsed = json.loads(json_part)
+    except Exception:
+        parsed = {"intent": "small_talk", "fields_missing": []}
+
+   # Update draft với JSON từ LLM
+    if parsed.get("intent") == "create_goal":
+        for field in ["goal_title", "measurable_target", "daily_action", "start_date", "end_date", "duration"]:
+            val = parsed.get(field)
+            if val:
+                setattr(draft, field, val)
+
+        # Chỉ hỏi những field còn thiếu
+        draft.fields_missing = parsed.get("fields_missing", [])
+
+        # Nếu duration đã có, bỏ end_date ra khỏi fields_missing
+        if draft.duration and "end_date" in draft.fields_missing:
+            draft.fields_missing.remove("end_date")
+
+        await session.commit()
+
+    # Chuẩn bị tin nhắn follow-up nếu còn thiếu
+    if draft.fields_missing:
+        questions = {
+            "goal_title": "What's the title of your goal?",
+            "measurable_target": "What's the specific result you want to achieve?",
+            "daily_action": "What will you do daily to reach it?",
+            "start_date": "When do you want to start?",
+            "duration": "How long do you want this goal to take?",
+            "end_date": "When do you want to finish?"
+        }
+
+        # Nếu duration đã có, bỏ end_date ra khỏi follow-up
+        follow_up_fields = draft.fields_missing.copy()
+        if draft.duration and "end_date" in follow_up_fields:
+            follow_up_fields.remove("end_date")
+
+        follow_up = [questions[f] for f in follow_up_fields if f in questions]
+
+        follow_up_message = "✨ Let's complete your goal by answering:\n" + "\n".join(follow_up)
+        return ChatResponse(
+            response=follow_up_message,
+            usage=result.get("usage"),
+            model=result.get("model")
+        )
+
+
+
 @router.post("/chat/parse_task", response_model=List[TaskIntentResponse])
 async def parse_task(
     req: ChatRequest,
     llm_service: LLMService = Depends(get_llm_service),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_db)
 ):
     try:
         system_prompt = DEFAULT_TASK_PARSER_PROMPT
@@ -84,12 +228,30 @@ async def parse_task(
         if isinstance(parsed, dict):
             parsed = [parsed]
 
+        default_category = await session.scalar(
+            select(Category).where(Category.owner_id == current_user.id, Category.is_default == True)
+        )
+        default_category_id = default_category.id if default_category else None
+
+        category_id = task_data.get("category_id")
+        if not category_id:
+            category_id = default_category_id
+        else:
+            # Kiểm tra category đó có thuộc user hiện tại không
+            check_category = await session.scalar(
+                select(Category).where(Category.id == category_id, Category.owner_id == current_user.id)
+            )
+            if not check_category:
+                category_id = default_category_id
+
+
+
         tasks: List[TaskIntentResponse] = []
         for task_data in parsed:
             intent = task_data.get("intent", "small_talk")
             title = task_data.get("title", "None Title")
             description = task_data.get("description", "")
-            category_id = task_data.get("category_id", 57)
+            category_id = task_data.get("category_id", default_category_id)
 
             # xử lý date
             date_str = task_data.get("date")

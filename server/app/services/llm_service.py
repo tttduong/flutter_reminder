@@ -63,7 +63,7 @@ class LLMService:
         except Exception as e:
             print(f"Error calling Groq API: {str(e)}")
             return {
-                "response": f"Xin lỗi, đã có lỗi xảy ra: {str(e)}",
+                "response": f"Error: {str(e)}",
                 "usage": {},
                 "model": model
             }

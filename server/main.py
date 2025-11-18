@@ -43,7 +43,7 @@ app.add_middleware(
     SessionMiddleware,
     secret_key=SECRET_KEY,
     session_cookie="sessionid",
-    max_age=1209600,
+    max_age=1209600, # 14 days
     same_site="lax",
     https_only=False,
 )
