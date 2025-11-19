@@ -1,11 +1,15 @@
 from datetime import datetime, timezone
+from enum import Enum
 from uuid import uuid4
+import uuid
 from sqlalchemy.dialects.postgresql import TIMESTAMP
 from sqlalchemy import ARRAY, UUID, Column, Integer, String, Boolean, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.db.database import Base
-
+from app.api.models.enums import GoalStatus
+from app.api.models.enums import GoalStatus  # hoặc from models.enums import GoalStatus
+from sqlalchemy import Enum as SQLEnum
 
 class User(Base):
     __tablename__ = "user"
@@ -15,9 +19,11 @@ class User(Base):
     email = Column(String, unique=True, index=True, nullable=True)
     hashed_password = Column(String)
     
-    tasks = relationship("Task", back_populates="owner")
+    tasks = relationship("Task", back_populates="owner", cascade="all, delete")
+    # tasks = relationship("Task", back_populates="owner")
     categories = relationship("Category", back_populates="owner")
     conversations = relationship("Conversation", back_populates="user", cascade="all, delete")
+
 
 class Task(Base):
     __tablename__ = "task"
@@ -34,9 +40,13 @@ class Task(Base):
 
     owner_id = Column(Integer, ForeignKey("user.id"))
     category_id = Column(Integer, ForeignKey("category.id", ondelete="CASCADE"), nullable=True)
-    
+     # Nếu task thuộc goal
+    goal_id = Column(UUID(as_uuid=True), ForeignKey("goal_drafts.id"), nullable=True)
+
     owner = relationship("User", back_populates="tasks")
     category = relationship("Category", back_populates="tasks")
+    goal = relationship("GoalDraft", back_populates="tasks")
+
 
 
 
@@ -56,17 +66,6 @@ class Category(Base):
     owner = relationship("User", back_populates="categories")
     tasks = relationship("Task", back_populates="category", cascade="all, delete", passive_deletes=True)
     is_default = Column(Boolean, default=False)
-#  tasks = relationship("Task", back_populates="category", cascade="all, delete")
-
-# class Conversation(Base):
-#     __tablename__ = "conversations"
-
-#     id = Column(Integer, primary_key=True, index=True)
-#     user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
-#     title = Column(String, default="New Chat")
-#     created_at = Column(DateTime, default=datetime.utcnow)
-
-#     messages = relationship("Message", back_populates="conversation", cascade="all, delete")
 
 
 
@@ -94,19 +93,21 @@ class Message(Base):
 
     conversation = relationship("Conversation", back_populates="messages")
 
-
 class GoalDraft(Base):
     __tablename__ = "goal_drafts"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    user_id = Column(Integer, ForeignKey("user.id"))
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
     
-    goal_title = Column(String, nullable=True)          # maps to "goal_title"
-    measurable_target = Column(String, nullable=True)   # maps to "measurable_target"
-    daily_action = Column(String, nullable=True)        # maps to "daily_action"
-    start_date = Column(DateTime, nullable=True)        # maps to "start_date"
+    goal_title = Column(String, nullable=True)
+    measurable_target = Column(String, nullable=True)
+    daily_action = Column(String, nullable=True)
+    start_date = Column(DateTime, nullable=True)
     duration = Column(String, nullable=True)
-    end_date = Column(DateTime, nullable=True)          # maps to "end_date"
+    end_date = Column(DateTime, nullable=True)
     
-    fields_missing = Column(ARRAY(String), nullable=True)  # list of missing fields
-    status = Column(String, default="collecting")         # collecting | ready | confirmed
+    fields_missing = Column(ARRAY(String), nullable=True)
+    status = Column(String, default="collecting")  # collecting | ready | confirmed
+
+    tasks = relationship("Task", back_populates="goal")
+

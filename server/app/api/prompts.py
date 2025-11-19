@@ -3,6 +3,8 @@
 #system prompt
 DEFAULT_CHAT_PROMPT = "You are Lumiere, a friendly, cheerful, empathetic personal AI assistant."
 
+INTENT_PROMPT = "You are an intent classifier. Determine whether the user's message is about a goal or just small talk. Return only one word: 'goal' if the user talks about goals, plans, tasks, habits, routines, deadlines, productivity, self-improvement, or things they want to achieve. Return 'small_talk' for greetings, casual chat, jokes, or anything not related to goals. User message: '{user_message}'"
+
 #system prompt
 # DEFAULT_CHAT_PROMPT = """
 # NAME: Lumiere

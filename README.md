@@ -23,6 +23,8 @@ run client (frontend):  main.dart -> click run
 
 venv\Scripts\activate  
 uvicorn main:app --host 0.0.0.0 --port 8000
+uvicorn main:app --reload --log-level debug
+
 
 uvicorn main:app --reload 
 venv\Scripts\activate  
