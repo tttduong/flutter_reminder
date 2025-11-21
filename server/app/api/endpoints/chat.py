@@ -18,11 +18,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import get_db
 from app.api.models.conversation import ConversationResponse
-from app.api.prompts import DEFAULT_CHAT_PROMPT, DEFAULT_TASK_PARSER_PROMPT, GOAL_ANALYZER_PROMPT, INTENT_PROMPT
+from app.api.prompts import DEFAULT_TASK_PARSER_PROMPT, INTENT_PROMPT, build_default_system_prompt, build_goal_analyzer_prompt
 
 import re
 from datetime import datetime, timedelta
 import calendar
+import pytz
 
 router = APIRouter()
 app = FastAPI(title="Groq LLM API", version="1.0.0")
@@ -31,7 +32,8 @@ app = FastAPI(title="Groq LLM API", version="1.0.0")
 class ChatRequest(BaseModel):
     conversation_id: Optional[str] = None
     message: str
-    model: str = "llama-3.1-8b-instant"  # Default Groq model
+    # model: str = "llama-3.1-8b-instant"  # Default Groq model
+    model: str = "gpt-4o-mini"
     # model: str = "openai/gpt-oss-120b"
     # system_prompt: Optional[str] = None  
     conversation_history: Optional[List[Dict[str, str]]] = []  
@@ -55,9 +57,12 @@ class TaskIntentResponse(BaseModel):
 # Dependency để tạo LLM service
 async def get_llm_service():
     llm_service = LLMService(
-        api_key=settings.CHAT_KEY,
-        base_url="https://api.groq.com/openai/v1"
+        # api_key=settings.CHAT_KEY,
+        # base_url="https://api.groq.com/openai/v1"
+        api_key=settings.OPENAI_API_KEY,
+        base_url="https://api.openai.com/v1"
     )
+
     try:
         yield llm_service  
     finally:
@@ -373,10 +378,8 @@ async def handle_small_talk_chat(
     messages = []
 
     # Thêm system prompt nếu có
-    # if request.system_prompt:
-    #     messages.append({"role": "system", "content": DEFAULT_CHAT_PROMPT})
-    messages.append({"role": "system", "content": DEFAULT_CHAT_PROMPT})
-
+    # messages.append({"role": "system", "content": DEFAULT_CHAT_PROMPT})
+    messages.append({"role": "system", "content": build_default_system_prompt()})
     # Lấy lịch sử tin nhắn từ DB
     db_messages = (await session.scalars(
         select(Message)
@@ -424,29 +427,38 @@ async def handle_goal_chat(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_db)
 ):
-    # 1️⃣ Lấy hoặc tạo Conversation
+    # ============================================
+    # 1) LẤY HOẶC TẠO CONVERSATION
+    # ============================================
     conversation = await session.scalar(
         select(Conversation)
-        .where(Conversation.id == req.conversation_id, Conversation.user_id == current_user.id)
+        .where(Conversation.id == req.conversation_id,
+               Conversation.user_id == current_user.id)
     )
+
     if not conversation:
         conversation = Conversation(
             id=str(uuid.uuid4()),
             user_id=current_user.id,
             title="Goal Chat",
             created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow()
+            updated_at=datetime.utcnow(),
         )
         session.add(conversation)
         await session.flush()
 
-    # 2️⃣ Lấy hoặc tạo GoalDraft
+    # ============================================
+    # 2) LẤY HOẶC TẠO GOALDRAFT
+    # ============================================
     draft = await session.scalar(
         select(GoalDraft)
-        .where(GoalDraft.user_id == current_user.id, GoalDraft.status == "collecting")
+        .where(GoalDraft.user_id == current_user.id,
+               GoalDraft.status == "collecting")
     )
+
     if not draft:
         draft = GoalDraft(
+            id=str(uuid.uuid4()),
             user_id=current_user.id,
             goal_title=None,
             measurable_target=None,
@@ -454,115 +466,136 @@ async def handle_goal_chat(
             start_date=None,
             duration=None,
             end_date=None,
-            status="collecting"
+            status="collecting",
         )
-        # Tính fields_missing dựa trên field thực sự còn trống
         draft.fields_missing = [
-            f for f in ["goal_title","measurable_target","daily_action","start_date","duration","end_date"]
-            if getattr(draft, f) is None
+            "goal_title", "measurable_target", "daily_action",
+            "start_date", "duration", "end_date"
         ]
         session.add(draft)
         await session.flush()
 
+    # ============================================
+    # 3) BUILD MESSAGE HISTORY
+    # ============================================
+    messages = [{"role": "system", "content": build_goal_analyzer_prompt()}]
 
-    # 3️⃣ Tạo danh sách messages (system + lịch sử + user)
-    # messages = [{"role": "system", "content": DEFAULT_CHAT_PROMPT}]
-    messages = [{"role": "system", "content": GOAL_ANALYZER_PROMPT}]
-    db_messages = (await session.scalars(
-        select(Message)
-        .where(Message.conversation_id == conversation.id)
-        .order_by(Message.created_at)
-    )).all()
+    db_messages = (
+        await session.scalars(
+            select(Message)
+            .where(Message.conversation_id == conversation.id)
+            .order_by(Message.created_at)
+        )
+    ).all()
+
     for msg in db_messages:
         messages.append({"role": msg.role, "content": msg.content})
 
-    # Thêm user message mới
-    user_message = Message(
-        conversation_id=conversation.id,
-        role="user",
-        content=req.message
-    )
-    session.add(user_message)
     messages.append({"role": "user", "content": req.message})
 
-    # 4️⃣ Gọi LLM
+    # Lưu user message
+    session.add(Message(
+        conversation_id=conversation.id,
+        role="user",
+        content=req.message,
+    ))
+
+    # ============================================
+    # 4) CALL LLM
+    # ============================================
     result = await llm_service.generate_response_with_messages(
         messages=messages,
         model=req.model
     )
-    print(f"LLM Response: {result['response']}")
-    # 5️⃣ Lưu phản hồi AI
-    ai_message = Message(
+
+    llm_text = result["response"]
+    print(f"LLM Response:\n{llm_text}\n")
+
+    # Lưu AI message
+    session.add(Message(
         conversation_id=conversation.id,
         role="assistant",
-        content=result["response"]
-    )
-    session.add(ai_message)
+        content=llm_text
+    ))
     await session.commit()
 
-    # 6️⃣ Cập nhật draft với JSON từ LLM
-    try:
-        # json_line = result["response"].splitlines()[-1]
-        # parsed = json.loads(json_line)
-        # lấy đoạn nằm giữa hai dấu ```
-        text = result["response"]
-        if "```" in text:
-            json_part = text.split("```")[1]
-        else:
-            json_part = text
+    # ============================================
+    # 5) PARSE JSON AN TOÀN
+    # ============================================
+    import re
+    parsed = {"intent": "small_talk", "fields_missing": []}
+    json_match = re.search(r"\{[\s\S]*\}", llm_text)
 
-        parsed = json.loads(json_part)
-    except Exception:
-        parsed = {"intent": "small_talk", "fields_missing": []}
+    if json_match:
+        try:
+            parsed = json.loads(json_match.group(0))
+        except Exception as e:
+            print("⚠ JSON parse failed:", e)
 
-    # 6️⃣ Cập nhật draft với JSON từ LLM-----------------------dùng parse date------------------------------------------
-    try:
-        text = result["response"]
-        if "```" in text:
-            json_part = text.split("```")[1]
-        else:
-            json_part = text
+    print("Parsed JSON →", parsed)
 
-        parsed = json.loads(json_part)
-    except Exception:
-        parsed = {"intent": "small_talk", "fields_missing": []}
+    # ============================================
+    # 5.1) TỰ ĐOÁN INTENT DỰA TRÊN DB
+    # Nếu tất cả fields đã có giá trị → intent = create_goal
+    # ============================================
+    safe_fields = [
+        "goal_title", "measurable_target", "daily_action",
+        "start_date", "duration", "end_date",
+    ]
+    all_filled = all(getattr(draft, f) not in [None, ""] for f in safe_fields)
+    if all_filled:
+        parsed["intent"] = "create_goal"
 
-    # ------------------ PARSE AND UPDATE 
-    if parsed.get("intent") == "create_goal":
-        for field in ["goal_title", "measurable_target", "daily_action", "start_date", "end_date", "duration"]:
-            val = parsed.get(field)
-            if not val:
-                continue
+    intent = parsed.get("intent")
 
-            # 🔥 If AI returns a date string => convert to real datetime.date
-            if field in ["start_date", "end_date"] and isinstance(val, str):
-                parsed_date = parse_human_date(val)
-                if parsed_date:
-                    setattr(draft, field, parsed_date)
-                    print(f"{field} parsed: {parsed_date} (type: {type(parsed_date)})")
-                else:
-                    setattr(draft, field, None)   # để hỏi lại hợp lý
-                    print(f"{field} could not be parsed, set to None")
-            else:
-                setattr(draft, field, val)
-                print(f"{field} set: {val}")
+    # ============================================
+    # 6) Nếu không phải create_goal → chỉ hiển thị message thân thiện
+    # ============================================
+    if intent != "create_goal":
+        follow_msg = "✨ " + parsed.get("message", llm_text)
+        return ChatResponse(
+            response=follow_msg,
+            usage=result.get("usage"),
+            model=result.get("model")
+        )
 
-            # Tính lại danh sách field còn thiếu
-            draft.fields_missing = [
-                f for f in ["goal_title", "measurable_target", "daily_action", "start_date", "duration", "end_date"]
-                if getattr(draft, f) in [None, ""]
-            ]
+    # ============================================
+    # 7) CẬP NHẬT DRAFT
+    # ============================================
+    for field in safe_fields:
+        val = parsed.get(field)
+        if not val:
+            continue
 
-            # Nếu duration đã có → bỏ end_date
-            if draft.duration and "end_date" in draft.fields_missing:
-                draft.fields_missing.remove("end_date")
+        # parse date nếu cần
+        if field in ["start_date", "end_date"] and isinstance(val, str):
+            d = parse_human_date(val)
+            if d:
+                setattr(draft, field, d)
+                print(f"✔ {field} = {d}")
+            continue
 
-            await session.commit()
-    # 6️⃣ Cập nhật draft với JSON từ LLM--------------------dùng parse date---------------------------------------------
+        setattr(draft, field, val)
+        print(f"✔ {field} = {val}")
 
-    # Chuẩn bị tin nhắn follow-up nếu còn thiếu
+    # Recalculate missing
+    draft.fields_missing = [
+        f for f in safe_fields
+        if getattr(draft, f) in [None, ""]
+    ]
+
+    # Nếu có duration → bỏ end_date khỏi missing
+    if draft.duration and "end_date" in draft.fields_missing:
+        draft.fields_missing.remove("end_date")
+
+    await session.commit()
+    print("Updated draft →", draft.fields_missing)
+
+    # ============================================
+    # 8) HỎI TIẾP NẾU CÒN FIELD THIẾU
+    # ============================================
     if draft.fields_missing:
-        questions = {
+        QUESTIONS = {
             "goal_title": "What's the title of your goal?",
             "measurable_target": "What's the specific result you want to achieve?",
             "daily_action": "What will you do daily to reach it?",
@@ -571,123 +604,279 @@ async def handle_goal_chat(
             "end_date": "When do you want to finish?"
         }
 
-        # Nếu duration đã có, bỏ end_date ra khỏi follow-up
-        follow_up_fields = draft.fields_missing.copy()
-        if draft.duration and "end_date" in follow_up_fields:
-            follow_up_fields.remove("end_date")
+        follow_up = [QUESTIONS[f] for f in draft.fields_missing]
+        follow_msg = "✨ Let's complete your goal:\n" + "\n".join(follow_up)
 
-        follow_up = [questions[f] for f in follow_up_fields if f in questions]
-
-        follow_up_message = "✨ Let's complete your goal by answering:\n" + "\n".join(follow_up)
         return ChatResponse(
-            response=follow_up_message,
-            usage=result.get("usage"),
-            model=result.get("model")
-        )
-    # Nếu tất cả field đã đầy đủ → generate plan
-    if not draft.fields_missing:
-        plan = await generate_plan(draft)
-
-        # Lưu plan vào DB (tùy table của bạn)
-        for task_data in plan:
-            task = Task(
-                goal_id=draft.id,
-                title=task_data["title"],
-                description=task_data["description"],
-                due_date=task_data["due_date"],
-                # status="pending"
-            )
-            session.add(task)
-        await session.commit()
-
-        # Trả về response cho user
-        plan_messages = "\n".join([f"{t['due_date']}: {t['title']} - {t['description']}" for t in plan])
-        return ChatResponse(
-            response=f"✅ Your detailed 5-day plan is ready:\n{plan_messages}",
+            response=follow_msg,
             usage=result.get("usage"),
             model=result.get("model")
         )
 
+    # ============================================
+    # 9) ĐỦ FIELD → GENERATE PLAN
+    # ============================================
+    plan = await generate_plan(draft)
 
-# ------handle date data -------------
-def parse_human_date(text: str):
-    text = text.lower().strip()
-    now = datetime.now()
+    for item in plan:
+        session.add(Task(
+            goal_id=draft.id,
+            title=item["title"],
+            description=item["description"],
+            due_date=item["due_date"],
+        ))
 
-    # --------- Direct keywords ---------
-    if text == "today":
-        return now.date()
+    await session.commit()
 
-    if text == "tomorrow":
-        return (now + timedelta(days=1)).date()
+    plan_text = "\n".join([f"{p['due_date']}: {p['title']} – {p['description']}" for p in plan])
 
-    if text == "yesterday":
-        return (now - timedelta(days=1)).date()
+    return ChatResponse(
+        response=f"✅ Your 5-day plan is ready:\n{plan_text}",
+        usage=result.get("usage"),
+        model=result.get("model")
+    )
 
-    # --------- "In X days/weeks/months" ---------
-    match = re.match(r"in (\d+) (day|days)", text)
-    if match:
-        n = int(match.group(1))
-        return (now + timedelta(days=n)).date()
+# @router.post("/chat/goal", response_model=ChatResponse)
+# async def handle_goal_chat(
+#     req: ChatRequest,
+#     llm_service: LLMService = Depends(get_llm_service),
+#     current_user: User = Depends(get_current_user),
+#     session: AsyncSession = Depends(get_db)
+# ):
+#     # ============================================
+#     # 1) LẤY HOẶC TẠO CONVERSATION
+#     # ============================================
+#     conversation = await session.scalar(
+#         select(Conversation)
+#         .where(Conversation.id == req.conversation_id,
+#                Conversation.user_id == current_user.id)
+#     )
 
-    match = re.match(r"in (\d+) (week|weeks)", text)
-    if match:
-        n = int(match.group(1))
-        return (now + timedelta(weeks=n)).date()
+#     if not conversation:
+#         conversation = Conversation(
+#             id=str(uuid.uuid4()),
+#             user_id=current_user.id,
+#             title="Goal Chat",
+#             created_at=datetime.utcnow(),
+#             updated_at=datetime.utcnow(),
+#         )
+#         session.add(conversation)
+#         await session.flush()
 
-    match = re.match(r"in (\d+) (month|months)", text)
-    if match:
-        n = int(match.group(1))
-        month = now.month - 1 + n
-        year = now.year + month // 12
-        month = month % 12 + 1
-        day = min(now.day, calendar.monthrange(year, month)[1])
-        return datetime(year, month, day).date()
+#     # ============================================
+#     # 2) LẤY HOẶC TẠO GOALDRAFT
+#     # ============================================
+#     draft = await session.scalar(
+#         select(GoalDraft)
+#         .where(GoalDraft.user_id == current_user.id,
+#                GoalDraft.status == "collecting")
+#         # .order_by(GoalDraft.created_at.desc())
+#     )
 
-    # --------- Next Monday / This Monday ---------
-    weekdays = {
-        "monday": 0, "tuesday": 1, "wednesday": 2,
-        "thursday": 3, "friday": 4, "saturday": 5, "sunday": 6
-    }
+#     if not draft:
+#         draft = GoalDraft(
+#             id=str(uuid.uuid4()),
+#             user_id=current_user.id,
+#             goal_title=None,
+#             measurable_target=None,
+#             daily_action=None,
+#             start_date=None,
+#             duration=None,
+#             end_date=None,
+#             status="collecting",
+#         )
+#         draft.fields_missing = [
+#             "goal_title", "measurable_target", "daily_action",
+#             "start_date", "duration", "end_date"
+#         ]
+#         session.add(draft)
+#         await session.flush()
 
-    match = re.match(r"next (monday|tuesday|wednesday|thursday|friday|saturday|sunday)", text)
-    if match:
-        target = weekdays[match.group(1)]
-        days_ahead = (target - now.weekday() + 7) % 7
-        days_ahead = 7 if days_ahead == 0 else days_ahead
-        return (now + timedelta(days=days_ahead)).date()
+#     # ============================================
+#     # 3) BUILD MESSAGE HISTORY
+#     # ============================================
+#     # messages = [{"role": "system", "content": GOAL_ANALYZER_PROMPT}]
+#     messages = [{"role": "system", "content": build_goal_analyzer_prompt()}]
 
-    match = re.match(r"this (monday|tuesday|wednesday|thursday|friday|saturday|sunday)", text)
-    if match:
-        target = weekdays[match.group(1)]
-        days_ahead = target - now.weekday()
-        return (now + timedelta(days=days_ahead)).date()
+#     db_messages = (
+#         await session.scalars(
+#             select(Message)
+#             .where(Message.conversation_id == conversation.id)
+#             .order_by(Message.created_at)
+#         )
+#     ).all()
 
-    # --------- Next week / next month ---------
-    if text == "next week":
-        return (now + timedelta(weeks=1)).date()
+#     for msg in db_messages:
+#         messages.append({"role": msg.role, "content": msg.content})
 
-    if text == "next month":
-        month = now.month % 12 + 1
-        year = now.year + (now.month // 12)
-        day = min(now.day, calendar.monthrange(year, month)[1])
-        return datetime(year, month, day).date()
+#     messages.append({"role": "user", "content": req.message})
 
-    # --------- ISO format YYYY-MM-DD ---------
-    try:
-        return datetime.fromisoformat(text).date()
-    except:
-        pass
+#     # Lưu user message
+#     session.add(Message(
+#         conversation_id=conversation.id,
+#         role="user",
+#         content=req.message,
+#     ))
 
-    # --------- VN format DD/MM/YYYY ---------
-    try:
-        return datetime.strptime(text, "%d/%m/%Y").date()
-    except:
-        pass
+#     # ============================================
+#     # 4) CALL LLM
+#     # ============================================
+#     result = await llm_service.generate_response_with_messages(
+#         messages=messages,
+#         model=req.model
+#     )
 
-    # --------- Not recognized ---------
-    return None
+#     llm_text = result["response"]
+#     print(f"LLM Response:\n{llm_text}\n")
 
+#     # Lưu AI message
+#     session.add(Message(
+#         conversation_id=conversation.id,
+#         role="assistant",
+#         content=llm_text
+#     ))
+#     await session.commit()
+
+#     # ============================================
+#     # 5) PARSE JSON — AN TOÀN 100%
+#     #    TÌM JSON BẰNG REGEX KIỂU {"intent": ...}
+#     # ============================================
+#     import re
+#     json_match = re.search(r"\{[\s\S]*\}", llm_text)
+
+#     parsed = {"intent": "small_talk", "fields_missing": []}
+
+#     if json_match:
+#         try:
+#             parsed = json.loads(json_match.group(0))
+#         except Exception as e:
+#             print("⚠ JSON parse failed:", e)
+
+#     print("Parsed JSON →", parsed)
+
+#     if not draft.fields_missing:
+#         parsed["intent"] = "create_goal"
+
+#     intent = parsed.get("intent")
+
+#     # Nếu không phải intent create_goal → trả lời small talk luôn
+#     if intent != "create_goal":
+#         return ChatResponse(
+#             response=llm_text,
+#             usage=result.get("usage"),
+#             model=result.get("model")
+#         )
+
+#     # ============================================
+#     # 6) PHÁT HIỆN NEW GOAL (goal_title thay đổi)
+#     # ============================================
+#     new_title = parsed.get("goal_title")
+
+#     if new_title:
+#         if draft.goal_title and new_title.strip().lower() != draft.goal_title.strip().lower():
+#             print("⚠ NEW GOAL → Abandon old draft.")
+
+#             draft.status = "abandoned"
+#             await session.commit()
+
+#             draft = GoalDraft(
+#                 id=str(uuid.uuid4()),
+#                 user_id=current_user.id,
+#                 status="collecting"
+#             )
+#             draft.fields_missing = [
+#                 "goal_title", "measurable_target", "daily_action",
+#                 "start_date", "duration", "end_date"
+#             ]
+#             session.add(draft)
+#             await session.commit()
+
+#     # ============================================
+#     # 7) UPDATE DRAFT — CHỐNG LỖI TUYỆT ĐỐI
+#     # ============================================
+#     safe_fields = [
+#         "goal_title", "measurable_target", "daily_action",
+#         "start_date", "duration", "end_date",
+#     ]
+
+#     for field in safe_fields:
+#         val = parsed.get(field)
+#         if not val:
+#             continue
+
+#         # ----- parse date -----
+#         if field in ["start_date", "end_date"] and isinstance(val, str):
+#             d = parse_human_date(val)
+#             if d:
+#                 setattr(draft, field, d)
+#                 print(f"✔ {field} = {d}")
+#             continue
+
+#         setattr(draft, field, val)
+#         print(f"✔ {field} = {val}")
+
+#     # Recalculate missing
+#     required = safe_fields.copy()
+
+#     draft.fields_missing = [
+#         f for f in required
+#         if getattr(draft, f) in [None, ""]
+#     ]
+
+#     # Nếu có duration → bỏ end_date
+#     if draft.duration and "end_date" in draft.fields_missing:
+#         draft.fields_missing.remove("end_date")
+
+#     await session.commit()
+
+#     print("Updated draft →", draft.fields_missing)
+
+#     # ============================================
+#     # 8) CHƯA ĐỦ FIELD → HỎI TIẾP
+#     # ============================================
+#     if draft.fields_missing:
+#         QUESTIONS = {
+#             "goal_title": "What's the title of your goal?",
+#             "measurable_target": "What's the specific result you want to achieve?",
+#             "daily_action": "What will you do daily to reach it?",
+#             "start_date": "When do you want to start?",
+#             "duration": "How long do you want this goal to take?",
+#             "end_date": "When do you want to finish?"
+#         }
+
+#         follow_up = [QUESTIONS[f] for f in draft.fields_missing]
+#         follow_msg = "✨ Let's complete your goal:\n" + "\n".join(follow_up)
+
+#         return ChatResponse(
+#             response=follow_msg,
+#             usage=result.get("usage"),
+#             model=result.get("model")
+#         )
+
+#     # ============================================
+#     # 9) ĐỦ FIELD → GENERATE PLAN
+#     # ============================================
+#     plan = await generate_plan(draft)
+
+#     for item in plan:
+#         session.add(Task(
+#             goal_id=draft.id,
+#             title=item["title"],
+#             description=item["description"],
+#             due_date=item["due_date"],
+#         ))
+
+#     await session.commit()
+
+#     plan_text = "\n".join([
+#         f"{p['due_date']}: {p['title']} – {p['description']}" for p in plan
+#     ])
+
+#     return ChatResponse(
+#         response=f"✅ Your 5-day plan is ready:\n{plan_text}",
+#         usage=result.get("usage"),
+#         model=result.get("model")
+#     )
 
 # -------generate plan after collect all fiels of GoalDraft-----------
 async def generate_plan(draft: GoalDraft):
@@ -726,3 +915,145 @@ async def generate_plan(draft: GoalDraft):
         plan.append(day_task)
 
     return plan
+# ------handle date data -------------
+def parse_human_date(text: str):
+    """
+    Parse human-readable date strings to datetime object with timestamp
+    Returns: datetime object (e.g., 2025-11-20 00:00:00) or None
+    """
+    if not text:
+        return None
+        
+    text = text.lower().strip()
+    
+    # ✅ Dùng pytz để lấy thời gian VN
+    tz = pytz.timezone('Asia/Ho_Chi_Minh')
+    now = datetime.now(tz)
+    
+    print(f"[parse_human_date] Input: '{text}', Now: {now}")
+
+    # --------- Remove extra words ---------
+    text = text.replace("'s date", "").replace(" date", "").replace("'s", "")
+    text = text.strip()
+    print(f"[parse_human_date] After cleanup: '{text}'")
+
+    # --------- Direct keywords ---------
+    if text == "today":
+        return now.replace(hour=0, minute=0, second=0, microsecond=0)
+
+    if text == "tomorrow":
+        return (now + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+
+    if text == "yesterday":
+        return (now - timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+
+    # --------- "In X days/weeks/months" ---------
+    match = re.match(r"in (\d+) (day|days)", text)
+    if match:
+        n = int(match.group(1))
+        return (now + timedelta(days=n)).replace(hour=0, minute=0, second=0, microsecond=0)
+
+    match = re.match(r"in (\d+) (week|weeks)", text)
+    if match:
+        n = int(match.group(1))
+        return (now + timedelta(weeks=n)).replace(hour=0, minute=0, second=0, microsecond=0)
+
+    match = re.match(r"in (\d+) (month|months)", text)
+    if match:
+        n = int(match.group(1))
+        month = now.month - 1 + n
+        year = now.year + month // 12
+        month = month % 12 + 1
+        day = min(now.day, calendar.monthrange(year, month)[1])
+        return datetime(year, month, day, 0, 0, 0, tzinfo=tz)
+
+    # --------- "X days/weeks/months from now" ---------
+    match = re.match(r"(\d+) (day|days) from now", text)
+    if match:
+        n = int(match.group(1))
+        return (now + timedelta(days=n)).replace(hour=0, minute=0, second=0, microsecond=0)
+
+    match = re.match(r"(\d+) (week|weeks) from now", text)
+    if match:
+        n = int(match.group(1))
+        return (now + timedelta(weeks=n)).replace(hour=0, minute=0, second=0, microsecond=0)
+
+    match = re.match(r"(\d+) (month|months) from now", text)
+    if match:
+        n = int(match.group(1))
+        month = now.month - 1 + n
+        year = now.year + month // 12
+        month = month % 12 + 1
+        day = min(now.day, calendar.monthrange(year, month)[1])
+        return datetime(year, month, day, 0, 0, 0, tzinfo=tz)
+
+    # --------- "X days/weeks/months from [target_date]" ---------
+    match = re.match(r"(\d+) (day|days|week|weeks|month|months) from (.*)", text)
+    if match:
+        amount = int(match.group(1))
+        unit = match.group(2).rstrip('s')
+        target_str = match.group(3).strip()
+        
+        target_date = parse_human_date(target_str)
+        if target_date:
+            if unit == "day":
+                return target_date + timedelta(days=amount)
+            elif unit == "week":
+                return target_date + timedelta(weeks=amount)
+            elif unit == "month":
+                month = target_date.month - 1 + amount
+                year = target_date.year + month // 12
+                month = month % 12 + 1
+                day = min(target_date.day, calendar.monthrange(year, month)[1])
+                return datetime(year, month, day, 0, 0, 0, tzinfo=tz)
+
+    # --------- Next/This weekday ---------
+    weekdays = {
+        "monday": 0, "tuesday": 1, "wednesday": 2,
+        "thursday": 3, "friday": 4, "saturday": 5, "sunday": 6
+    }
+
+    match = re.match(r"next (monday|tuesday|wednesday|thursday|friday|saturday|sunday)", text)
+    if match:
+        target = weekdays[match.group(1)]
+        days_ahead = (target - now.weekday() + 7) % 7
+        days_ahead = 7 if days_ahead == 0 else days_ahead
+        return (now + timedelta(days=days_ahead)).replace(hour=0, minute=0, second=0, microsecond=0)
+
+    match = re.match(r"this (monday|tuesday|wednesday|thursday|friday|saturday|sunday)", text)
+    if match:
+        target = weekdays[match.group(1)]
+        days_ahead = target - now.weekday()
+        return (now + timedelta(days=days_ahead)).replace(hour=0, minute=0, second=0, microsecond=0)
+
+    # --------- Next week/month ---------
+    if text == "next week":
+        return (now + timedelta(weeks=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+
+    if text == "next month":
+        month = now.month % 12 + 1
+        year = now.year + (now.month // 12)
+        day = min(now.day, calendar.monthrange(year, month)[1])
+        return datetime(year, month, day, 0, 0, 0, tzinfo=tz)
+
+    # --------- ISO format YYYY-MM-DD ---------
+    try:
+        parsed = datetime.fromisoformat(text)
+        if parsed.tzinfo is None:
+            parsed = tz.localize(parsed)
+        print(f"[parse_human_date] Parsed ISO: {parsed}")
+        return parsed.replace(hour=0, minute=0, second=0, microsecond=0)
+    except:
+        pass
+
+    # --------- VN format DD/MM/YYYY ---------
+    try:
+        parsed = datetime.strptime(text, "%d/%m/%Y")
+        parsed = tz.localize(parsed)
+        print(f"[parse_human_date] Parsed VN format: {parsed}")
+        return parsed
+    except:
+        pass
+
+    print(f"[parse_human_date] ❌ Could not parse: '{text}'")
+    return None

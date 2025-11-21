@@ -102,9 +102,9 @@ class GoalDraft(Base):
     goal_title = Column(String, nullable=True)
     measurable_target = Column(String, nullable=True)
     daily_action = Column(String, nullable=True)
-    start_date = Column(DateTime, nullable=True)
+    start_date = Column(TIMESTAMP(timezone=True), nullable=True)
     duration = Column(String, nullable=True)
-    end_date = Column(DateTime, nullable=True)
+    end_date = Column(TIMESTAMP(timezone=True), nullable=True)
     
     fields_missing = Column(ARRAY(String), nullable=True)
     status = Column(String, default="collecting")  # collecting | ready | confirmed

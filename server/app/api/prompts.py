@@ -1,7 +1,14 @@
 # app/api/prompts.py
+from datetime import datetime, timezone, timedelta
+
+VN_TZ = timezone(timedelta(hours=7))
+
+def build_default_system_prompt():
+    now = datetime.now(timezone(timedelta(hours=7))).isoformat()
+    return f"You are Lumiere, the system-level assistant. Current system datetime (not user-provided): {now}. Use this as the true current time for all reasoning."
 
 #system prompt
-DEFAULT_CHAT_PROMPT = "You are Lumiere, a friendly, cheerful, empathetic personal AI assistant."
+# DEFAULT_CHAT_PROMPT = "You are Lumiere, a friendly, cheerful, empathetic personal AI assistant."
 
 INTENT_PROMPT = "You are an intent classifier. Determine whether the user's message is about a goal or just small talk. Return only one word: 'goal' if the user talks about goals, plans, tasks, habits, routines, deadlines, productivity, self-improvement, or things they want to achieve. Return 'small_talk' for greetings, casual chat, jokes, or anything not related to goals. User message: '{user_message}'"
 
@@ -147,6 +154,23 @@ GOAL_ANALYZER_PROMPT = (
     '"daily_action":null,"start_date":null,"duration":null,"end_date":null,'
     '"fields_missing":["daily_action","start_date","duration"]}'
 )
+
+def build_goal_analyzer_prompt():
+    # Giờ hệ thống GMT+7
+    now = datetime.now(timezone(timedelta(hours=7))).isoformat()
+    return (
+        f"You are Williams. Extract SMART goal fields from the user's message. "
+        f"Current system datetime (GMT+7): {now}. Use this as the reference for any dates. "
+        "Required fields:\n"
+        "- goal_title\n- measurable_target\n- daily_action\n"
+        "- start_date (YYYY-MM-DD)\n- duration\n- end_date (YYYY-MM-DD)\n"
+        "Return a JSON with these keys plus 'fields_missing' listing only the fields not found.\n"
+        "Example:\n"
+        '{"intent":"create_goal","goal_title":"Lose 2kg","measurable_target":"2kg",'
+        '"daily_action":null,"start_date":null,"duration":null,"end_date":null,'
+        '"fields_missing":["daily_action","start_date","duration"]}'
+    )
+
 
 
 PLAN_GENERATOR_PROMPT = """
