@@ -33,3 +33,8 @@ flutter run
 
 https://claude.ai/chat/a6977722-41e0-4352-a8b6-8685cc2b883f
 
+
+In case port 8000 is occupied:
+netstat -ano | findstr :8000
+taskkill /PID <PID> /F                 (ex: taskkill /PID 11840 /F )
+

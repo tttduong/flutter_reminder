@@ -42,24 +42,32 @@ class ApiService {
     // String model = "llama-3.1-8b-instant",
     String model = "gpt-4o-mini",
     String? conversationId,
+    String? mode,
   }) async {
     final cookies =
         await cookieJar.loadForRequest(Uri.parse(dio.options.baseUrl));
-    print("📌 Cookies before sendChat: $cookies");
+    // print("📌 Cookies before sendChat: $cookies");
 
-    print("➡️ Sending chat request to ${dio.options.baseUrl}/chat/");
-    print("Payload: {message: $message, model: $model}");
+    // print("➡️ Sending chat request to ${dio.options.baseUrl}/chat/");
+    // print("Payload: {message: $message, model: $model}");
+    print("⬅️ MODE: ${mode}");
 
-    final response = await dio.post('/api/v1/chat/', data: {
+    // Chọn endpoint dựa vào mode
+    String endpoint = '/api/v1/chat/';
+    if (mode == "generate_plan") {
+      endpoint = '/api/v1/chat/create_tasks_from_schedule';
+    }
+    final response = await dio.post(endpoint, data: {
       "conversation_id": conversationId,
       "message": message,
       "model": model,
       "conversation_history": conversationHistory,
       "system_prompt": systemPrompt ?? "",
+      "mode": mode, // gửi luôn mode nếu backend cần
     });
 
-    print("⬅️ Response status: ${response.statusCode}");
-    print("⬅️ Response data: ${response.data}");
+    // print("⬅️ Response status: ${response.statusCode}");
+    // print("⬅️ Response data: ${response.data}");
 
     return response.data;
   }

@@ -11,7 +11,8 @@ from app.api.models.enums import GoalStatus
 from app.api.models.enums import GoalStatus  # hoặc from models.enums import GoalStatus
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import JSONB
-
+from pydantic import BaseModel
+from typing import Dict, Any
 class User(Base):
     __tablename__ = "user"
 
@@ -102,6 +103,10 @@ class ScheduleDraft(Base):
     schedule_json = Column(JSONB, default=dict)
     updated_at = Column(DateTime, default=datetime.utcnow)
 
+
+
+class ScheduleDraftInput(BaseModel):
+    schedule_json: Dict[str, Any]
 
 
 class GoalDraft(Base):

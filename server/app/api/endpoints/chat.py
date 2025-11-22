@@ -8,8 +8,8 @@ import os
 from sqlalchemy import select
 from app.core.config import settings
 from app.services.llm_service import LLMService
-from typing import List, Dict, Optional, AsyncGenerator
-from app.db.db_structure import Category, Conversation, GoalDraft, Message, ScheduleDraft, Task
+from typing import List, Dict, Optional, AsyncGenerator, Any
+from app.db.db_structure import Category, Conversation, GoalDraft, Message, ScheduleDraft, ScheduleDraftInput, Task
 from app.core.session import get_current_user
 from app.db.db_structure import User
 from datetime import datetime, date
@@ -45,6 +45,7 @@ class ChatResponse(BaseModel):
     response: str
     usage: dict = {}
     model: str
+    extra: Optional[Dict[str, Any]] = None
 
 class TaskIntentResponse(BaseModel):
     intent: str
@@ -478,43 +479,73 @@ async def chat_schedule(
         model=result["model"],
         extra={"schedule_draft": updated_draft}
     )
-# -------------------------
+# -------------------------get schedule draft--------------------
+@router.get("/chat/schedule/get", response_model=ChatResponse)
+async def get_schedule(
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_db)
+):
+    draft = await session.scalar(
+        select(ScheduleDraft).where(ScheduleDraft.user_id == current_user.id)
+    )
+
+    if not draft:
+        return ChatResponse(
+            response="No schedule found.",
+            usage={},
+            model="mock",
+            extra={}
+        )
+
+    return ChatResponse(
+        response="Your current schedule draft.",
+        usage={},
+        model="mock",
+        extra={"schedule_draft": draft.schedule_json}
+    )
+
+# -------------------------create tasks from schedule----------------
 @router.post("/chat/create_tasks_from_schedule", response_model=ChatResponse)
-async def create_tasks_from_schedule(draft: ScheduleDraft, session: AsyncSession, user_id: int):
+async def create_tasks_from_schedule(
+    draft: ScheduleDraftInput,
+    session: AsyncSession = Depends(get_db),
+    user_id: int = 1  # hoặc lấy từ current_user
+):
     """
     Tạo task riêng trong DB từ một ScheduleDraft.
-    
-    Args:
-        draft (ScheduleDraft): object ScheduleDraft đã lưu JSON.
-        session (AsyncSession): session async của SQLAlchemy.
-        user_id (int): id của user để gán vào Task.
     """
     tasks_created = []
 
     for day in draft.schedule_json.get("days", []):
-        date_str = day.get("date")  # ví dụ "2023-10-01"
+        date_str = day.get("date")
         for t in day.get("tasks", []):
-            time_str = t.get("time", "00:00")  # ví dụ "07:00"
+            time_str = t.get("time", "00:00")
             datetime_str = f"{date_str} {time_str}"
             
             try:
                 start_dt = datetime.strptime(datetime_str, "%Y-%m-%d %H:%M")
             except ValueError:
-                # fallback: nếu format sai thì chỉ lấy date + 00:00
                 start_dt = datetime.strptime(date_str, "%Y-%m-%d")
 
             task = Task(
-                user_id=user_id,
+                owner_id=user_id,
+                category_id = 94,
                 title=t.get("description", ""),
-                start_time=start_dt,
-                duration=t.get("length", ""),  # có thể parse thêm nếu muốn timedelta
-                schedule_draft_id=draft.id
+                # start_time=start_dt,
+                # duration=t.get("length", ""),
+                # schedule_draft_id=None  # nếu muốn gắn draft id, truyền id vào input
             )
             session.add(task)
             tasks_created.append(task)
 
     await session.commit()
-    return tasks_created
+
+    return ChatResponse(
+        response=f"Created {len(tasks_created)} tasks from schedule.",
+        usage={},
+        model="mock"
+    )
+
 # ----- endpoint test lưu mock schedule draft -----
 @router.post("/chat/schedule/mock", response_model=ChatResponse)
 async def chat_schedule_mock(

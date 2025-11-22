@@ -492,6 +492,9 @@ class _ChatPageState extends State<ChatPage> {
 
   List<dynamic> messages = [];
   late TextEditingController _textController;
+
+  String _selectedMode = "normal"; //"generate_plan" / "normal"
+
   @override
   void initState() {
     super.initState();
@@ -883,6 +886,27 @@ class _ChatPageState extends State<ChatPage> {
             //textfield message
             child: Row(
               children: [
+                // Nút dấu cộng
+                GestureDetector(
+                  onTap: () {
+                    _showModeBottomSheet();
+                  },
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppColors.primary,
+                    ),
+                    child: const Icon(
+                      Icons.add,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // TextField
                 Expanded(
                   child: TextField(
                     controller: _textController,
@@ -945,6 +969,52 @@ class _ChatPageState extends State<ChatPage> {
         ]));
   }
 
+// 2️⃣ Hàm show bottom sheet chọn mode
+  void _showModeBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(16),
+          child: Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: [
+              _buildModeButton("Normal Chat", "normal"),
+              _buildModeButton("Generate Plan", "generate_plan"),
+              _buildModeButton("Small Talk", "small_talk"),
+              // thêm mode khác nếu muốn
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+// 3️⃣ Widget nút mode
+  Widget _buildModeButton(String label, String mode) {
+    return ElevatedButton(
+      onPressed: () {
+        Navigator.pop(context); // đóng bottom sheet
+        setState(() {
+          _selectedMode = mode;
+        });
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppColors.primary,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      ),
+      child: Text(label),
+    );
+  }
+
   Widget _buildMessageContent(String text, bool isUserMessage) {
     return SelectableText(
       text,
@@ -976,6 +1046,7 @@ class _ChatPageState extends State<ChatPage> {
         conversationId: _selectedConversationId,
         message: m.text,
         conversationHistory: _conversationHistory,
+        mode: _selectedMode,
       );
 
       print("Response data: $responseData");
