@@ -10,6 +10,7 @@ from app.db.database import Base
 from app.api.models.enums import GoalStatus
 from app.api.models.enums import GoalStatus  # hoặc from models.enums import GoalStatus
 from sqlalchemy import Enum as SQLEnum
+from sqlalchemy.dialects.postgresql import JSONB
 
 class User(Base):
     __tablename__ = "user"
@@ -92,6 +93,16 @@ class Message(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     conversation = relationship("Conversation", back_populates="messages")
+
+class ScheduleDraft(Base):
+    __tablename__ = "schedule_drafts"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
+    schedule_json = Column(JSONB, default=dict)
+    updated_at = Column(DateTime, default=datetime.utcnow)
+
+
 
 class GoalDraft(Base):
     __tablename__ = "goal_drafts"

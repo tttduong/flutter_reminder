@@ -8,8 +8,8 @@ import os
 from sqlalchemy import select
 from app.core.config import settings
 from app.services.llm_service import LLMService
-from typing import List, Dict, Optional
-from app.db.db_structure import Category, Conversation, GoalDraft, Message, Task
+from typing import List, Dict, Optional, AsyncGenerator
+from app.db.db_structure import Category, Conversation, GoalDraft, Message, ScheduleDraft, Task
 from app.core.session import get_current_user
 from app.db.db_structure import User
 from datetime import datetime, date
@@ -18,12 +18,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import get_db
 from app.api.models.conversation import ConversationResponse
-from app.api.prompts import DEFAULT_TASK_PARSER_PROMPT, INTENT_PROMPT, build_default_system_prompt, build_goal_analyzer_prompt
+from app.api.prompts import DEFAULT_TASK_PARSER_PROMPT, INTENT_PROMPT, SCHEDULE_SYSTEM_PROMPT, build_default_system_prompt, build_goal_analyzer_prompt
 
 import re
 from datetime import datetime, timedelta
 import calendar
 import pytz
+from fastapi.responses import StreamingResponse
+import asyncio
 
 router = APIRouter()
 app = FastAPI(title="Groq LLM API", version="1.0.0")
@@ -37,6 +39,7 @@ class ChatRequest(BaseModel):
     # model: str = "openai/gpt-oss-120b"
     # system_prompt: Optional[str] = None  
     conversation_history: Optional[List[Dict[str, str]]] = []  
+    mode: Optional[str] = None    #mode="generate_plan"
 
 class ChatResponse(BaseModel):
     response: str
@@ -44,10 +47,6 @@ class ChatResponse(BaseModel):
     model: str
 
 class TaskIntentResponse(BaseModel):
-    # intent: str
-    # title: str
-    # date: str
-    # time: str
     intent: str
     title: str
     description: str
@@ -67,7 +66,6 @@ async def get_llm_service():
         yield llm_service  
     finally:
         await llm_service.close()
-
 
 
 @router.post("/chat/parse_task", response_model=List[TaskIntentResponse])
@@ -311,17 +309,14 @@ async def chat_endpoint(
     session: AsyncSession = Depends(get_db),
 ):
     # ---------- 1. Classify intent ----------
-    # intent_result = await llm_service.generate_response(
-    #     prompt=INTENT_PROMPT.format(user_message=request.message),
-    #     model="llama-3.1-8b-instant"  # hoặc model rẻ
-    # )
     intent_messages = [
     {"role": "system", "content": INTENT_PROMPT.format(user_message=request.message)}
     ]
 
     intent_result = await llm_service.generate_response_with_messages(
         messages=intent_messages,
-        model="llama-3.1-8b-instant"
+        # model="llama-3.1-8b-instant"
+        model="gpt-4o-mini"
     )
 
 
@@ -329,13 +324,13 @@ async def chat_endpoint(
     print("RAW intent_result:", intent_result)
 
     # ---------- 2. Nếu intent = goal → dùng logic goal ----------
-    if intent == "goal":
-        return await handle_goal_chat(
-            req=request,
-            llm_service=llm_service,
-            current_user=current_user,
-            session=session
-        )
+    # if intent == "goal":
+    #     return await handle_goal_chat(
+    #         req=request,
+    #         llm_service=llm_service,
+    #         current_user=current_user,
+    #         session=session
+    #     )
 
     # ---------- 3. Nếu small talk → xử lý chat bình thường ----------
     return await handle_small_talk_chat(
@@ -419,6 +414,420 @@ async def handle_small_talk_chat(
         usage=result["usage"],
         model=result["model"]
     )
+# -------generate plan
+@router.post("/chat/schedule", response_model=ChatResponse)
+async def chat_schedule(
+    req: ChatRequest,
+    llm: LLMService = Depends(get_llm_service),
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_db)
+):
+    # 1️⃣ Lấy hoặc tạo ScheduleDraft
+    draft = await session.scalar(
+        select(ScheduleDraft).where(ScheduleDraft.user_id == current_user.id)
+    )
+
+    if not draft:
+        draft = ScheduleDraft(
+            user_id=current_user.id,
+            schedule_json={
+                "schedule_title": None,
+                "start_date": None,
+                "end_date": None,
+                "days": [],
+                "fields_missing": [],
+                "is_complete": False
+            }
+        )
+        session.add(draft)
+        await session.flush()
+
+    # 2️⃣ Build messages cho LLM
+    messages = [
+        {"role": "system", "content": SCHEDULE_SYSTEM_PROMPT},
+        {"role": "system", "content": f"Current schedule draft: {json.dumps(draft.schedule_json)}"},
+        {"role": "system", "content": f"Mode: generate_plan"},  # Backend trigger
+        {"role": "user", "content": req.message}
+    ]
+
+    # 3️⃣ Gọi LLM
+    result = await llm.generate_response_with_messages(
+        messages=messages,
+        model=req.model
+    )
+
+    # 4️⃣ Parse JSON response
+    try:
+        parsed = json.loads(result["response"])
+        ai_text = parsed["assistant_reply"]
+        updated_draft = parsed["schedule_draft"]
+    except:
+        # fallback an toàn
+        ai_text = result["response"]
+        updated_draft = draft.schedule_json
+
+    # 5️⃣ Lưu ngay vào DB
+    draft.schedule_json = updated_draft
+    draft.updated_at = datetime.utcnow()
+    await session.commit()
+
+    # 6️⃣ Trả về response
+    return ChatResponse(
+        response=ai_text,
+        usage=result["usage"],
+        model=result["model"],
+        extra={"schedule_draft": updated_draft}
+    )
+# -------------------------
+@router.post("/chat/create_tasks_from_schedule", response_model=ChatResponse)
+async def create_tasks_from_schedule(draft: ScheduleDraft, session: AsyncSession, user_id: int):
+    """
+    Tạo task riêng trong DB từ một ScheduleDraft.
+    
+    Args:
+        draft (ScheduleDraft): object ScheduleDraft đã lưu JSON.
+        session (AsyncSession): session async của SQLAlchemy.
+        user_id (int): id của user để gán vào Task.
+    """
+    tasks_created = []
+
+    for day in draft.schedule_json.get("days", []):
+        date_str = day.get("date")  # ví dụ "2023-10-01"
+        for t in day.get("tasks", []):
+            time_str = t.get("time", "00:00")  # ví dụ "07:00"
+            datetime_str = f"{date_str} {time_str}"
+            
+            try:
+                start_dt = datetime.strptime(datetime_str, "%Y-%m-%d %H:%M")
+            except ValueError:
+                # fallback: nếu format sai thì chỉ lấy date + 00:00
+                start_dt = datetime.strptime(date_str, "%Y-%m-%d")
+
+            task = Task(
+                user_id=user_id,
+                title=t.get("description", ""),
+                start_time=start_dt,
+                duration=t.get("length", ""),  # có thể parse thêm nếu muốn timedelta
+                schedule_draft_id=draft.id
+            )
+            session.add(task)
+            tasks_created.append(task)
+
+    await session.commit()
+    return tasks_created
+# ----- endpoint test lưu mock schedule draft -----
+@router.post("/chat/schedule/mock", response_model=ChatResponse)
+async def chat_schedule_mock(
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_db),
+):
+    # Paste mock response JSON từ LLM
+    mock_response = {
+        "assistant_reply": "I've created a structured plan to help you lose 2 kg. This includes workouts, meal planning, and tracking your progress. Here's the schedule:",
+        "schedule_draft": {
+            "days": [
+                {
+                    "date": "2025-12-01",
+                    "tasks": [
+                        {"time": "07:00", "length": "30 minutes", "description": "Morning jog or brisk walk"},
+                        {"time": "08:00", "length": "30 minutes", "description": "Prepare and eat a healthy breakfast (e.g., oatmeal with fruits)"}
+                    ]
+                },
+                {
+                    "date": "2023-10-02",
+                    "tasks": [
+                        {"time": "07:00", "length": "30 minutes", "description": "HIIT workout (high-intensity interval training)"},
+                        {"time": "08:00", "length": "30 minutes", "description": "Healthy breakfast (smoothie with spinach and protein)"}
+                    ]
+                }
+            ],
+            "start_date": "2023-10-01",
+            "end_date": "2023-10-03",
+            "is_complete": False,
+            "fields_missing": [],
+            "schedule_title": "Weight Loss Plan - 2 kg Target"
+        }
+    }
+
+    # 1️⃣ Lấy hoặc tạo ScheduleDraft
+    draft = await session.scalar(
+        select(ScheduleDraft).where(ScheduleDraft.user_id == current_user.id)
+    )
+    if not draft:
+        draft = ScheduleDraft(
+            user_id=current_user.id,
+            schedule_json={}
+        )
+        session.add(draft)
+        await session.flush()
+
+    # 2️⃣ Lưu thẳng vào DB
+    draft.schedule_json = mock_response["schedule_draft"]
+    draft.updated_at = datetime.utcnow()
+    await session.commit()
+
+    return ChatResponse(
+        response=mock_response["assistant_reply"],
+        usage={},
+        model="mock",
+        extra={"schedule_draft": mock_response["schedule_draft"]}
+    )
+
+# @router.post("/chat/schedule", response_model=ChatResponse)
+# async def chat_schedule(
+#     req: ChatRequest,
+#     llm: LLMService = Depends(get_llm_service),
+#     current_user: User = Depends(get_current_user),
+#     session: AsyncSession = Depends(get_db)
+# ):
+#     # ------------------------------
+#     # 1) Lấy hoặc tạo ScheduleDraft
+#     # ------------------------------
+#     draft = await session.scalar(
+#         select(ScheduleDraft).where(ScheduleDraft.user_id == current_user.id)
+#     )
+
+#     if not draft:
+#         draft = ScheduleDraft(
+#             user_id=current_user.id,
+#             schedule_json={
+#                 "schedule_title": None,
+#                 "start_date": None,
+#                 "end_date": None,
+#                 "days": [],
+#                 "fields_missing": [],
+#                 "is_complete": False
+#             }
+#         )
+#         session.add(draft)
+#         await session.flush()
+
+#     # ------------------------------
+#     # 2) Build messages cho LLM
+#     # ------------------------------
+#     messages = [
+#         {"role": "system", "content": SCHEDULE_SYSTEM_PROMPT},
+#         {"role": "system", "content": f"Current schedule draft: {json.dumps(draft.schedule_json)}"},
+#         {"role": "system", "content": f"Mode: {req.mode}"},
+#         {"role": "user", "content": req.message}
+#     ]
+
+#     # ------------------------------
+#     # 3) Gọi LLM
+#     # ------------------------------
+#     result = await llm.generate_response_with_messages(
+#         messages=messages,
+#         model=req.model
+#     )
+
+#     print("LLM RESULT:", result)
+
+#     # ------------------------------
+#     # 4) Parse JSON response
+#     # ------------------------------
+#     try:
+#         parsed = json.loads(result["response"])
+#         ai_text = parsed["assistant_reply"]
+#         updated_draft = parsed["schedule_draft"]
+#     except:
+#         # fallback an toàn
+#         ai_text = result["response"]
+#         updated_draft = draft.schedule_json
+
+#     # ------------------------------
+#     # 5) Lưu vào DB
+#     # ------------------------------
+#     draft.schedule_json = updated_draft
+#     draft.updated_at = datetime.utcnow()
+
+#     await session.commit()
+
+#     # ------------------------------
+#     # 6) Trả kết quả
+#     # ------------------------------
+#     return ChatResponse(
+#         response=ai_text,
+#         usage=result["usage"],
+#         model=result["model"],
+#         extra={"schedule_draft": updated_draft}
+#     )
+
+
+# ------handle date data -------------
+def parse_human_date(text: str):
+    """
+    Parse human-readable date strings to datetime object with timestamp
+    Returns: datetime object (e.g., 2025-11-20 00:00:00) or None
+    """
+    if not text:
+        return None
+        
+    text = text.lower().strip()
+    
+    # ✅ Dùng pytz để lấy thời gian VN
+    tz = pytz.timezone('Asia/Ho_Chi_Minh')
+    now = datetime.now(tz)
+    
+    print(f"[parse_human_date] Input: '{text}', Now: {now}")
+
+    # --------- Remove extra words ---------
+    text = text.replace("'s date", "").replace(" date", "").replace("'s", "")
+    text = text.strip()
+    print(f"[parse_human_date] After cleanup: '{text}'")
+
+    # --------- Direct keywords ---------
+    if text == "today":
+        return now.replace(hour=0, minute=0, second=0, microsecond=0)
+
+    if text == "tomorrow":
+        return (now + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+
+    if text == "yesterday":
+        return (now - timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+
+    # --------- "In X days/weeks/months" ---------
+    match = re.match(r"in (\d+) (day|days)", text)
+    if match:
+        n = int(match.group(1))
+        return (now + timedelta(days=n)).replace(hour=0, minute=0, second=0, microsecond=0)
+
+    match = re.match(r"in (\d+) (week|weeks)", text)
+    if match:
+        n = int(match.group(1))
+        return (now + timedelta(weeks=n)).replace(hour=0, minute=0, second=0, microsecond=0)
+
+    match = re.match(r"in (\d+) (month|months)", text)
+    if match:
+        n = int(match.group(1))
+        month = now.month - 1 + n
+        year = now.year + month // 12
+        month = month % 12 + 1
+        day = min(now.day, calendar.monthrange(year, month)[1])
+        return datetime(year, month, day, 0, 0, 0, tzinfo=tz)
+
+    # --------- "X days/weeks/months from now" ---------
+    match = re.match(r"(\d+) (day|days) from now", text)
+    if match:
+        n = int(match.group(1))
+        return (now + timedelta(days=n)).replace(hour=0, minute=0, second=0, microsecond=0)
+
+    match = re.match(r"(\d+) (week|weeks) from now", text)
+    if match:
+        n = int(match.group(1))
+        return (now + timedelta(weeks=n)).replace(hour=0, minute=0, second=0, microsecond=0)
+
+    match = re.match(r"(\d+) (month|months) from now", text)
+    if match:
+        n = int(match.group(1))
+        month = now.month - 1 + n
+        year = now.year + month // 12
+        month = month % 12 + 1
+        day = min(now.day, calendar.monthrange(year, month)[1])
+        return datetime(year, month, day, 0, 0, 0, tzinfo=tz)
+
+    # --------- "X days/weeks/months from [target_date]" ---------
+    match = re.match(r"(\d+) (day|days|week|weeks|month|months) from (.*)", text)
+    if match:
+        amount = int(match.group(1))
+        unit = match.group(2).rstrip('s')
+        target_str = match.group(3).strip()
+        
+        target_date = parse_human_date(target_str)
+        if target_date:
+            if unit == "day":
+                return target_date + timedelta(days=amount)
+            elif unit == "week":
+                return target_date + timedelta(weeks=amount)
+            elif unit == "month":
+                month = target_date.month - 1 + amount
+                year = target_date.year + month // 12
+                month = month % 12 + 1
+                day = min(target_date.day, calendar.monthrange(year, month)[1])
+                return datetime(year, month, day, 0, 0, 0, tzinfo=tz)
+
+    # --------- Next/This weekday ---------
+    weekdays = {
+        "monday": 0, "tuesday": 1, "wednesday": 2,
+        "thursday": 3, "friday": 4, "saturday": 5, "sunday": 6
+    }
+
+    match = re.match(r"next (monday|tuesday|wednesday|thursday|friday|saturday|sunday)", text)
+    if match:
+        target = weekdays[match.group(1)]
+        days_ahead = (target - now.weekday() + 7) % 7
+        days_ahead = 7 if days_ahead == 0 else days_ahead
+        return (now + timedelta(days=days_ahead)).replace(hour=0, minute=0, second=0, microsecond=0)
+
+    match = re.match(r"this (monday|tuesday|wednesday|thursday|friday|saturday|sunday)", text)
+    if match:
+        target = weekdays[match.group(1)]
+        days_ahead = target - now.weekday()
+        return (now + timedelta(days=days_ahead)).replace(hour=0, minute=0, second=0, microsecond=0)
+
+    # --------- Next week/month ---------
+    if text == "next week":
+        return (now + timedelta(weeks=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+
+    if text == "next month":
+        month = now.month % 12 + 1
+        year = now.year + (now.month // 12)
+        day = min(now.day, calendar.monthrange(year, month)[1])
+        return datetime(year, month, day, 0, 0, 0, tzinfo=tz)
+
+    # --------- ISO format YYYY-MM-DD ---------
+    try:
+        parsed = datetime.fromisoformat(text)
+        if parsed.tzinfo is None:
+            parsed = tz.localize(parsed)
+        print(f"[parse_human_date] Parsed ISO: {parsed}")
+        return parsed.replace(hour=0, minute=0, second=0, microsecond=0)
+    except:
+        pass
+
+    # --------- VN format DD/MM/YYYY ---------
+    try:
+        parsed = datetime.strptime(text, "%d/%m/%Y")
+        parsed = tz.localize(parsed)
+        print(f"[parse_human_date] Parsed VN format: {parsed}")
+        return parsed
+    except:
+        pass
+
+    print(f"[parse_human_date] ❌ Could not parse: '{text}'")
+    return None
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # ------------handle goal chat - to collect necessarry details related goal ---------
 @router.post("/chat/goal", response_model=ChatResponse)
 async def handle_goal_chat(
@@ -915,145 +1324,3 @@ async def generate_plan(draft: GoalDraft):
         plan.append(day_task)
 
     return plan
-# ------handle date data -------------
-def parse_human_date(text: str):
-    """
-    Parse human-readable date strings to datetime object with timestamp
-    Returns: datetime object (e.g., 2025-11-20 00:00:00) or None
-    """
-    if not text:
-        return None
-        
-    text = text.lower().strip()
-    
-    # ✅ Dùng pytz để lấy thời gian VN
-    tz = pytz.timezone('Asia/Ho_Chi_Minh')
-    now = datetime.now(tz)
-    
-    print(f"[parse_human_date] Input: '{text}', Now: {now}")
-
-    # --------- Remove extra words ---------
-    text = text.replace("'s date", "").replace(" date", "").replace("'s", "")
-    text = text.strip()
-    print(f"[parse_human_date] After cleanup: '{text}'")
-
-    # --------- Direct keywords ---------
-    if text == "today":
-        return now.replace(hour=0, minute=0, second=0, microsecond=0)
-
-    if text == "tomorrow":
-        return (now + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
-
-    if text == "yesterday":
-        return (now - timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
-
-    # --------- "In X days/weeks/months" ---------
-    match = re.match(r"in (\d+) (day|days)", text)
-    if match:
-        n = int(match.group(1))
-        return (now + timedelta(days=n)).replace(hour=0, minute=0, second=0, microsecond=0)
-
-    match = re.match(r"in (\d+) (week|weeks)", text)
-    if match:
-        n = int(match.group(1))
-        return (now + timedelta(weeks=n)).replace(hour=0, minute=0, second=0, microsecond=0)
-
-    match = re.match(r"in (\d+) (month|months)", text)
-    if match:
-        n = int(match.group(1))
-        month = now.month - 1 + n
-        year = now.year + month // 12
-        month = month % 12 + 1
-        day = min(now.day, calendar.monthrange(year, month)[1])
-        return datetime(year, month, day, 0, 0, 0, tzinfo=tz)
-
-    # --------- "X days/weeks/months from now" ---------
-    match = re.match(r"(\d+) (day|days) from now", text)
-    if match:
-        n = int(match.group(1))
-        return (now + timedelta(days=n)).replace(hour=0, minute=0, second=0, microsecond=0)
-
-    match = re.match(r"(\d+) (week|weeks) from now", text)
-    if match:
-        n = int(match.group(1))
-        return (now + timedelta(weeks=n)).replace(hour=0, minute=0, second=0, microsecond=0)
-
-    match = re.match(r"(\d+) (month|months) from now", text)
-    if match:
-        n = int(match.group(1))
-        month = now.month - 1 + n
-        year = now.year + month // 12
-        month = month % 12 + 1
-        day = min(now.day, calendar.monthrange(year, month)[1])
-        return datetime(year, month, day, 0, 0, 0, tzinfo=tz)
-
-    # --------- "X days/weeks/months from [target_date]" ---------
-    match = re.match(r"(\d+) (day|days|week|weeks|month|months) from (.*)", text)
-    if match:
-        amount = int(match.group(1))
-        unit = match.group(2).rstrip('s')
-        target_str = match.group(3).strip()
-        
-        target_date = parse_human_date(target_str)
-        if target_date:
-            if unit == "day":
-                return target_date + timedelta(days=amount)
-            elif unit == "week":
-                return target_date + timedelta(weeks=amount)
-            elif unit == "month":
-                month = target_date.month - 1 + amount
-                year = target_date.year + month // 12
-                month = month % 12 + 1
-                day = min(target_date.day, calendar.monthrange(year, month)[1])
-                return datetime(year, month, day, 0, 0, 0, tzinfo=tz)
-
-    # --------- Next/This weekday ---------
-    weekdays = {
-        "monday": 0, "tuesday": 1, "wednesday": 2,
-        "thursday": 3, "friday": 4, "saturday": 5, "sunday": 6
-    }
-
-    match = re.match(r"next (monday|tuesday|wednesday|thursday|friday|saturday|sunday)", text)
-    if match:
-        target = weekdays[match.group(1)]
-        days_ahead = (target - now.weekday() + 7) % 7
-        days_ahead = 7 if days_ahead == 0 else days_ahead
-        return (now + timedelta(days=days_ahead)).replace(hour=0, minute=0, second=0, microsecond=0)
-
-    match = re.match(r"this (monday|tuesday|wednesday|thursday|friday|saturday|sunday)", text)
-    if match:
-        target = weekdays[match.group(1)]
-        days_ahead = target - now.weekday()
-        return (now + timedelta(days=days_ahead)).replace(hour=0, minute=0, second=0, microsecond=0)
-
-    # --------- Next week/month ---------
-    if text == "next week":
-        return (now + timedelta(weeks=1)).replace(hour=0, minute=0, second=0, microsecond=0)
-
-    if text == "next month":
-        month = now.month % 12 + 1
-        year = now.year + (now.month // 12)
-        day = min(now.day, calendar.monthrange(year, month)[1])
-        return datetime(year, month, day, 0, 0, 0, tzinfo=tz)
-
-    # --------- ISO format YYYY-MM-DD ---------
-    try:
-        parsed = datetime.fromisoformat(text)
-        if parsed.tzinfo is None:
-            parsed = tz.localize(parsed)
-        print(f"[parse_human_date] Parsed ISO: {parsed}")
-        return parsed.replace(hour=0, minute=0, second=0, microsecond=0)
-    except:
-        pass
-
-    # --------- VN format DD/MM/YYYY ---------
-    try:
-        parsed = datetime.strptime(text, "%d/%m/%Y")
-        parsed = tz.localize(parsed)
-        print(f"[parse_human_date] Parsed VN format: {parsed}")
-        return parsed
-    except:
-        pass
-
-    print(f"[parse_human_date] ❌ Could not parse: '{text}'")
-    return None

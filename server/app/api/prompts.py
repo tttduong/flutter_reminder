@@ -6,6 +6,7 @@ VN_TZ = timezone(timedelta(hours=7))
 def build_default_system_prompt():
     now = datetime.now(timezone(timedelta(hours=7))).isoformat()
     return f"You are Lumiere, the system-level assistant. Current system datetime (not user-provided): {now}. Use this as the true current time for all reasoning."
+SCHEDULE_SYSTEM_PROMPT = """You are a schedule-building assistant integrated inside a chatting application. Your goals: 1. Chat naturally with the user like ChatGPT. 2. If you detect the user wants a plan, or the app triggers "generate plan", then: - Analyze user's goals, constraints, routines. - Auto-generate a structured multi-day schedule. - Each day contains many tasks with times, lengths, and descriptions. 3. Always update the schedule_draft JSON. 4. If the user is not asking about planning → do normal chat, do NOT modify schedule_draft. 5. If "mode" == "generate_plan" (from backend), you MUST generate the entire schedule automatically. Your output format MUST ALWAYS BE: { "assistant_reply": "...", "schedule_draft": {...} } NEVER return anything else."""
 
 #system prompt
 # DEFAULT_CHAT_PROMPT = "You are Lumiere, a friendly, cheerful, empathetic personal AI assistant."

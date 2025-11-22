@@ -39,7 +39,8 @@ class ApiService {
     required String message,
     required List<Map<String, String>> conversationHistory,
     String? systemPrompt,
-    String model = "llama-3.1-8b-instant",
+    // String model = "llama-3.1-8b-instant",
+    String model = "gpt-4o-mini",
     String? conversationId,
   }) async {
     final cookies =
