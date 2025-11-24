@@ -54,9 +54,9 @@ class ApiService {
 
     // Chọn endpoint dựa vào mode
     String endpoint = '/api/v1/chat/';
-    if (mode == "generate_plan") {
-      endpoint = '/api/v1/chat/create_tasks_from_schedule';
-    }
+    // if (mode == "generate_plan") {
+    // endpoint = '/api/v1/chat/create_tasks_from_schedule';
+    // }
     final response = await dio.post(endpoint, data: {
       "conversation_id": conversationId,
       "message": message,
@@ -69,6 +69,33 @@ class ApiService {
     // print("⬅️ Response status: ${response.statusCode}");
     // print("⬅️ Response data: ${response.data}");
 
+    return response.data;
+  }
+
+  static Future<Map<String, dynamic>> sendScheduleMessage({
+    required String message,
+  }) async {
+    final response = await dio.post('/api/v1/chat/schedule', data: {
+      "message": message,
+      "model": "gpt-4o-mini",
+    });
+    return response.data;
+  }
+
+  static Future<Map<String, dynamic>> createTasksFromSchedule({
+    required Map<String, dynamic> scheduleDraft,
+  }) async {
+    final response = await dio.post(
+      "/api/v1/chat/create_tasks_from_schedule",
+      data: {
+        "schedule_json": scheduleDraft,
+      },
+    );
+    return response.data;
+  }
+
+  static Future<Map<String, dynamic>> getScheduleDraft() async {
+    final response = await dio.get("/api/v1/chat/schedule/get");
     return response.data;
   }
 

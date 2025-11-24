@@ -8,6 +8,7 @@ import 'package:flutter_to_do_app/controller/conversation_controller.dart';
 import 'package:flutter_to_do_app/data/models/conversation.dart';
 import 'package:flutter_to_do_app/data/models/task_intent_response.dart';
 import 'package:flutter_to_do_app/data/services/conversation_service.dart';
+import 'package:flutter_to_do_app/ui/widgets/my_chat_message.dart';
 import 'package:flutter_to_do_app/ui/widgets/typing_indicator.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
@@ -16,455 +17,6 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
-// class ChatPage extends StatefulWidget {
-//   final String conversationId;
-//   const ChatPage({super.key, required this.conversationId});
-
-//   @override
-//   State<ChatPage> createState() => _ChatPageState();
-// }
-
-// class _ChatPageState extends State<ChatPage> {
-//   final ChatUser _currentUser =
-//       ChatUser(id: '1', firstName: 'Duong', lastName: 'Thuy');
-//   final ChatUser _gptChatUser =
-//       ChatUser(id: '2', firstName: 'Lumiere', lastName: '');
-//   List<ChatMessage> _messages = [];
-//   bool isLoading = false;
-//   List<Map<String, String>> _conversationHistory = [];
-//   // Map<String, dynamic>? _lastTaskIntent;
-//   List<TaskIntentResponse> _lastTaskIntents = [];
-//   final uuid = Uuid();
-
-//   List<Conversation> _conversations = [];
-
-//   String _selectedConversationId = '1';
-
-//   // final ChatController chatController = Get.put(ChatController());
-//   final ConversationController convController =
-//       Get.put(ConversationController());
-
-//   List<dynamic> messages = [];
-
-//   @override
-//   void initState() {
-//     super.initState();
-//     convController.fetchConversations();
-//     _loadMessages();
-//   }
-
-//   Future<void> _loadMessages() async {
-//     setState(() {
-//       isLoading = true;
-//     });
-
-//     try {
-//       final data =
-//           await ConversationService.fetchMessages(widget.conversationId);
-
-//       // 🔥 Convert API messages to DashChat ChatMessage format
-//       List<ChatMessage> loadedMessages = [];
-
-//       for (var msg in data) {
-//         // Xác định user dựa trên role
-//         ChatUser messageUser;
-//         if (msg['role'] == 'user') {
-//           messageUser = _currentUser;
-//         } else if (msg['role'] == 'assistant') {
-//           messageUser = _gptChatUser;
-//         } else {
-//           continue; // Bỏ qua nếu là system message
-//         }
-
-//         // Tạo ChatMessage
-//         loadedMessages.add(
-//           ChatMessage(
-//             text: msg['content'] ?? '',
-//             user: messageUser,
-//             createdAt: msg['created_at'] != null
-//                 ? DateTime.parse(msg['created_at'])
-//                 : DateTime.now(),
-//           ),
-//         );
-
-//         // Thêm vào conversation history để maintain context
-//         _conversationHistory.add({
-//           "role": msg['role'],
-//           "content": msg['content'] ?? '',
-//         });
-//       }
-
-//       setState(() {
-//         // Reverse để message mới nhất ở đầu (DashChat yêu cầu format này)
-//         _messages = loadedMessages.reversed.toList();
-//         messages = data;
-//         isLoading = false;
-//       });
-
-//       print("✅ Loaded ${_messages.length} messages successfully");
-//     } catch (e) {
-//       print("❌ Error loading messages: $e");
-//       setState(() {
-//         isLoading = false;
-//       });
-//     }
-//   }
-
-// // 🔥 Load messages cho một conversation cụ thể
-//   Future<void> _loadMessagesForConversation(String conversationId) async {
-//     setState(() {
-//       isLoading = true;
-//       _messages = []; // Clear messages hiện tại
-//       _conversationHistory = []; // Clear conversation history
-//     });
-
-//     try {
-//       final data = await ConversationService.fetchMessages(conversationId);
-
-//       List<ChatMessage> loadedMessages = [];
-
-//       for (var msg in data) {
-//         ChatUser messageUser;
-//         if (msg['role'] == 'user') {
-//           messageUser = _currentUser;
-//         } else if (msg['role'] == 'assistant') {
-//           messageUser = _gptChatUser;
-//         } else {
-//           continue;
-//         }
-
-//         loadedMessages.add(
-//           ChatMessage(
-//             text: msg['content'] ?? '',
-//             user: messageUser,
-//             createdAt: msg['created_at'] != null
-//                 ? DateTime.parse(msg['created_at'])
-//                 : DateTime.now(),
-//           ),
-//         );
-
-//         _conversationHistory.add({
-//           "role": msg['role'],
-//           "content": msg['content'] ?? '',
-//         });
-//       }
-
-//       setState(() {
-//         _messages = loadedMessages.reversed.toList();
-//         messages = data;
-//         isLoading = false;
-//       });
-
-//       print(
-//           "✅ Loaded ${_messages.length} messages for conversation $conversationId");
-//     } catch (e) {
-//       print("❌ Error loading messages for conversation $conversationId: $e");
-//       setState(() {
-//         isLoading = false;
-//       });
-
-//       // Hiển thị error message
-//       Get.snackbar(
-//         'Error',
-//         'Failed to load conversation messages',
-//         snackPosition: SnackPosition.BOTTOM,
-//         backgroundColor: Colors.red.withOpacity(0.8),
-//         colorText: Colors.white,
-//       );
-//     }
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     print("🎯 ChatPage build() called");
-//     return Scaffold(
-//       appBar: AppBar(
-//         leading: Builder(
-//           builder: (context) => IconButton(
-//             icon: Icon(Icons.menu, color: AppColors.primary),
-//             onPressed: () {
-//               Scaffold.of(context).openDrawer();
-//               print("open chat drawer");
-//             },
-//           ),
-//         ),
-//         backgroundColor: AppColors.background,
-//         title: const Text(
-//           "Lumiere",
-//           style:
-//               TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600),
-//         ),
-//         actions: [
-//           IconButton(
-//             icon: const Icon(Icons.close_rounded, color: AppColors.primary),
-//             onPressed: () {
-//               Get.back();
-//             },
-//           ),
-//         ],
-//       ),
-//       drawer: Drawer(
-//         width: 280,
-//         backgroundColor: Colors.white,
-//         child: SafeArea(
-//           child: Column(
-//             crossAxisAlignment: CrossAxisAlignment.start,
-//             children: [
-//               Container(
-//                 color: AppColors.white,
-//                 padding: const EdgeInsets.fromLTRB(10, 12, 10, 0),
-//                 child: Column(
-//                   children: [
-//                     TextField(
-//                       decoration: InputDecoration(
-//                         hintStyle: TextStyle(
-//                           color: AppColors.primary.withOpacity(0.6),
-//                           fontSize: 14,
-//                         ),
-//                         prefixIcon: Icon(
-//                           Icons.search,
-//                           color: AppColors.primary.withOpacity(0.7),
-//                           size: 20,
-//                         ),
-//                         filled: true,
-//                         fillColor: AppColors.secondary.withOpacity(0.2),
-//                         contentPadding: const EdgeInsets.symmetric(
-//                           vertical: 0,
-//                           horizontal: 16,
-//                         ),
-//                         border: OutlineInputBorder(
-//                           borderRadius: BorderRadius.circular(25),
-//                           borderSide: BorderSide.none,
-//                         ),
-//                       ),
-//                       style: const TextStyle(
-//                         color: AppColors.primary,
-//                         fontSize: 14,
-//                       ),
-//                     ),
-//                     SizedBox(
-//                       width: double.infinity,
-//                       child: TextButton.icon(
-//                         onPressed: () {
-//                           setState(() {
-//                             // final newId = DateTime.now()
-//                             //     .millisecondsSinceEpoch
-//                             //     .toString();
-//                             final newId = uuid.v4();
-//                             _conversations.insert(
-//                               0,
-//                               Conversation(
-//                                 id: newId,
-//                                 title: 'New conversation',
-//                                 lastMessage: 'Bắt đầu trò chuyện với Lumiere',
-//                                 createdAt: DateTime.now(),
-//                                 updatedAt: DateTime.now(),
-//                               ),
-//                             );
-//                             _selectedConversationId = newId;
-//                           });
-//                           Navigator.pop(context);
-//                         },
-//                         icon: const Icon(
-//                           Icons.add,
-//                           color: AppColors.primary,
-//                           size: 22,
-//                         ),
-//                         label: const Text(
-//                           'New conversation',
-//                           style: TextStyle(
-//                             fontSize: 16,
-//                             fontWeight: FontWeight.bold,
-//                             color: AppColors.primary,
-//                           ),
-//                         ),
-//                         style: TextButton.styleFrom(
-//                           backgroundColor: Colors.white,
-//                           padding: EdgeInsets.zero,
-//                           alignment: Alignment.centerLeft,
-//                         ),
-//                       ),
-//                     ),
-//                   ],
-//                 ),
-//               ),
-//               Expanded(
-//                 child: Obx(() {
-//                   if (convController.isLoading.value) {
-//                     return const Center(child: CircularProgressIndicator());
-//                   }
-
-//                   return ListView.builder(
-//                     padding: EdgeInsets.zero,
-//                     itemCount: convController.conversations.length,
-//                     itemBuilder: (context, index) {
-//                       final convo = convController.conversations[index];
-//                       final isSelected =
-//                           convo.id.toString() == _selectedConversationId;
-//                       return ListTile(
-//                         contentPadding: const EdgeInsets.symmetric(
-//                             horizontal: 16, vertical: 6),
-//                         dense: true,
-//                         selected: isSelected,
-//                         selectedTileColor:
-//                             AppColors.secondary.withOpacity(0.15),
-//                         title: Text(
-//                           convo.title,
-//                           maxLines: 1,
-//                           overflow: TextOverflow.ellipsis,
-//                           style: TextStyle(
-//                             fontSize: 16,
-//                             fontWeight: isSelected
-//                                 ? FontWeight.bold
-//                                 : FontWeight.normal,
-//                             color:
-//                                 isSelected ? AppColors.primary : Colors.black87,
-//                           ),
-//                         ),
-//                         subtitle: convo.lastMessage != null
-//                             ? Text(
-//                                 convo.lastMessage!,
-//                                 maxLines: 1,
-//                                 overflow: TextOverflow.ellipsis,
-//                               )
-//                             : null,
-//                         onTap: () async {
-//                           setState(() {
-//                             _selectedConversationId = convo.id.toString();
-//                           });
-//                           Navigator.pop(context);
-//                           // TODO: load messages cho convo đã chọn
-//                           // 🔥 Load messages cho conversation đã chọn
-//                           await _loadMessagesForConversation(convo.id);
-//                         },
-//                       );
-//                     },
-//                   );
-//                 }),
-//               ),
-//               const Divider(height: 1),
-//             ],
-//           ),
-//         ),
-//       ),
-//       body: Column(
-//         children: [
-//           Expanded(
-//             child: DashChat(
-//               currentUser: _currentUser,
-//               messages: _messages,
-//               onSend: (ChatMessage m) async {
-//                 setState(() {
-//                   _messages.insert(0, m);
-//                   isLoading = true;
-//                 });
-
-//                 _conversationHistory.add({"role": "user", "content": m.text});
-
-//                 try {
-//                   final responseData = await ApiService.sendChat(
-//                     conversationId: _selectedConversationId,
-//                     message: m.text,
-//                     conversationHistory: _conversationHistory,
-//                     // systemPrompt: systemPrompt,
-//                   );
-
-//                   print("Response data: $responseData");
-
-//                   String reply =
-//                       responseData['response'] ?? "Không có phản hồi";
-
-//                   _conversationHistory
-//                       .add({"role": "assistant", "content": reply});
-
-//                   await _parseTaskIntent(reply);
-
-//                   setState(() {
-//                     _messages.insert(
-//                       0,
-//                       ChatMessage(
-//                         text: reply,
-//                         user: _gptChatUser,
-//                         createdAt: DateTime.now(),
-//                       ),
-//                     );
-//                     isLoading = false;
-//                   });
-//                 } catch (e) {
-//                   setState(() {
-//                     _messages.insert(
-//                       0,
-//                       ChatMessage(
-//                         text: "Lỗi kết nối: ${e.toString()}",
-//                         user: _gptChatUser,
-//                         createdAt: DateTime.now(),
-//                       ),
-//                     );
-//                     isLoading = false;
-//                   });
-//                 }
-//               },
-//               messageOptions: MessageOptions(
-//                 currentUserContainerColor: AppColors.primary,
-//                 currentUserTextColor: Colors.white,
-//                 containerColor: AppColors.secondary,
-//                 textColor: Colors.black,
-//                 showOtherUsersName: false,
-//                 showOtherUsersAvatar: false,
-//               ),
-//               typingUsers: isLoading ? [_gptChatUser] : [],
-//             ),
-//           ),
-//           if (_messages.isNotEmpty &&
-//               _messages.first.user.id == _gptChatUser.id &&
-//               !isLoading)
-//             Container(
-//               width: double.infinity,
-//               padding: const EdgeInsets.all(16),
-//               decoration: BoxDecoration(
-//                 color: Colors.grey[50],
-//                 border: Border(top: BorderSide(color: Colors.grey[300]!)),
-//               ),
-//               child: Wrap(
-//                 spacing: 8,
-//                 runSpacing: 8,
-//                 children: _buildSuggestionButtons(),
-//               ),
-//             ),
-//         ],
-//       ),
-//     );
-//   }
-
-//   // 🔥 Parse task intent từ AI response
-//   Future<void> _parseTaskIntent(String aiResponse) async {
-//     try {
-//       final intentResponse = await ApiService.parseTask(
-//         message: aiResponse,
-//       );
-
-//       // _lastTaskIntents = intentResponse.cast<Map<String, dynamic>>();
-//       _lastTaskIntents = intentResponse;
-//       // print("🎯 Task intent: ${intentResponse}");
-//       // _lastTaskIntent = intentResponse;
-//       for (var task in _lastTaskIntents) {
-//         print("📌 Task parsed: ${task.title} at ${task.date}");
-//       }
-//     } catch (e) {
-//       print("❌ Parse task intent error: $e");
-//       _lastTaskIntents = [
-//         TaskIntentResponse(
-//           intent: "small_talk",
-//           title: "",
-//           description: "",
-//           categoryId: 0,
-//           date: DateTime.now(),
-//           dueDate: null,
-//         )
-//       ];
-//       // fallback
-//     }
-//   }
 class ChatPage extends StatefulWidget {
   final String conversationId;
   const ChatPage({super.key, required this.conversationId});
@@ -478,7 +30,7 @@ class _ChatPageState extends State<ChatPage> {
       ChatUser(id: '1', firstName: 'Duong', lastName: 'Thuy');
   final ChatUser _gptChatUser =
       ChatUser(id: '2', firstName: 'Lumiere', lastName: '');
-  List<ChatMessage> _messages = [];
+  List<MyChatMessage> _messages = [];
   bool isLoading = false;
   List<Map<String, String>> _conversationHistory = [];
   List<TaskIntentResponse> _lastTaskIntents = [];
@@ -518,7 +70,7 @@ class _ChatPageState extends State<ChatPage> {
       final data =
           await ConversationService.fetchMessages(widget.conversationId);
 
-      List<ChatMessage> loadedMessages = [];
+      List<MyChatMessage> loadedMessages = [];
 
       for (var msg in data) {
         ChatUser messageUser;
@@ -531,7 +83,7 @@ class _ChatPageState extends State<ChatPage> {
         }
 
         loadedMessages.add(
-          ChatMessage(
+          MyChatMessage(
             text: msg['content'] ?? '',
             user: messageUser,
             createdAt: msg['created_at'] != null
@@ -571,7 +123,7 @@ class _ChatPageState extends State<ChatPage> {
     try {
       final data = await ConversationService.fetchMessages(conversationId);
 
-      List<ChatMessage> loadedMessages = [];
+      List<MyChatMessage> loadedMessages = [];
 
       for (var msg in data) {
         ChatUser messageUser;
@@ -584,7 +136,7 @@ class _ChatPageState extends State<ChatPage> {
         }
 
         loadedMessages.add(
-          ChatMessage(
+          MyChatMessage(
             text: msg['content'] ?? '',
             user: messageUser,
             createdAt: msg['created_at'] != null
@@ -846,9 +398,14 @@ class _ChatPageState extends State<ChatPage> {
                                     : AppColors.secondary,
                                 borderRadius: BorderRadius.circular(12),
                               ),
+                              // child: _buildMessageContent(
+                              //   message.text,
+                              //   isUserMessage,
+                              // ),
                               child: _buildMessageContent(
                                 message.text,
                                 isUserMessage,
+                                customProps: message.customProperties,
                               ),
                             ),
                           ),
@@ -938,7 +495,7 @@ class _ChatPageState extends State<ChatPage> {
                 GestureDetector(
                   onTap: () {
                     if (_textController.text.isNotEmpty) {
-                      final message = ChatMessage(
+                      final message = MyChatMessage(
                         text: _textController.text,
                         user: _currentUser,
                         createdAt: DateTime.now(),
@@ -1015,16 +572,144 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
-  Widget _buildMessageContent(String text, bool isUserMessage) {
-    return SelectableText(
+  Widget _buildMessageContent(
+    String text,
+    bool isUser, {
+    Map<String, dynamic>? customProps,
+  }) {
+    final scheduleDraft = customProps?["schedule_draft"];
+
+    // Nếu có schedule draft thì render UI đặc biệt
+    if (scheduleDraft != null) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            text,
+            style: TextStyle(
+              color: isUser ? Colors.white : Colors.black,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          // CARD SCHEDULE
+          Card(
+            color: Colors.grey[100],
+            child: Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    scheduleDraft['schedule_title'] ?? "",
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text("Start: ${scheduleDraft['start_date']}"),
+                  Text("End: ${scheduleDraft['end_date']}"),
+                  const SizedBox(height: 8),
+
+                  // DATES + TASKS
+                  ...List.generate(scheduleDraft['days'].length, (i) {
+                    final day = scheduleDraft['days'][i];
+
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            day['date'],
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          ...List.generate(day['tasks'].length, (j) {
+                            final task = day['tasks'][j];
+
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 2.0),
+                              child: Text(
+                                "- ${task['time']} | ${task['description']} (${task['length']})",
+                                style: const TextStyle(fontSize: 14),
+                              ),
+                            );
+                          }),
+                        ],
+                      ),
+                    );
+                  }),
+
+                  const SizedBox(height: 8),
+                ],
+              ),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.grey[100],
+              foregroundColor: AppColors.primary,
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 2,
+            ),
+            onPressed: () async {
+              if (customProps == null || customProps["schedule_draft"] == null)
+                return;
+
+              final draft =
+                  Map<String, dynamic>.from(customProps["schedule_draft"]);
+
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (_) => const Center(
+                    child: CircularProgressIndicator(strokeWidth: 2.5)),
+              );
+
+              try {
+                final result = await ApiService.createTasksFromSchedule(
+                  scheduleDraft: draft,
+                );
+
+                Navigator.pop(context);
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text("Tasks created successfully! 🎉"),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              } catch (e) {
+                Navigator.pop(context);
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text("Failed: $e"),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+            child: Text("Create Schedule"),
+          )
+        ],
+      );
+    }
+
+    // Nếu không có schedule trong message → tin nhắn bình thường
+    return Text(
       text,
       style: TextStyle(
-        color: isUserMessage ? Colors.white : Colors.black87,
-        fontSize: 15,
-        height: 1.4,
-        fontWeight: FontWeight.w400,
+        color: isUser ? Colors.white : Colors.black,
       ),
-      textAlign: TextAlign.start,
     );
   }
 
@@ -1033,45 +718,97 @@ class _ChatPageState extends State<ChatPage> {
     return []; // Bạn có thể thêm suggestion buttons ở đây
   }
 
-  Future<void> _onSendMessage(ChatMessage m) async {
+  Future<void> _onSendMessage(MyChatMessage m) async {
     setState(() {
-      _messages.insert(0, m);
+      _messages.insert(0, m); // user message
       isLoading = true;
     });
 
     _conversationHistory.add({"role": "user", "content": m.text});
 
     try {
-      final responseData = await ApiService.sendChat(
-        conversationId: _selectedConversationId,
-        message: m.text,
-        conversationHistory: _conversationHistory,
-        mode: _selectedMode,
-      );
+      Map<String, dynamic> responseData;
 
-      print("Response data: $responseData");
+      if (_selectedMode == "generate_plan") {
+        // MOCK data
+        responseData = {
+          "response": "Here's your generated plan:",
+          "extra": {
+            "schedule_draft": {
+              "schedule_title": "Weight Loss Plan - 2 kg Target",
+              "start_date": "2023-10-01",
+              "end_date": "2023-10-03",
+              "is_complete": false,
+              "fields_missing": [],
+              "days": [
+                {
+                  "date": "2025-12-01",
+                  "tasks": [
+                    {
+                      "time": "07:00",
+                      "length": "30 minutes",
+                      "description": "Morning jog or brisk walk"
+                    },
+                    {
+                      "time": "08:00",
+                      "length": "30 minutes",
+                      "description": "Prepare and eat a healthy breakfast"
+                    }
+                  ]
+                },
+                {
+                  "date": "2023-10-02",
+                  "tasks": [
+                    {
+                      "time": "07:00",
+                      "length": "30 minutes",
+                      "description": "HIIT workout"
+                    },
+                    {
+                      "time": "08:00",
+                      "length": "30 minutes",
+                      "description": "Healthy breakfast"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        };
+      } else {
+        // Mock normal chat
+        responseData = {
+          "response": "This is a mocked chat reply.",
+          "extra": {}
+        };
+      }
 
-      String reply = responseData['response'] ?? "No response";
-
+      final reply = responseData['response'] ?? "No response";
       _conversationHistory.add({"role": "assistant", "content": reply});
-      await _parseTaskIntent(reply);
 
-      setState(() {
-        _messages.insert(
-          0,
-          ChatMessage(
-            text: reply,
-            user: _gptChatUser,
-            createdAt: DateTime.now(),
-          ),
-        );
-        isLoading = false;
-      });
+      // Insert **1 message assistant duy nhất**
+      final extraMap = <String, dynamic>{};
+      if (responseData["extra"] != null && responseData["extra"] is Map) {
+        responseData["extra"].forEach((k, v) {
+          extraMap[k.toString()] = v;
+        });
+      }
+
+      _messages.insert(
+        0,
+        MyChatMessage(
+          text: reply,
+          user: _gptChatUser,
+          createdAt: DateTime.now(),
+          customProperties: extraMap,
+        ),
+      );
+      isLoading = false;
     } catch (e) {
       setState(() {
         _messages.insert(
           0,
-          ChatMessage(
+          MyChatMessage(
             text: "Error Connection: ${e.toString()}",
             user: _gptChatUser,
             createdAt: DateTime.now(),
@@ -1080,398 +817,5 @@ class _ChatPageState extends State<ChatPage> {
         isLoading = false;
       });
     }
-  }
-
-  Future<void> _parseTaskIntent(String aiResponse) async {
-    try {
-      final intentResponse = await ApiService.parseTask(
-        message: aiResponse,
-      );
-
-      _lastTaskIntents = intentResponse;
-      for (var task in _lastTaskIntents) {
-        print("📌 Task parsed: ${task.title} at ${task.date}");
-      }
-    } catch (e) {
-      print("❌ Parse task intent error: $e");
-      _lastTaskIntents = [
-        TaskIntentResponse(
-          intent: "small_talk",
-          title: "",
-          description: "",
-          categoryId: 0,
-          date: DateTime.now(),
-          dueDate: null,
-        )
-      ];
-    }
-  }
-
-// // 🔥 Tạo suggestion buttons động theo intent
-//   List<Widget> _buildSuggestionButtons() {
-//     List<Widget> buttons = [];
-
-//     // 🎯 Thêm buttons theo intent
-//     if (_lastTaskIntents.isNotEmpty) {
-//       final intents = _lastTaskIntents
-//           .map((t) => t.intent.toLowerCase()) // dùng property .intent
-//           .toSet();
-//       String aiResponse = _messages.first.text;
-//       if (intents.contains('create_task') ||
-//           intents.contains('create_schedule')) {
-//         buttons.add(
-//           _buildSuggestionButton(
-//             "📅 Create Schedule",
-//             () => _setupSchedule(aiResponse),
-//           ),
-//         );
-//         buttons.add(
-//           _buildSuggestionButton(
-//             "⏰ Set Reminder",
-//             () => _createReminder(aiResponse),
-//           ),
-//         );
-//       }
-
-//       if (intents.contains('create_reminder')) {
-//         buttons.add(
-//           _buildSuggestionButton(
-//             "⏰ Create Reminder",
-//             () => _createReminder(aiResponse),
-//           ),
-//         );
-//         buttons.add(
-//           _buildSuggestionButton(
-//             "🔄 Modify Time",
-//             () => _modifyTime(),
-//           ),
-//         );
-//       }
-
-//       if (intents.contains('question')) {
-//         buttons.add(
-//           _buildSuggestionButton(
-//             "🎯 Convert to Task",
-//             () => _convertToTask(),
-//           ),
-//         );
-//       }
-//     }
-
-//     return buttons;
-//   }
-
-  // Widget tạo nút gợi ý
-  Widget _buildSuggestionButton(String text, VoidCallback onPressed) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.grey[200],
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey[300]!),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(20),
-          onTap: onPressed,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Text(
-              text,
-              style: const TextStyle(
-                fontSize: 13,
-                color: Colors.black87,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-// Hàm xử lý setup lịch
-  void _setupSchedule(String aiResponse) {
-    print("🗓️ Setup lịch từ AI response: $aiResponse");
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Setup Lịch"),
-        content: Text("Bạn muốn tạo lịch từ gợi ý:\n$aiResponse"),
-        actions: [
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(context);
-
-              for (var task in _lastTaskIntents) {
-                final title = task.title;
-                final description = task.description ?? "";
-                final categoryId = 57;
-                // final categoryId = task.category_id ?? 57;
-
-                // Parse datetime từ BE
-                final dateStr = task.date;
-                final dueDateStr = task.dueDate;
-
-                // Parse datetime từ BE
-                final date = task.date ?? DateTime.now();
-                final dueDate = task.dueDate;
-
-                print("✅ Creating schedule: $title at $date");
-
-                await _createScheduleDirectly(
-                  title,
-                  description,
-                  categoryId,
-                  date,
-                  dueDate,
-                );
-                print("✅ Creating schedule: $title at $date");
-              }
-            },
-            child: const Text("Create Schedule"),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Hàm tạo nhắc nhở
-  void _createReminder(String aiResponse) {
-    print("🔔 Tạo nhắc nhở từ AI response: $aiResponse");
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Tính năng tạo nhắc nhở đang phát triển")),
-    );
-  }
-
-  // Hàm hỏi thêm chi tiết
-  // void _askForMoreDetails(String aiResponse) {
-  //   print("❓ Hỏi thêm chi tiết: $aiResponse");
-  //   ChatMessage followUpMessage = ChatMessage(
-  //     text: "Bạn có thể giải thích chi tiết hơn không?",
-  //     user: _currentUser,
-  //     createdAt: DateTime.now(),
-  //   );
-
-  //   setState(() {
-  //     _messages.insert(0, followUpMessage);
-  //   });
-
-  //   _sendFollowUpMessage("Giải thích chi tiết hơn về: $aiResponse");
-  // }
-
-  // Hàm gửi follow-up message
-  // void _sendFollowUpMessage(ChatM) async {
-  //   setState(() {
-  //     _messages.insert(0, m);
-  //     isLoading = true;
-  //   });
-
-  //   _conversationHistory.add({"role": "user", "content": m});
-
-  //   try {
-  //     final responseData = await ApiService.sendChat(
-  //       message: m,
-  //       conversationHistory: _conversationHistory,
-  //       // systemPrompt: systemPrompt,
-  //     );
-
-  //     String reply = responseData['response'] ?? "Không có phản hồi";
-
-  //     _conversationHistory.add({"role": "assistant", "content": reply});
-  //     // 🔥 Stream message từng chữ một
-  //     await _streamChatResponse(m);
-  //     // 🔥 Parse intent cho follow-up message cũng
-  //     await _parseTaskIntent(reply);
-
-  //     setState(() {
-  //       _messages.insert(
-  //         0,
-  //         ChatMessage(
-  //           text: reply,
-  //           user: _gptChatUser,
-  //           createdAt: DateTime.now(),
-  //         ),
-  //       );
-  //       isLoading = false;
-  //     });
-  //   } catch (e) {
-  //     setState(() {
-  //       _messages.insert(
-  //         0,
-  //         ChatMessage(
-  //           text: "Lỗi kết nối: ${e.toString()}",
-  //           user: _gptChatUser,
-  //           createdAt: DateTime.now(),
-  //         ),
-  //       );
-  //       isLoading = false;
-  //     });
-  //   }
-  // }
-
-  // Hàm chỉnh sửa chi tiết task
-  void _editTaskDetails() {
-    // if (_lastTaskIntents == null) return;
-
-    // String title = _lastTaskIntents!['title'] ?? '';
-    // String date = _lastTaskIntents!['date'] ?? '';
-    // String time = _lastTaskIntents!['time'] ?? '';
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Edit Task Details"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Text("Title: $title"),
-            // Text("Date: $date"),
-            // Text("Time: $time"),
-            Text("This function is developing"),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              // TODO: Navigate to edit screen
-            },
-            child: const Text("Edit"),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Hàm chỉnh sửa thời gian
-  void _modifyTime() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Modify Time"),
-        content: const Text("Select new time for your reminder"),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              // TODO: Show time picker
-            },
-            child: const Text("Select Time"),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Hàm convert sang task
-  void _convertToTask() {
-    String currentMessage = _messages.first.text;
-
-    // Gửi follow-up để tạo task
-    // _sendFollowUpMessage("Tạo một task từ câu này: $currentMessage");
-  }
-
-// 🔥 Tạo schedule trực tiếp từ dữ liệu BE trả về
-  Future<void> _createScheduleDirectly(
-    String title,
-    String description,
-    int categoryId,
-    DateTime date,
-    DateTime? dueDate,
-  ) async {
-    try {
-      // Hiện loading
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-
-      final result = await ApiService.createTask(
-        title: title,
-        description: description,
-        categoryId: categoryId,
-        date: date,
-        dueDate: dueDate,
-      );
-
-      print("📅 Creating schedule: $result");
-
-      Navigator.pop(context);
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.check_circle, color: Colors.white),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text("Schedule '$title' created successfully!"),
-              ),
-            ],
-          ),
-          backgroundColor: Colors.green,
-          duration: const Duration(seconds: 3),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-
-      _sendConfirmationMessage(
-        "✅ Schedule created: $title on ${date.toLocal()}",
-      );
-    } catch (e) {
-      if (Navigator.canPop(context)) {
-        Navigator.pop(context);
-      }
-
-      print("❌ Error creating schedule: $e");
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.error, color: Colors.white),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text("Failed to create schedule: ${e.toString()}"),
-              ),
-            ],
-          ),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 4),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-
-      _sendConfirmationMessage("❌ Failed to create schedule: ${e.toString()}");
-    }
-  }
-
-// 🔄 Gửi confirmation message về chat
-  void _sendConfirmationMessage(String message) {
-    setState(() {
-      _messages.insert(
-        0,
-        ChatMessage(
-          text: "✅ $message",
-          user: _gptChatUser,
-          createdAt: DateTime.now(),
-        ),
-      );
-    });
-
-    _conversationHistory.add({"role": "assistant", "content": "✅ $message"});
   }
 }

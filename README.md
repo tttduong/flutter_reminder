@@ -22,6 +22,7 @@ run client (frontend):  main.dart -> click run
 # save tools in venv to requirement.txt: pip freeze > requirements.txt
 
 venv\Scripts\activate  
+venv\Scripts\activate  
 uvicorn main:app --host 0.0.0.0 --port 8000
 uvicorn main:app --reload --log-level debug
 

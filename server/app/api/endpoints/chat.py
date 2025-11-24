@@ -509,7 +509,7 @@ async def get_schedule(
 async def create_tasks_from_schedule(
     draft: ScheduleDraftInput,
     session: AsyncSession = Depends(get_db),
-    user_id: int = 1  # hoặc lấy từ current_user
+    current_user: User = Depends(get_current_user)
 ):
     """
     Tạo task riêng trong DB từ một ScheduleDraft.
@@ -528,7 +528,7 @@ async def create_tasks_from_schedule(
                 start_dt = datetime.strptime(date_str, "%Y-%m-%d")
 
             task = Task(
-                owner_id=user_id,
+                owner_id = current_user.id,
                 category_id = 94,
                 title=t.get("description", ""),
                 # start_time=start_dt,
