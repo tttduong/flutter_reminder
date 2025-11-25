@@ -3,7 +3,7 @@ from enum import Enum
 from uuid import uuid4
 import uuid
 from sqlalchemy.dialects.postgresql import TIMESTAMP
-from sqlalchemy import ARRAY, UUID, Column, Integer, String, Boolean, ForeignKey, DateTime
+from sqlalchemy import ARRAY, JSON, UUID, Column, Integer, String, Boolean, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.db.database import Base
@@ -91,6 +91,7 @@ class Message(Base):
     conversation_id = Column(String, ForeignKey("conversations.id"))
     role = Column(String, nullable=False)  # "user", "assistant", "system"
     content = Column(String, nullable=False)
+    custom_properties = Column(JSONB)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     conversation = relationship("Conversation", back_populates="messages")

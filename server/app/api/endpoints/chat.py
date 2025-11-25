@@ -416,6 +416,97 @@ async def handle_small_talk_chat(
         model=result["model"]
     )
 # -------generate plan
+# @router.post("/chat/schedule", response_model=ChatResponse)
+# async def chat_schedule(
+#     req: ChatRequest,
+#     llm: LLMService = Depends(get_llm_service),
+#     current_user: User = Depends(get_current_user),
+#     session: AsyncSession = Depends(get_db)
+# ):
+#     # 0️⃣ Lấy hoặc tạo conversation
+#     conversation = await session.scalar(
+#         select(Conversation).where(
+#             Conversation.user_id == current_user.id,
+#             Conversation.id == req.conversation_id  # nếu client truyền lên
+#         )
+#     )
+#     if not conversation:
+#         conversation = Conversation(
+#             id=str(uuid.uuid4()),
+#             user_id=current_user.id,
+#             title="Schedule Chat",
+#             created_at=datetime.utcnow(),
+#             updated_at=datetime.utcnow()
+#         )
+#         session.add(conversation)
+#         await session.flush()  # có conversation.id
+
+#     # 1️⃣ Lấy hoặc tạo ScheduleDraft
+#     draft = await session.scalar(
+#         select(ScheduleDraft).where(ScheduleDraft.user_id == current_user.id)
+#     )
+#     if not draft:
+#         draft = ScheduleDraft(
+#             user_id=current_user.id,
+#             schedule_json={
+#                 "schedule_title": None,
+#                 "start_date": None,
+#                 "end_date": None,
+#                 "days": [],
+#                 "fields_missing": [],
+#                 "is_complete": False
+#             }
+#         )
+#         session.add(draft)
+#         await session.flush()
+
+#     # 2️⃣ Build messages cho LLM
+#     messages = [
+#         {"role": "system", "content": SCHEDULE_SYSTEM_PROMPT},
+#         {"role": "system", "content": f"Current schedule draft: {json.dumps(draft.schedule_json)}"},
+#         {"role": "system", "content": f"Mode: generate_plan"},
+#         {"role": "user", "content": req.message}
+#     ]
+
+#     # 3️⃣ Gọi LLM
+#     result = await llm.generate_response_with_messages(
+#         messages=messages,
+#         model=req.model
+#     )
+
+#     # 4️⃣ Parse JSON response
+#     try:
+#         parsed = json.loads(result["response"])
+#         ai_text = parsed["assistant_reply"]
+#         updated_draft = parsed["schedule_draft"]
+#     except:
+#         ai_text = result["response"]
+#         updated_draft = draft.schedule_json
+
+#     # 5️⃣ Lưu ScheduleDraft
+#     draft.schedule_json = updated_draft
+#     draft.updated_at = datetime.utcnow()
+#     await session.flush()
+
+#     # 6️⃣ Lưu message assistant với conversation_id
+#     assistant_message = Message(
+#         conversation_id=conversation.id,
+#         role="assistant",
+#         content=ai_text,
+#         custom_properties={"schedule_draft": updated_draft},
+#         created_at=datetime.utcnow()
+#     )
+#     session.add(assistant_message)
+#     await session.commit()
+
+#     # 7️⃣ Trả về response
+#     return ChatResponse(
+#         response=ai_text,
+#         usage=result["usage"],
+#         model=result["model"],
+#         extra={"schedule_draft": updated_draft, "conversation_id": conversation.id}
+#     )
+
 @router.post("/chat/schedule", response_model=ChatResponse)
 async def chat_schedule(
     req: ChatRequest,
@@ -423,11 +514,28 @@ async def chat_schedule(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_db)
 ):
+    # 0️⃣ Lấy hoặc tạo conversation
+    conversation = await session.scalar(
+        select(Conversation).where(
+            Conversation.user_id == current_user.id,
+            Conversation.id == req.conversation_id  # nếu client truyền lên
+        )
+    )
+    if not conversation:
+        conversation = Conversation(
+            id=str(uuid.uuid4()),
+            user_id=current_user.id,
+            title="Schedule Chat",
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow()
+        )
+        session.add(conversation)
+        await session.flush()  # có conversation.id
+
     # 1️⃣ Lấy hoặc tạo ScheduleDraft
     draft = await session.scalar(
         select(ScheduleDraft).where(ScheduleDraft.user_id == current_user.id)
     )
-
     if not draft:
         draft = ScheduleDraft(
             user_id=current_user.id,
@@ -443,11 +551,21 @@ async def chat_schedule(
         session.add(draft)
         await session.flush()
 
+    # ✅ 1.5️⃣ Lưu user message vào DB
+    user_message = Message(
+        conversation_id=conversation.id,
+        role="user",
+        content=req.message,
+        created_at=datetime.utcnow()
+    )
+    session.add(user_message)
+    await session.flush()
+
     # 2️⃣ Build messages cho LLM
     messages = [
         {"role": "system", "content": SCHEDULE_SYSTEM_PROMPT},
         {"role": "system", "content": f"Current schedule draft: {json.dumps(draft.schedule_json)}"},
-        {"role": "system", "content": f"Mode: generate_plan"},  # Backend trigger
+        {"role": "system", "content": f"Mode: generate_plan"},
         {"role": "user", "content": req.message}
     ]
 
@@ -463,21 +581,31 @@ async def chat_schedule(
         ai_text = parsed["assistant_reply"]
         updated_draft = parsed["schedule_draft"]
     except:
-        # fallback an toàn
         ai_text = result["response"]
         updated_draft = draft.schedule_json
 
-    # 5️⃣ Lưu ngay vào DB
+    # 5️⃣ Lưu ScheduleDraft
     draft.schedule_json = updated_draft
     draft.updated_at = datetime.utcnow()
+    await session.flush()
+
+    # 6️⃣ Lưu message assistant với conversation_id
+    assistant_message = Message(
+        conversation_id=conversation.id,
+        role="assistant",
+        content=ai_text,
+        custom_properties={"schedule_draft": updated_draft},
+        created_at=datetime.utcnow()
+    )
+    session.add(assistant_message)
     await session.commit()
 
-    # 6️⃣ Trả về response
+    # 7️⃣ Trả về response
     return ChatResponse(
         response=ai_text,
         usage=result["usage"],
         model=result["model"],
-        extra={"schedule_draft": updated_draft}
+        extra={"schedule_draft": updated_draft, "conversation_id": conversation.id}
     )
 # -------------------------get schedule draft--------------------
 @router.get("/chat/schedule/get", response_model=ChatResponse)

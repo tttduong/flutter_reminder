@@ -3,6 +3,7 @@ import 'package:dash_chat_2/dash_chat_2.dart';
 /// {@category Models}
 class MyChatMessage {
   MyChatMessage({
+    required this.conversationId,
     required this.user,
     required this.createdAt,
     this.isMarkdown = false,
@@ -14,12 +15,16 @@ class MyChatMessage {
     this.status = MessageStatus.none,
     this.replyTo,
     this.scheduleDraft,
+    // this.customProps,
   });
+
+  // final Map<String, dynamic>? customProps;
   final Map<String, dynamic>? scheduleDraft;
 
   /// Create a MyChatMessage instance from json data
   factory MyChatMessage.fromJson(Map<String, dynamic> jsonData) {
     return MyChatMessage(
+      conversationId: jsonData['conversationId'] ?? '', // parse conversationId
       user: ChatUser.fromJson(jsonData['user'] as Map<String, dynamic>),
       createdAt: DateTime.parse(jsonData['createdAt'].toString()).toLocal(),
       text: jsonData['text']?.toString() ?? '',
@@ -36,7 +41,7 @@ class MyChatMessage {
                   QuickReply.fromJson(quickReply as Map<String, dynamic>))
               .toList()
           : <QuickReply>[],
-      customProperties: jsonData['customProperties'] as Map<String, dynamic>?,
+      customProperties: jsonData['custom_properties'] as Map<String, dynamic>?,
       mentions: jsonData['mentions'] != null
           ? (jsonData['mentions'] as List<dynamic>)
               .map((dynamic mention) =>
@@ -51,6 +56,8 @@ class MyChatMessage {
           jsonData['scheduleDraft'] as Map<String, dynamic>?, // parse thêm
     );
   }
+  // conversation id (text)
+  final String conversationId;
 
   /// If the message is Markdown formatted then it will be converted to Markdown (by default it will be false)
   bool isMarkdown;
@@ -87,6 +94,7 @@ class MyChatMessage {
   /// Convert a MyChatMessage into a json
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
+      'conversationId': conversationId, // serialize conversationId
       'user': user.toJson(),
       'createdAt': createdAt.toUtc().toIso8601String(),
       'text': text,

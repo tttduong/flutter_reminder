@@ -73,9 +73,11 @@ class ApiService {
   }
 
   static Future<Map<String, dynamic>> sendScheduleMessage({
+    required String conversationId,
     required String message,
   }) async {
     final response = await dio.post('/api/v1/chat/schedule', data: {
+      'conversation_id': conversationId,
       "message": message,
       "model": "gpt-4o-mini",
     });
