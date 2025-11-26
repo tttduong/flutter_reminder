@@ -18,7 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import get_db
 from app.api.models.conversation import ConversationResponse
-from app.api.prompts import DEFAULT_TASK_PARSER_PROMPT, INTENT_PROMPT, SCHEDULE_SYSTEM_PROMPT, SMALL_TALK_SYSTEM_PROMPT, VN_TZ, build_default_system_prompt, build_goal_analyzer_prompt
+from app.api.prompts import DEFAULT_TASK_PARSER_PROMPT, INTENT_PROMPT, SCHEDULE_SYSTEM_PROMPT, build_default_system_prompt, build_goal_analyzer_prompt
 
 import re
 from datetime import datetime, timedelta
@@ -376,7 +376,6 @@ async def handle_small_talk_chat(
     # Thêm system prompt nếu có
     # messages.append({"role": "system", "content": DEFAULT_CHAT_PROMPT})
     messages.append({"role": "system", "content": build_default_system_prompt()})
-    messages.append({"role": "system", "content": SMALL_TALK_SYSTEM_PROMPT})
     # Lấy lịch sử tin nhắn từ DB
     db_messages = (await session.scalars(
         select(Message)
@@ -417,7 +416,6 @@ async def handle_small_talk_chat(
         model=result["model"]
     )
 # -------generate plan
-# --------- handle schedule ----------
 # @router.post("/chat/schedule", response_model=ChatResponse)
 # async def chat_schedule(
 #     req: ChatRequest,
@@ -462,19 +460,8 @@ async def handle_small_talk_chat(
 #         session.add(draft)
 #         await session.flush()
 
-#     # ✅ 1.5️⃣ Lưu user message vào DB
-#     user_message = Message(
-#         conversation_id=conversation.id,
-#         role="user",
-#         content=req.message,
-#         created_at=datetime.utcnow()
-#     )
-#     session.add(user_message)
-#     await session.flush()
-
 #     # 2️⃣ Build messages cho LLM
 #     messages = [
-#         {"role": "system", "content": build_default_system_prompt()},
 #         {"role": "system", "content": SCHEDULE_SYSTEM_PROMPT},
 #         {"role": "system", "content": f"Current schedule draft: {json.dumps(draft.schedule_json)}"},
 #         {"role": "system", "content": f"Mode: generate_plan"},
@@ -527,17 +514,11 @@ async def chat_schedule(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_db)
 ):
-    # ✅ Lấy thời gian HIỆN TẠI ngay đầu
-    now_vn = datetime.now(VN_TZ)
-    current_datetime_iso = now_vn.isoformat()
-    current_date_str = now_vn.strftime("%Y-%m-%d")
-    current_time_str = now_vn.strftime("%H:%M")
-    
     # 0️⃣ Lấy hoặc tạo conversation
     conversation = await session.scalar(
         select(Conversation).where(
             Conversation.user_id == current_user.id,
-            Conversation.id == req.conversation_id
+            Conversation.id == req.conversation_id  # nếu client truyền lên
         )
     )
     if not conversation:
@@ -549,7 +530,7 @@ async def chat_schedule(
             updated_at=datetime.utcnow()
         )
         session.add(conversation)
-        await session.flush()
+        await session.flush()  # có conversation.id
 
     # 1️⃣ Lấy hoặc tạo ScheduleDraft
     draft = await session.scalar(
@@ -570,7 +551,7 @@ async def chat_schedule(
         session.add(draft)
         await session.flush()
 
-    # ✅ Lưu user message
+    # ✅ 1.5️⃣ Lưu user message vào DB
     user_message = Message(
         conversation_id=conversation.id,
         role="user",
@@ -580,14 +561,11 @@ async def chat_schedule(
     session.add(user_message)
     await session.flush()
 
-    # 2️⃣ Build messages - ✅ Thêm thời gian chính xác vào system prompt
+    # 2️⃣ Build messages cho LLM
     messages = [
-        {"role": "system", "content": f"You are Lumiere assistant. Current time: {current_datetime_iso}. Use this for all reasoning."},
         {"role": "system", "content": SCHEDULE_SYSTEM_PROMPT},
-        {
-            "role": "system", 
-            "content": f"TODAY: {current_date_str} at {current_time_str}. Schedule from NOW onwards. Draft: {json.dumps(draft.schedule_json)}"
-        },
+        {"role": "system", "content": f"Current schedule draft: {json.dumps(draft.schedule_json)}"},
+        {"role": "system", "content": f"Mode: generate_plan"},
         {"role": "user", "content": req.message}
     ]
 
@@ -602,8 +580,7 @@ async def chat_schedule(
         parsed = json.loads(result["response"])
         ai_text = parsed["assistant_reply"]
         updated_draft = parsed["schedule_draft"]
-    except Exception as e:
-        print(f"❌ Error parsing schedule JSON: {e}")
+    except:
         ai_text = result["response"]
         updated_draft = draft.schedule_json
 
@@ -612,7 +589,7 @@ async def chat_schedule(
     draft.updated_at = datetime.utcnow()
     await session.flush()
 
-    # 6️⃣ Lưu message assistant
+    # 6️⃣ Lưu message assistant với conversation_id
     assistant_message = Message(
         conversation_id=conversation.id,
         role="assistant",
