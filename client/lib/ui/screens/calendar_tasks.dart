@@ -382,7 +382,7 @@ class _CalendarTasksState extends State<CalendarTasks> {
               Text(
                 task.title ?? '',
                 style: const TextStyle(fontSize: 11),
-                maxLines: 3,
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
               Text(

@@ -73,27 +73,232 @@ class ApiService {
   }
 
   static Future<Map<String, dynamic>> sendScheduleMessage({
-    required String conversationId,
+    required String conversation_id,
     required String message,
   }) async {
     final response = await dio.post('/api/v1/chat/schedule', data: {
-      'conversation_id': conversationId,
+      'conversation_id': conversation_id,
       "message": message,
       "model": "gpt-4o-mini",
     });
     return response.data;
   }
 
+  // static Future<Map<String, dynamic>> createTasksFromSchedule({
+  //   required Map<String, dynamic> scheduleDraft,
+  // }) async {
+  //   final response = await dio.post(
+  //     "/api/v1/chat/create_tasks_from_schedule",
+  //     data: {
+  //       "schedule_json": scheduleDraft,
+  //     },
+  //   );
+  //   return response.data;
+  // }
+
   static Future<Map<String, dynamic>> createTasksFromSchedule({
     required Map<String, dynamic> scheduleDraft,
   }) async {
+    // Transform the schedule draft to include proper date/due_date
+    final transformedDraft = _transformScheduleForTaskCreation(scheduleDraft);
+
     final response = await dio.post(
       "/api/v1/chat/create_tasks_from_schedule",
       data: {
-        "schedule_json": scheduleDraft,
+        "schedule_json": transformedDraft,
       },
     );
     return response.data;
+  }
+
+  /// Transform schedule draft to include date and due_date for each task
+  static Map<String, dynamic> _transformScheduleForTaskCreation(
+    Map<String, dynamic> draft,
+  ) {
+    final transformed = Map<String, dynamic>.from(draft);
+
+    if (transformed["days"] is List) {
+      transformed["days"] = (transformed["days"] as List).map((day) {
+        final dayMap = Map<String, dynamic>.from(day as Map);
+        final dateStr = dayMap["date"] as String?; // "2025-01-15"
+
+        if (dayMap["tasks"] is List && dateStr != null) {
+          dayMap["tasks"] = (dayMap["tasks"] as List).map((task) {
+            final taskMap = Map<String, dynamic>.from(task as Map);
+            final timeStr = taskMap["time"] as String? ?? "09:00"; // "14:30"
+            final durationMinutes =
+                _parseDuration(taskMap["length"]); // "1.5h" or "90m"
+
+            // ✅ Combine date + time to create start datetime
+            final dateTime = DateTime.parse("$dateStr $timeStr");
+            taskMap["date"] = dateTime.toUtc().toIso8601String();
+
+            // ✅ Calculate due_date based on duration
+            if (durationMinutes > 0) {
+              final dueDateTime =
+                  dateTime.add(Duration(minutes: durationMinutes));
+              taskMap["due_date"] = dueDateTime.toUtc().toIso8601String();
+            } else {
+              // Default: due_date = same day end of day (17:00)
+              final endOfDay = DateTime.parse("$dateStr 17:00");
+              taskMap["due_date"] = endOfDay.toUtc().toIso8601String();
+            }
+
+            return taskMap;
+          }).toList();
+        }
+
+        return dayMap;
+      }).toList();
+    }
+
+    return transformed;
+  }
+
+  /// Parse duration string to minutes
+  /// Examples: "1.5h" -> 90, "30m" -> 30, "1h30m" -> 90
+  // static int _parseDuration(dynamic lengthValue) {
+  //   if (lengthValue == null) return 0;
+
+  //   final length = lengthValue.toString().toLowerCase().trim();
+
+  //   // ✅ Handle "1 hour", "2 hours", "1.5 hours"
+  //   if (length.contains("hour")) {
+  //     // Extract number before "hour"
+  //     final regex = RegExp(r'(\d+\.?\d*)\s*hour');
+  //     final match = regex.firstMatch(length);
+  //     if (match != null) {
+  //       final hours = double.tryParse(match.group(1)!) ?? 0;
+  //       return (hours * 60).toInt();
+  //     }
+  //   }
+
+  //   // Handle "1.5h" or "1h"
+  //   if (length.contains("h") && !length.contains("hour")) {
+  //     if (length.contains("m")) {
+  //       // "1h30m"
+  //       final parts = length.split("h");
+  //       final hours = int.tryParse(parts[0]) ?? 0;
+  //       final minutes = int.tryParse(parts[1].replaceAll("m", "")) ?? 0;
+  //       return (hours * 60) + minutes;
+  //     } else {
+  //       // "1.5h"
+  //       final hours = double.tryParse(length.replaceAll("h", "")) ?? 0;
+  //       return (hours * 60).toInt();
+  //     }
+  //   }
+
+  //   // Handle "30m", "30 minutes", "1 minute"
+  //   if (length.contains("m")) {
+  //     final regex = RegExp(r'(\d+\.?\d*)\s*m');
+  //     final match = regex.firstMatch(length);
+  //     if (match != null) {
+  //       return int.tryParse(match.group(1)!) ?? 0;
+  //     }
+  //   }
+
+  //   return 0;
+  // }
+  /// Parse duration string to minutes - handles all common formats
+  /// Examples:
+  /// - "1 hour" → 60
+  /// - "2 hours" → 120
+  /// - "1.5 hours" → 90
+  /// - "1h" → 60
+  /// - "1.5h" → 90
+  /// - "1h30m" → 90
+  /// - "90 minutes" → 90
+  /// - "1 minute" → 1
+  /// - "30m" → 30
+  /// - "30 mins" → 30
+  /// - "1h 30m" → 90
+  /// - "1 hour 30 minutes" → 90
+  static int _parseDuration(dynamic lengthValue) {
+    if (lengthValue == null) return 0;
+
+    final length = lengthValue.toString().toLowerCase().trim();
+    if (length.isEmpty) return 0;
+
+    int totalMinutes = 0;
+
+    // ✅ Handle hours (both "hour" and "h")
+    // Patterns: "1 hour", "2 hours", "1.5h", "1h", "1 h"
+    final hourRegex = RegExp(r'(\d+\.?\d*)\s*hours?');
+    final hourMatch = hourRegex.firstMatch(length);
+    if (hourMatch != null) {
+      final hours = double.tryParse(hourMatch.group(1)!) ?? 0;
+      totalMinutes += (hours * 60).toInt();
+
+      // Remove matched part to process remaining
+      final remaining = length.replaceFirst(hourRegex, '').trim();
+
+      // Process remaining for additional minutes
+      if (remaining.isNotEmpty) {
+        totalMinutes += _parseDuration(remaining);
+      }
+
+      return totalMinutes;
+    }
+
+    // ✅ Handle "1h30m" format (compact, no spaces)
+    if (length.contains("h") && !length.contains("hour")) {
+      final compactRegex = RegExp(r'(\d+\.?\d*)h(\d+\.?\d*)?m?');
+      final compactMatch = compactRegex.firstMatch(length);
+      if (compactMatch != null) {
+        final hours = double.tryParse(compactMatch.group(1)!) ?? 0;
+        totalMinutes += (hours * 60).toInt();
+
+        if (compactMatch.group(2) != null) {
+          final mins = double.tryParse(compactMatch.group(2)!) ?? 0;
+          totalMinutes += mins.toInt();
+        }
+
+        return totalMinutes;
+      }
+    }
+
+    // ✅ Handle minutes (both "minute(s)" and "m(ins)")
+    // Patterns: "90 minutes", "30 minute", "45m", "60 mins"
+    final minuteRegex = RegExp(r'(\d+\.?\d*)\s*(?:minutes?|mins?)');
+    final minuteMatch = minuteRegex.firstMatch(length);
+    if (minuteMatch != null) {
+      final mins = double.tryParse(minuteMatch.group(1)!) ?? 0;
+      totalMinutes += mins.toInt();
+
+      return totalMinutes;
+    }
+
+    // ✅ Handle "Xh Ym" format with spaces
+    // Pattern: "1 h 30 m" or "1 hour 30 minutes"
+    if (length.contains("h") || length.contains("hour")) {
+      final hourRegex2 = RegExp(r'(\d+\.?\d*)\s*(?:hours?|h)');
+      final hourMatch2 = hourRegex2.firstMatch(length);
+      if (hourMatch2 != null) {
+        final hours = double.tryParse(hourMatch2.group(1)!) ?? 0;
+        totalMinutes += (hours * 60).toInt();
+      }
+
+      final minRegex2 = RegExp(r'(\d+\.?\d*)\s*(?:minutes?|m)');
+      final minMatch2 = minRegex2.firstMatch(length);
+      if (minMatch2 != null) {
+        final mins = double.tryParse(minMatch2.group(1)!) ?? 0;
+        totalMinutes += mins.toInt();
+      }
+
+      return totalMinutes;
+    }
+
+    // ✅ Fallback: just extract first number if it's pure minutes
+    // Pattern: "90" or "120"
+    if (totalMinutes == 0) {
+      final numberRegex = RegExp(r'(\d+\.?\d*)');
+      final numberMatch = numberRegex.firstMatch(length);
+      if (numberMatch != null) {
+        return int.tryParse(numberMatch.group(1)!) ?? 0;
+      }
+    }
+
+    return totalMinutes;
   }
 
   static Future<Map<String, dynamic>> getScheduleDraft() async {

@@ -18,8 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import get_db
 from app.api.models.conversation import ConversationResponse
-from app.api.prompts import DEFAULT_TASK_PARSER_PROMPT, INTENT_PROMPT, SCHEDULE_SYSTEM_PROMPT, build_default_system_prompt, build_goal_analyzer_prompt
-
+from app.api.prompts import DEFAULT_TASK_PARSER_PROMPT, INTENT_PROMPT, SCHEDULE_SYSTEM_PROMPT, SMALL_TALK_SYSTEM_PROMPT, VN_TZ, build_default_system_prompt, build_goal_analyzer_prompt
 import re
 from datetime import datetime, timedelta
 import calendar
@@ -376,6 +375,7 @@ async def handle_small_talk_chat(
     # Thêm system prompt nếu có
     # messages.append({"role": "system", "content": DEFAULT_CHAT_PROMPT})
     messages.append({"role": "system", "content": build_default_system_prompt()})
+    messages.append({"role": "system", "content": SMALL_TALK_SYSTEM_PROMPT})
     # Lấy lịch sử tin nhắn từ DB
     db_messages = (await session.scalars(
         select(Message)
@@ -514,6 +514,13 @@ async def chat_schedule(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_db)
 ):
+
+    # ✅ Lấy thời gian HIỆN TẠI ngay đầu
+    now_vn = datetime.now(VN_TZ)
+    current_datetime_iso = now_vn.isoformat()
+    current_date_str = now_vn.strftime("%Y-%m-%d")
+    current_time_str = now_vn.strftime("%H:%M")
+    
     # 0️⃣ Lấy hoặc tạo conversation
     conversation = await session.scalar(
         select(Conversation).where(
@@ -563,9 +570,12 @@ async def chat_schedule(
 
     # 2️⃣ Build messages cho LLM
     messages = [
+        {"role": "system", "content": f"You are Lumiere assistant. Current time: {current_datetime_iso}. Use this for all reasoning."},
         {"role": "system", "content": SCHEDULE_SYSTEM_PROMPT},
-        {"role": "system", "content": f"Current schedule draft: {json.dumps(draft.schedule_json)}"},
-        {"role": "system", "content": f"Mode: generate_plan"},
+        {
+            "role": "system", 
+            "content": f"TODAY: {current_date_str} at {current_time_str}. Schedule from NOW onwards. Draft: {json.dumps(draft.schedule_json)}"
+        },
         {"role": "user", "content": req.message}
     ]
 
@@ -580,7 +590,17 @@ async def chat_schedule(
         parsed = json.loads(result["response"])
         ai_text = parsed["assistant_reply"]
         updated_draft = parsed["schedule_draft"]
-    except:
+        if not updated_draft.get("schedule_title"):
+            updated_draft["schedule_title"] = "My Schedule"
+
+        if not updated_draft.get("start_date") and updated_draft.get("days"):
+            updated_draft["start_date"] = updated_draft["days"][0]["date"]
+
+        if not updated_draft.get("end_date") and updated_draft.get("days"):
+            updated_draft["end_date"] = updated_draft["days"][-1]["date"]
+
+    except Exception as e:
+        print(f"❌ Error parsing schedule JSON: {e}")
         ai_text = result["response"]
         updated_draft = draft.schedule_json
 
@@ -639,29 +659,27 @@ async def create_tasks_from_schedule(
     session: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """
-    Tạo task riêng trong DB từ một ScheduleDraft.
-    """
     tasks_created = []
 
     for day in draft.schedule_json.get("days", []):
-        date_str = day.get("date")
         for t in day.get("tasks", []):
-            time_str = t.get("time", "00:00")
-            datetime_str = f"{date_str} {time_str}"
+            # ✅ Now receiving date and due_date from Dart
+            date_str = t.get("date")  # ISO 8601 string from Dart
+            due_date_str = t.get("due_date")  # ISO 8601 string from Dart
             
             try:
-                start_dt = datetime.strptime(datetime_str, "%Y-%m-%d %H:%M")
-            except ValueError:
-                start_dt = datetime.strptime(date_str, "%Y-%m-%d")
-
+                start_dt = datetime.fromisoformat(date_str)
+                due_dt = datetime.fromisoformat(due_date_str) if due_date_str else None
+            except (ValueError, TypeError):
+                continue  # Skip if invalid date
+            
             task = Task(
-                owner_id = current_user.id,
-                category_id = 94,
+                owner_id=current_user.id,
+                category_id=94,
                 title=t.get("description", ""),
-                # start_time=start_dt,
-                # duration=t.get("length", ""),
-                # schedule_draft_id=None  # nếu muốn gắn draft id, truyền id vào input
+                date=start_dt,  # ✅ Now properly set
+                due_date=due_dt,  # ✅ Now properly set
+                description=t.get("description", ""),
             )
             session.add(task)
             tasks_created.append(task)
@@ -673,7 +691,6 @@ async def create_tasks_from_schedule(
         usage={},
         model="mock"
     )
-
 # ----- endpoint test lưu mock schedule draft -----
 @router.post("/chat/schedule/mock", response_model=ChatResponse)
 async def chat_schedule_mock(

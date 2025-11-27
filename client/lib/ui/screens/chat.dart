@@ -593,132 +593,200 @@ class _ChatPageState extends State<ChatPage> {
   // }) {
   //   final scheduleDraft = customProps?["schedule_draft"];
 
-  //   // Nếu có schedule draft thì render UI đặc biệt
-  //   if (scheduleDraft != null) {
-  //     return Column(
-  //       crossAxisAlignment: CrossAxisAlignment.start,
-  //       children: [
-  //         Text(
-  //           text,
-  //           style: TextStyle(
-  //             color: isUser ? Colors.white : Colors.black,
-  //             fontWeight: FontWeight.bold,
-  //           ),
-  //         ),
-  //         const SizedBox(height: 8),
+  //   // Kiểm tra xem scheduleDraft có phải là schedule data hợp lệ
+  //   // Schedule có thể có 2 format:
+  //   // 1. Format cũ: {schedule_title, start_date, end_date, days: [...]}
+  //   // 2. Format mới: {date1: [...], date2: [...], ...}
 
-  //         // CARD SCHEDULE
-  //         Card(
-  //           color: Colors.grey[100],
-  //           child: Padding(
-  //             padding: const EdgeInsets.all(12.0),
-  //             child: Column(
-  //               crossAxisAlignment: CrossAxisAlignment.start,
-  //               children: [
-  //                 Text(
-  //                   scheduleDraft['schedule_title'] ?? "",
-  //                   style: const TextStyle(
-  //                     fontSize: 16,
-  //                     fontWeight: FontWeight.bold,
-  //                   ),
-  //                 ),
-  //                 Text("Start: ${scheduleDraft['start_date']}"),
-  //                 Text("End: ${scheduleDraft['end_date']}"),
-  //                 const SizedBox(height: 8),
+  //   bool hasValidSchedule = false;
+  //   List<MapEntry<String, dynamic>> scheduleEntries = [];
 
-  //                 // DATES + TASKS
-  //                 ...List.generate(scheduleDraft['days'].length, (i) {
-  //                   final day = scheduleDraft['days'][i];
+  //   if (scheduleDraft != null && scheduleDraft is Map<String, dynamic>) {
+  //     // Check format cũ (có schedule_title)
+  //     if (scheduleDraft.containsKey('schedule_title') &&
+  //         scheduleDraft.containsKey('days') &&
+  //         scheduleDraft['days'] is List &&
+  //         (scheduleDraft['schedule_title']?.toString().isNotEmpty ?? false)) {
+  //       hasValidSchedule = true;
+  //     }
+  //     // Check format mới (key là ngày, value là List)
+  //     else if (scheduleDraft.isNotEmpty) {
+  //       final entries = scheduleDraft.entries
+  //           .where((e) => e.value is List && (e.value as List).isNotEmpty)
+  //           .toList();
 
-  //                   return Padding(
-  //                     padding: const EdgeInsets.only(bottom: 10),
-  //                     child: Column(
-  //                       crossAxisAlignment: CrossAxisAlignment.start,
-  //                       children: [
-  //                         Text(
-  //                           day['date'],
-  //                           style: const TextStyle(
-  //                             fontWeight: FontWeight.bold,
-  //                             decoration: TextDecoration.underline,
-  //                           ),
-  //                         ),
-  //                         const SizedBox(height: 4),
-  //                         ...List.generate(day['tasks'].length, (j) {
-  //                           final task = day['tasks'][j];
-
-  //                           return Padding(
-  //                             padding: const EdgeInsets.only(bottom: 2.0),
-  //                             child: Text(
-  //                               "- ${task['time']} | ${task['description']} (${task['length']})",
-  //                               style: const TextStyle(fontSize: 14),
-  //                             ),
-  //                           );
-  //                         }),
-  //                       ],
-  //                     ),
-  //                   );
-  //                 }),
-
-  //                 const SizedBox(height: 8),
-  //               ],
-  //             ),
-  //           ),
-  //         ),
-  //         ElevatedButton(
-  //           style: ElevatedButton.styleFrom(
-  //             backgroundColor: Colors.grey[100],
-  //             foregroundColor: AppColors.primary,
-  //             padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-  //             shape: RoundedRectangleBorder(
-  //               borderRadius: BorderRadius.circular(12),
-  //             ),
-  //             elevation: 2,
-  //           ),
-  //           onPressed: () async {
-  //             if (customProps == null || customProps["schedule_draft"] == null)
-  //               return;
-
-  //             final draft =
-  //                 Map<String, dynamic>.from(customProps["schedule_draft"]);
-
-  //             showDialog(
-  //               context: context,
-  //               barrierDismissible: false,
-  //               builder: (_) => const Center(
-  //                   child: CircularProgressIndicator(strokeWidth: 2.5)),
-  //             );
-
-  //             try {
-  //               final result = await ApiService.createTasksFromSchedule(
-  //                 scheduleDraft: draft,
-  //               );
-
-  //               Navigator.pop(context);
-
-  //               ScaffoldMessenger.of(context).showSnackBar(
-  //                 SnackBar(
-  //                   content: Text("Tasks created successfully! 🎉"),
-  //                   backgroundColor: Colors.green,
-  //                 ),
-  //               );
-  //             } catch (e) {
-  //               Navigator.pop(context);
-
-  //               ScaffoldMessenger.of(context).showSnackBar(
-  //                 SnackBar(
-  //                   content: Text("Failed: $e"),
-  //                   backgroundColor: Colors.red,
-  //                 ),
-  //               );
-  //             }
-  //           },
-  //           child: Text("Create Schedule"),
-  //         )
-  //       ],
-  //     );
+  //       if (entries.isNotEmpty) {
+  //         hasValidSchedule = true;
+  //         scheduleEntries = entries;
+  //       }
+  //     }
   //   }
 
-  //   // Nếu không có schedule trong message → tin nhắn bình thường
+  //   if (hasValidSchedule) {
+  //     // Format cũ
+  //     if (scheduleDraft.containsKey('schedule_title')) {
+  //       final days = scheduleDraft['days'] as List<dynamic>;
+
+  //       return Column(
+  //         crossAxisAlignment: CrossAxisAlignment.start,
+  //         children: [
+  //           Text(
+  //             text,
+  //             style: TextStyle(
+  //               color: isUser ? Colors.white : Colors.black,
+  //               fontWeight: FontWeight.bold,
+  //             ),
+  //           ),
+  //           const SizedBox(height: 8),
+  //           Card(
+  //             color: Colors.grey[100],
+  //             child: Padding(
+  //               padding: const EdgeInsets.all(12.0),
+  //               child: Column(
+  //                 crossAxisAlignment: CrossAxisAlignment.start,
+  //                 children: [
+  //                   Text(
+  //                     scheduleDraft['schedule_title'] ?? "",
+  //                     style: const TextStyle(
+  //                       fontSize: 16,
+  //                       fontWeight: FontWeight.bold,
+  //                     ),
+  //                   ),
+  //                   Text("Start: ${scheduleDraft['start_date'] ?? '-'}"),
+  //                   Text("End: ${scheduleDraft['end_date'] ?? '-'}"),
+  //                   const SizedBox(height: 8),
+  //                   ...days.map((dayItem) {
+  //                     final day = dayItem as Map<String, dynamic>? ?? {};
+  //                     final tasks = day['tasks'] as List<dynamic>? ?? [];
+
+  //                     return Padding(
+  //                       padding: const EdgeInsets.only(bottom: 10),
+  //                       child: Column(
+  //                         crossAxisAlignment: CrossAxisAlignment.start,
+  //                         children: [
+  //                           Text(
+  //                             day['date'] ?? '-',
+  //                             style: const TextStyle(
+  //                               fontWeight: FontWeight.bold,
+  //                               decoration: TextDecoration.underline,
+  //                             ),
+  //                           ),
+  //                           const SizedBox(height: 4),
+  //                           ...tasks.map((taskItem) {
+  //                             final task =
+  //                                 taskItem as Map<String, dynamic>? ?? {};
+  //                             return Padding(
+  //                               padding: const EdgeInsets.only(bottom: 2.0),
+  //                               child: Text(
+  //                                 "- ${task['time'] ?? '-'} | ${task['description'] ?? '-'} (${task['length'] ?? '-'})",
+  //                                 style: const TextStyle(fontSize: 14),
+  //                               ),
+  //                             );
+  //                           }).toList(),
+  //                         ],
+  //                       ),
+  //                     );
+  //                   }).toList(),
+  //                   const SizedBox(height: 8),
+  //                 ],
+  //               ),
+  //             ),
+  //           ),
+  //           ElevatedButton(
+  //             style: ElevatedButton.styleFrom(
+  //               backgroundColor: Colors.grey[100],
+  //               foregroundColor: AppColors.primary,
+  //               padding:
+  //                   const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+  //               shape: RoundedRectangleBorder(
+  //                 borderRadius: BorderRadius.circular(12),
+  //               ),
+  //               elevation: 2,
+  //             ),
+  //             onPressed: () => _createSchedule(customProps, context),
+  //             child: const Text("Create Schedule"),
+  //           ),
+  //         ],
+  //       );
+  //     }
+  //     // Format mới (key là ngày)
+  //     else {
+  //       return Column(
+  //         crossAxisAlignment: CrossAxisAlignment.start,
+  //         children: [
+  //           Text(
+  //             text,
+  //             style: TextStyle(
+  //               color: isUser ? Colors.white : Colors.black,
+  //               fontWeight: FontWeight.bold,
+  //             ),
+  //           ),
+  //           const SizedBox(height: 8),
+  //           Card(
+  //             color: Colors.grey[100],
+  //             child: Padding(
+  //               padding: const EdgeInsets.all(12.0),
+  //               child: Column(
+  //                 crossAxisAlignment: CrossAxisAlignment.start,
+  //                 children: [
+  //                   ...scheduleEntries.map((entry) {
+  //                     final date = entry.key;
+  //                     final tasks = entry.value as List<dynamic>;
+
+  //                     return Padding(
+  //                       padding: const EdgeInsets.only(bottom: 10),
+  //                       child: Column(
+  //                         crossAxisAlignment: CrossAxisAlignment.start,
+  //                         children: [
+  //                           Text(
+  //                             date,
+  //                             style: const TextStyle(
+  //                               fontWeight: FontWeight.bold,
+  //                               fontSize: 14,
+  //                               decoration: TextDecoration.underline,
+  //                             ),
+  //                           ),
+  //                           const SizedBox(height: 4),
+  //                           ...tasks.map((taskItem) {
+  //                             final task =
+  //                                 taskItem as Map<String, dynamic>? ?? {};
+  //                             return Padding(
+  //                               padding: const EdgeInsets.only(bottom: 2.0),
+  //                               child: Text(
+  //                                 "- ${task['time'] ?? '-'} | ${task['description'] ?? '-'} (${task['length'] ?? '-'})",
+  //                                 style: const TextStyle(fontSize: 14),
+  //                               ),
+  //                             );
+  //                           }).toList(),
+  //                         ],
+  //                       ),
+  //                     );
+  //                   }).toList(),
+  //                   const SizedBox(height: 8),
+  //                 ],
+  //               ),
+  //             ),
+  //           ),
+  //           ElevatedButton(
+  //             style: ElevatedButton.styleFrom(
+  //               backgroundColor: Colors.grey[100],
+  //               foregroundColor: AppColors.primary,
+  //               padding:
+  //                   const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+  //               shape: RoundedRectangleBorder(
+  //                 borderRadius: BorderRadius.circular(12),
+  //               ),
+  //               elevation: 2,
+  //             ),
+  //             onPressed: () => _createSchedule(customProps, context),
+  //             child: const Text("Create Schedule"),
+  //           ),
+  //         ],
+  //       );
+  //     }
+  //   }
+
+  //   // Nếu không có schedule hợp lệ → tin nhắn bình thường
   //   return Text(
   //     text,
   //     style: TextStyle(
@@ -732,11 +800,6 @@ class _ChatPageState extends State<ChatPage> {
     Map<String, dynamic>? customProps,
   }) {
     final scheduleDraft = customProps?["schedule_draft"];
-
-    // Kiểm tra xem scheduleDraft có phải là schedule data hợp lệ
-    // Schedule có thể có 2 format:
-    // 1. Format cũ: {schedule_title, start_date, end_date, days: [...]}
-    // 2. Format mới: {date1: [...], date2: [...], ...}
 
     bool hasValidSchedule = false;
     List<MapEntry<String, dynamic>> scheduleEntries = [];
@@ -762,177 +825,191 @@ class _ChatPageState extends State<ChatPage> {
       }
     }
 
-    if (hasValidSchedule) {
-      // Format cũ
-      if (scheduleDraft.containsKey('schedule_title')) {
-        final days = scheduleDraft['days'] as List<dynamic>;
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              text,
-              style: TextStyle(
-                color: isUser ? Colors.white : Colors.black,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Card(
-              color: Colors.grey[100],
-              child: Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      scheduleDraft['schedule_title'] ?? "",
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Text("Start: ${scheduleDraft['start_date'] ?? '-'}"),
-                    Text("End: ${scheduleDraft['end_date'] ?? '-'}"),
-                    const SizedBox(height: 8),
-                    ...days.map((dayItem) {
-                      final day = dayItem as Map<String, dynamic>? ?? {};
-                      final tasks = day['tasks'] as List<dynamic>? ?? [];
-
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              day['date'] ?? '-',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                decoration: TextDecoration.underline,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            ...tasks.map((taskItem) {
-                              final task =
-                                  taskItem as Map<String, dynamic>? ?? {};
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 2.0),
-                                child: Text(
-                                  "- ${task['time'] ?? '-'} | ${task['description'] ?? '-'} (${task['length'] ?? '-'})",
-                                  style: const TextStyle(fontSize: 14),
-                                ),
-                              );
-                            }).toList(),
-                          ],
-                        ),
-                      );
-                    }).toList(),
-                    const SizedBox(height: 8),
-                  ],
-                ),
-              ),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.grey[100],
-                foregroundColor: AppColors.primary,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 2,
-              ),
-              onPressed: () => _createSchedule(customProps, context),
-              child: const Text("Create Schedule"),
-            ),
-          ],
-        );
-      }
-      // Format mới (key là ngày)
-      else {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              text,
-              style: TextStyle(
-                color: isUser ? Colors.white : Colors.black,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Card(
-              color: Colors.grey[100],
-              child: Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ...scheduleEntries.map((entry) {
-                      final date = entry.key;
-                      final tasks = entry.value as List<dynamic>;
-
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              date,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                                decoration: TextDecoration.underline,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            ...tasks.map((taskItem) {
-                              final task =
-                                  taskItem as Map<String, dynamic>? ?? {};
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 2.0),
-                                child: Text(
-                                  "- ${task['time'] ?? '-'} | ${task['description'] ?? '-'} (${task['length'] ?? '-'})",
-                                  style: const TextStyle(fontSize: 14),
-                                ),
-                              );
-                            }).toList(),
-                          ],
-                        ),
-                      );
-                    }).toList(),
-                    const SizedBox(height: 8),
-                  ],
-                ),
-              ),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.grey[100],
-                foregroundColor: AppColors.primary,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 2,
-              ),
-              onPressed: () => _createSchedule(customProps, context),
-              child: const Text("Create Schedule"),
-            ),
-          ],
-        );
-      }
+    // ✅ Nếu không có schedule hợp lệ → chỉ hiện text
+    if (!hasValidSchedule) {
+      return Text(
+        text,
+        style: TextStyle(
+          color: isUser ? Colors.white : Colors.black,
+        ),
+      );
     }
 
-    // Nếu không có schedule hợp lệ → tin nhắn bình thường
-    return Text(
-      text,
-      style: TextStyle(
-        color: isUser ? Colors.white : Colors.black,
-      ),
-    );
+    // ✅ Nếu có schedule hợp lệ → hiện schedule card
+    if (scheduleDraft.containsKey('schedule_title')) {
+      // Format cũ
+      final days = scheduleDraft['days'] as List<dynamic>;
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            text,
+            style: TextStyle(
+              color: isUser ? Colors.white : Colors.black,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Card(
+            color: Colors.grey[100],
+            child: Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ✅ Chỉ hiện schedule_title nếu có
+                  if (scheduleDraft['schedule_title'] != null &&
+                      scheduleDraft['schedule_title'].toString().isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8.0),
+                      child: Text(
+                        scheduleDraft['schedule_title'],
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  // ✅ Chỉ hiện start_date nếu có
+                  if (scheduleDraft['start_date'] != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 4.0),
+                      child: Text("Start: ${scheduleDraft['start_date']}"),
+                    ),
+                  // ✅ Chỉ hiện end_date nếu có
+                  if (scheduleDraft['end_date'] != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8.0),
+                      child: Text("End: ${scheduleDraft['end_date']}"),
+                    ),
+                  const SizedBox(height: 8),
+                  ...days.map((dayItem) {
+                    final day = dayItem as Map<String, dynamic>? ?? {};
+                    final tasks = day['tasks'] as List<dynamic>? ?? [];
+
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            day['date'] ?? '-',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          ...tasks.map((taskItem) {
+                            final task =
+                                taskItem as Map<String, dynamic>? ?? {};
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 2.0),
+                              child: Text(
+                                "- ${task['time'] ?? '-'} | ${task['description'] ?? '-'} (${task['length'] ?? '-'})",
+                                style: const TextStyle(fontSize: 14),
+                              ),
+                            );
+                          }).toList(),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                  const SizedBox(height: 8),
+                ],
+              ),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.grey[100],
+              foregroundColor: AppColors.primary,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 2,
+            ),
+            onPressed: () => _createSchedule(customProps, context),
+            child: const Text("Create Schedule"),
+          ),
+        ],
+      );
+    } else {
+      // Format mới (key là ngày)
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            text,
+            style: TextStyle(
+              color: isUser ? Colors.white : Colors.black,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Card(
+            color: Colors.grey[100],
+            child: Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ...scheduleEntries.map((entry) {
+                    final date = entry.key;
+                    final tasks = entry.value as List<dynamic>;
+
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            date,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          ...tasks.map((taskItem) {
+                            final task =
+                                taskItem as Map<String, dynamic>? ?? {};
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 2.0),
+                              child: Text(
+                                "- ${task['time'] ?? '-'} | ${task['description'] ?? '-'} (${task['length'] ?? '-'})",
+                                style: const TextStyle(fontSize: 14),
+                              ),
+                            );
+                          }).toList(),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                  const SizedBox(height: 8),
+                ],
+              ),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.grey[100],
+              foregroundColor: AppColors.primary,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 2,
+            ),
+            onPressed: () => _createSchedule(customProps, context),
+            child: const Text("Create Schedule"),
+          ),
+        ],
+      );
+    }
   }
 
   Future<void> _createSchedule(
@@ -1050,11 +1127,15 @@ class _ChatPageState extends State<ChatPage> {
       if (_selectedMode == "generate_plan") {
         // Gọi endpoint /chat/schedule
         responseData = await ApiService.sendScheduleMessage(
-            conversationId: _selectedConversationId, message: m.text);
+            conversation_id: _selectedConversationId, message: m.text);
 
         final scheduleDraft = responseData["extra"]?["schedule_draft"];
         final reply = responseData['response'] ?? "No response";
         _conversationHistory.add({"role": "assistant", "content": reply});
+
+        print(">>> SENDING schedule message:");
+        print("conversation_id FE gửi: $_selectedConversationId");
+        print("body: {conversation_id: $_selectedConversationId, message: $m}");
 
         setState(() {
           _messages.insert(
