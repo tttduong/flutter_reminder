@@ -89,6 +89,8 @@ import 'package:timezone/timezone.dart' as tz;
 // final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
 //     FlutterLocalNotificationsPlugin();
 
+// intergrate notification
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
