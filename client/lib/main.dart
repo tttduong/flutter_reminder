@@ -90,10 +90,36 @@ import 'package:timezone/timezone.dart' as tz;
 //     FlutterLocalNotificationsPlugin();
 
 // intergrate notification
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+//
+//
+//
+//
+  // intergrate notification--------------------
+  await Firebase.initializeApp();
+  FirebaseMessaging messaging = FirebaseMessaging.instance;
 
+  // Lấy token gửi về backend
+  String? token = await messaging.getToken();
+  print("FCM Token: $token");
+
+// Khi app đang foreground:
+  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    print('Received message: ${message.notification?.title}');
+  });
+// Khi app background hoặc bị kill:
+  FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+    print('User opened app from notification');
+  });
+
+// intergrate notification----------------------
+//
+//
+//
   // Init timezone
   tz.initializeTimeZones();
 

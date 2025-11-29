@@ -11,3 +11,7 @@ GeneratedPluginRegistrant.java
 key.properties
 **/*.keystore
 **/*.jks
+# service account
+serviceAccountKey.json
+server/app/core/serviceAccountKey.json
+client/android/app/google-services.json

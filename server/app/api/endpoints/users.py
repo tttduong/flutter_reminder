@@ -2,6 +2,7 @@
 from fastapi.responses import JSONResponse
 from app.core.session import get_current_user
 from app.db.repositories.user_repository import authenticate_user, get_user_by_id
+from app.api.models.user_token import UserToken
 from ..models.category import CategoryOut
 from sqlalchemy import select 
 from typing import Annotated, Optional
@@ -119,6 +120,14 @@ async def read_users_me(
         user=UserOut.from_orm(current_user),
         default_category=CategoryOut.from_orm(inbox_category) if inbox_category else None
     )
+
+@router.post("/save-token")
+async def save_token(user_id: int, fcm_token: str, db: AsyncSession = Depends(get_db)):
+    token_obj = UserToken(user_id=user_id, fcm_token=fcm_token)
+    db.add(token_obj)
+    await db.commit()
+    return {"success": True}
+
 
 @router.get("/about_me", response_model=UserResponse)
 def read_user(db: Session = Depends(get_db), username: str = Depends(get_user_by_token)):

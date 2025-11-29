@@ -2,7 +2,7 @@ import os
 from fastapi import FastAPI, Depends, Request
 from fastapi.responses import JSONResponse
 
-from app.api.endpoints import tasks, users, categories, chat, report
+from app.api.endpoints import tasks, users, categories, chat, report, notification
 from app.api.middleware.middleware import AuthMiddleware, logging_middleware, logger
 from app.core.security import get_user_by_token
 from app.db.database import Base, engine
@@ -11,6 +11,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from app.db.database import init_models
 from fastapi.responses import JSONResponse 
 from dotenv import load_dotenv
+
 
 # 🔹 Load biến môi trường từ file .env
 load_dotenv()
@@ -79,7 +80,7 @@ app.include_router(users.router, prefix="/api/v1", tags=["Users"])
 app.include_router(categories.router, prefix="/api/v1", tags=["Categories"])
 app.include_router(chat.router, prefix="/api/v1", tags=["Chat"])
 app.include_router(report.router, prefix="/api/v1", tags=["Report"])
-
+app.include_router(notification.router, prefix="/api/v1", tags=["Notification"])
 # app.middleware("http")(logging_middleware)
 
 

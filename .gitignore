@@ -62,3 +62,7 @@ Thumbs.db
 
 
 ~$d & Class Diagram.docx
+# service account
+serviceAccountKey.json
+server/app/core/serviceAccountKey.json
+client/android/app/google-services.json

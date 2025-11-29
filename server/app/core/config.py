@@ -10,6 +10,9 @@ class Settings(BaseSettings):
     SALT: str
     CHAT_KEY: str
     OPENAI_API_KEY:str
+    FCM_SERVER_KEY: str
+    FCM_PROJECT_ID: str
+    GOOGLE_APPLICATION_CREDENTIALS: str
     class Config:
         env_file = ".env"
 

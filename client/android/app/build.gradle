@@ -1,27 +1,79 @@
-buildscript {
-    ext.kotlin_version = '1.7.10'
-    repositories {
-        google()
-        mavenCentral()
-    }
+// buildscript {
+//     ext.kotlin_version = '1.7.10'
+//     repositories {
+//         google()
+//         mavenCentral()
+//     }
 
-    dependencies {
-        classpath 'com.android.tools.build:gradle:7.3.0'
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-    }
-}
+//     dependencies {
+//         classpath 'com.android.tools.build:gradle:7.3.0'
+//         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+//     }
+// }
+
+// plugins {
+//     id "com.android.application"
+//     id "kotlin-android"
+//     id "dev.flutter.flutter-gradle-plugin"
+// }
+
+// allprojects {
+//     repositories {
+//         google()
+//         mavenCentral()
+//     }
+// }
+
+// android {
+//     namespace 'com.example.flutter_to_do_app'
+//     compileSdk 35
+
+//     defaultConfig {
+//         applicationId 'com.example.flutter_to_do_app'
+//         minSdk 21
+//         targetSdk 35
+//         versionCode 1
+//         versionName "1.0.0"
+//     }
+
+//     compileOptions {
+//         sourceCompatibility JavaVersion.VERSION_1_8
+//         targetCompatibility JavaVersion.VERSION_1_8
+//         coreLibraryDesugaringEnabled true
+//     }
+
+//     kotlinOptions {
+//         jvmTarget = '1.8'
+//     }
+
+//     buildTypes {
+//         release {
+//             signingConfig signingConfigs.debug
+//         }
+//     }
+// }
+
+// dependencies {
+//     implementation "org.jetbrains.kotlin:kotlin-stdlib:1.9.0"
+
+//     coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:2.0.4"
+// }
+
+// rootProject.buildDir = '../build'
+// subprojects {
+//     project.buildDir = "${rootProject.buildDir}/${project.name}"
+// }
+// subprojects {
+//     project.evaluationDependsOn(':app')
+// }
+
+// apply plugin: 'com.google.gms.google-services'
 
 plugins {
     id "com.android.application"
     id "kotlin-android"
     id "dev.flutter.flutter-gradle-plugin"
-}
-
-allprojects {
-    repositories {
-        google()
-        mavenCentral()
-    }
+    id "com.google.gms.google-services"
 }
 
 android {
@@ -29,7 +81,7 @@ android {
     compileSdk 35
 
     defaultConfig {
-        applicationId 'com.example.flutter_to_do_app'
+        applicationId "com.example.flutter_to_do_app"
         minSdk 21
         targetSdk 35
         versionCode 1
@@ -43,7 +95,7 @@ android {
     }
 
     kotlinOptions {
-        jvmTarget = '1.8'
+        jvmTarget = "1.8"
     }
 
     buildTypes {
@@ -55,14 +107,5 @@ android {
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib:1.9.0"
-
     coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:2.0.4"
-}
-
-rootProject.buildDir = '../build'
-subprojects {
-    project.buildDir = "${rootProject.buildDir}/${project.name}"
-}
-subprojects {
-    project.evaluationDependsOn(':app')
 }
