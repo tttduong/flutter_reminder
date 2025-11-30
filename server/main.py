@@ -12,6 +12,10 @@ from app.db.database import init_models
 from fastapi.responses import JSONResponse 
 from dotenv import load_dotenv
 
+from app.core.scheduler import start_scheduler
+# from app.core import scheduler
+# from app.core.scheduler import scheduler
+
 
 # 🔹 Load biến môi trường từ file .env
 load_dotenv()
@@ -19,9 +23,14 @@ load_dotenv()
 # 🔹 Lấy SECRET_KEY
 SECRET_KEY = os.getenv("SECRET_KEY")
 
+import logging
+logging.basicConfig(level=logging.INFO)
+
+
 if not SECRET_KEY:
     raise ValueError("❌ SECRET_KEY not found in .env file!")
 app = FastAPI()
+start_scheduler()
 
 # 🔹 1. AuthMiddleware - ĐẶT TRƯỚC TIÊN (sẽ chạy SAU CÙNG)
 app.add_middleware(AuthMiddleware)
@@ -99,7 +108,6 @@ async def global_exception_handler(request: Request, exc: Exception):
         status_code=500,
         content={"error": "O-o-o-ps! Internal server error"}
     )
-
 
 @app.get("/")
 def read_root():

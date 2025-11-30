@@ -3,7 +3,7 @@ from enum import Enum
 from uuid import uuid4
 import uuid
 from sqlalchemy.dialects.postgresql import TIMESTAMP
-from sqlalchemy import ARRAY, JSON, UUID, Column, Integer, String, Boolean, ForeignKey, DateTime
+from sqlalchemy import ARRAY, JSON, UUID, Column, Integer, String, Boolean, ForeignKey, DateTime, Text
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.db.database import Base
@@ -13,6 +13,7 @@ from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import JSONB
 from pydantic import BaseModel
 from typing import Dict, Any
+
 class User(Base):
     __tablename__ = "user"
 
@@ -108,6 +109,24 @@ class ScheduleDraft(Base):
 
 class ScheduleDraftInput(BaseModel):
     schedule_json: Dict[str, Any]
+
+
+
+class Notification(Base):
+    __tablename__ = "notifications"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, nullable=False)
+    title = Column(Text, nullable=False)
+    body = Column(Text, nullable=False)
+
+    is_read = Column(Boolean, default=False)
+    created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
+
+    # NEW FIELDS
+    send_at = Column(TIMESTAMP(timezone=True), nullable=True)
+    sent = Column(Boolean, default=False)
+
 
 
 class GoalDraft(Base):
