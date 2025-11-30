@@ -21,12 +21,6 @@ AsyncSessionLocal = sessionmaker(
 class Base(DeclarativeBase):
     pass
 
-# def get_db():
-#     db = SessionLocal()
-#     try:
-#         yield db
-#     finally:
-#         db.close()
 
 async def init_models():
     async with engine.begin() as conn:
