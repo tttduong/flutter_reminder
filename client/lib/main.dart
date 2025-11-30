@@ -95,10 +95,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-//
-//
-//
-//
+
   // intergrate notification--------------------
   await Firebase.initializeApp();
   FirebaseMessaging messaging = FirebaseMessaging.instance;
@@ -116,10 +113,8 @@ void main() async {
     print('User opened app from notification');
   });
 
-// intergrate notification----------------------
-//
-//
-//
+// ------------------intergrate notification----------------------
+
   // Init timezone
   tz.initializeTimeZones();
 
