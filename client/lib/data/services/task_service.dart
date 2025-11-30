@@ -224,16 +224,63 @@ class TaskService {
     }
   }
 
+//   static Future<bool> createTask({Task? task}) async {
+//     if (task == null) return false;
+
+//     try {
+//       // Convert DateTime to UTC and format as ISO8601 string with timezone
+//       String? formatDateTimeToUTC(DateTime? dateTime) {
+//         if (dateTime == null) return null;
+//         return dateTime.toUtc().toIso8601String();
+//       }
+
+//       final response = await ApiService.dio.post('$baseUrl/tasks/', data: {
+//         "title": task.title,
+//         "description": task.description,
+//         "category_id": task.categoryId,
+//         "date": formatDateTimeToUTC(task.date),
+//         "due_date": formatDateTimeToUTC(task.dueDate),
+//         "priority": task.priority,
+//       });
+
+//       if (response.statusCode == 201 || response.statusCode == 200) {
+//         print("Task created successfully!");
+
+//         // 🟢 Schedule notification ngay sau khi tạo task
+// // Nếu có startTime trong tương lai thì schedule notification
+//         if (task.date != null && task.date!.isAfter(DateTime.now())) {
+//           await notificationService.scheduleNotification(
+//             id: task.id!, // id task làm id notification
+//             title: "Nhắc nhở công việc",
+//             body: task.title,
+//             dateTime: task.date!,
+//           );
+//         }
+
+//         return true;
+//       } else {
+//         print("Failed to create task: ${response.data}");
+//         return false;
+//       }
+//     } catch (e) {
+//       print("Error: $e");
+//       return false;
+//     }
+//   }
   static Future<bool> createTask({Task? task}) async {
     if (task == null) return false;
 
     try {
-      // Convert DateTime to UTC and format as ISO8601 string with timezone
+      // String? formatDateTimeToUTC(DateTime? dateTime) {
+      //   if (dateTime == null) return null;
+      //   return dateTime.toUtc().toIso8601String();
+      // }
       String? formatDateTimeToUTC(DateTime? dateTime) {
         if (dateTime == null) return null;
-        return dateTime.toUtc().toIso8601String();
+        return dateTime.toUtc().toIso8601String().replaceAll('Z', '+00:00');
       }
 
+      // 1️⃣ Tạo task trên server trước
       final response = await ApiService.dio.post('$baseUrl/tasks/', data: {
         "title": task.title,
         "description": task.description,
@@ -241,16 +288,31 @@ class TaskService {
         "date": formatDateTimeToUTC(task.date),
         "due_date": formatDateTimeToUTC(task.dueDate),
         "priority": task.priority,
+        "reminder_time": formatDateTimeToUTC(task.reminderTime), // thêm
       });
 
       if (response.statusCode == 201 || response.statusCode == 200) {
+        // Lấy task id trả về từ server
+        final taskIdFromServer = response.data['id'];
+        task.id = taskIdFromServer;
+
         print("Task created successfully!");
 
-        // 🟢 Schedule notification ngay sau khi tạo task
-// Nếu có startTime trong tương lai thì schedule notification
+        // 2️⃣ Schedule notification nếu có reminderTime
+        // if (task.reminderTime != null &&
+        //     task.reminderTime!.isAfter(DateTime.now())) {
+        //   await notificationService.scheduleNotification(
+        //     id: task.id!, // bây giờ đã có id
+        //     title: "Nhắc nhở công việc",
+        //     body: task.title,
+        //     dateTime: task.reminderTime!,
+        //   );
+        // }
+
+        // 3️⃣ Schedule notification nếu task.date trong tương lai
         if (task.date != null && task.date!.isAfter(DateTime.now())) {
           await notificationService.scheduleNotification(
-            id: task.id!, // id task làm id notification
+            id: task.id! + 100000, // khác id reminder để tránh trùng
             title: "Nhắc nhở công việc",
             body: task.title,
             dateTime: task.date!,

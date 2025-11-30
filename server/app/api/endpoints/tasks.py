@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from ..models.task import TaskCreate, TaskUpdate, TaskResponse
 from ...core.security import get_user_by_token
 from ...db.database import get_db
-from ...db.db_structure import Category, Task, User
+from ...db.db_structure import Category, Notification, Task, User
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, text, func, cast, Date
 from fastapi import Query
@@ -67,12 +67,26 @@ async def create_task(
         owner_id=current_user.id,
         date=task.date, 
         due_date=task.due_date,
-        priority=task.priority,  # Thêm này
-        completed=False  # Thêm này - set default là False
+        priority=task.priority,  
+        completed=False,  # set default là False
+        reminder_time=task.reminder_time 
     )
     db.add(new_task)
     await db.commit()
     await db.refresh(new_task)
+
+    if new_task.reminder_time is not None:
+        notification = Notification(
+            user_id=current_user.id,
+            title="Task time!",
+            body=new_task.description or new_task.title,
+            send_at=new_task.reminder_time,
+            sent=False,
+        )
+        db.add(notification)
+        await db.commit()
+        await db.refresh(notification)
+
     return new_task
 @router.get("/tasks/by-date/", response_model=List[TaskResponse])
 async def get_tasks_by_date(

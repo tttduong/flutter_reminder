@@ -8,8 +8,15 @@ class DateTimePickerModal extends StatefulWidget {
   final TimeOfDay? initialStartTime;
   final TimeOfDay? initialEndTime;
   final bool initialIsAllDay;
-  final Function(DateTime startDate, DateTime? dueDate, TimeOfDay? startTime,
-      TimeOfDay? endTime, bool isAllDay) onConfirm;
+  final TimeOfDay? initialReminderTime;
+
+  final Function(
+      DateTime startDate,
+      DateTime? dueDate,
+      TimeOfDay? startTime,
+      TimeOfDay? endTime,
+      bool isAllDay,
+      TimeOfDay? initialReminderTime) onConfirm;
 
   const DateTimePickerModal({
     Key? key,
@@ -18,6 +25,7 @@ class DateTimePickerModal extends StatefulWidget {
     this.initialStartTime,
     this.initialEndTime,
     this.initialIsAllDay = true,
+    this.initialReminderTime,
     required this.onConfirm,
   }) : super(key: key);
 
@@ -32,6 +40,7 @@ class _DateTimePickerModalState extends State<DateTimePickerModal> {
   TimeOfDay? tempEndTime;
   late bool tempIsAllDay;
   String selectedTab = 'Date'; // Date or Duration
+  TimeOfDay? tempReminderTime;
 
   @override
   void initState() {
@@ -41,6 +50,7 @@ class _DateTimePickerModalState extends State<DateTimePickerModal> {
     tempStartTime = widget.initialStartTime;
     tempEndTime = widget.initialEndTime;
     tempIsAllDay = widget.initialIsAllDay;
+    tempReminderTime = widget.initialReminderTime;
   }
 
   String _formatTimeOfDay(TimeOfDay time) {
@@ -112,6 +122,7 @@ class _DateTimePickerModalState extends State<DateTimePickerModal> {
                         tempStartTime,
                         tempEndTime,
                         tempIsAllDay,
+                        tempReminderTime,
                       );
                       Navigator.pop(context);
                     },
@@ -163,14 +174,30 @@ class _DateTimePickerModalState extends State<DateTimePickerModal> {
                 ),
 
                 // Reminder & Repeat placeholders
+                // Reminder
                 ListTile(
                   leading:
                       Icon(Icons.notifications_none, color: AppColors.primary),
                   title: Text('Reminder',
                       style: TextStyle(color: AppColors.primary)),
-                  trailing: Text('None', style: TextStyle(color: Colors.grey)),
-                  onTap: () {},
+                  trailing: Text(
+                    tempReminderTime != null
+                        ? _formatTimeOfDay(tempReminderTime!)
+                        : 'None',
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                  onTap: () async {
+                    // Chọn giờ cho reminder
+                    TimeOfDay? picked = await showTimePicker(
+                      context: context,
+                      initialTime: tempReminderTime ?? TimeOfDay.now(),
+                    );
+                    if (picked != null) {
+                      setState(() => tempReminderTime = picked);
+                    }
+                  },
                 ),
+
                 ListTile(
                   leading: Icon(Icons.repeat, color: AppColors.primary),
                   title: Text('Repeat',
@@ -191,6 +218,7 @@ class _DateTimePickerModalState extends State<DateTimePickerModal> {
                         tempStartTime = null;
                         tempEndTime = null;
                         tempIsAllDay = true;
+                        tempReminderTime = null;
                       });
                     },
                     child: Text('CLEAR',

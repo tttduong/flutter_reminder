@@ -40,7 +40,8 @@ class Task(Base):
     completed_at = Column(DateTime(timezone=True), nullable=True)
     completed = Column(Boolean, default=False, nullable=False) 
     priority = Column(Integer, nullable=True) 
-
+    reminder_time = Column(DateTime(timezone=True), nullable=True)
+    
     owner_id = Column(Integer, ForeignKey("user.id"))
     category_id = Column(Integer, ForeignKey("category.id", ondelete="CASCADE"), nullable=True)
      # Nếu task thuộc goal
@@ -123,7 +124,6 @@ class Notification(Base):
     is_read = Column(Boolean, default=False)
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
 
-    # NEW FIELDS
     send_at = Column(TIMESTAMP(timezone=True), nullable=True)
     sent = Column(Boolean, default=False)
 

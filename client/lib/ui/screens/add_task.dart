@@ -30,6 +30,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
   DateTime? _selectedDueDate; // nullable - có thể không có due date
   TimeOfDay? _startTime; // null = all day task
   TimeOfDay? _endTime;
+  TimeOfDay? reminderTime;
 
   bool _isAllDay = true; // Mặc định là all day task
   List<Category> listCategories = [];
@@ -137,14 +138,16 @@ class _AddTaskPageState extends State<AddTaskPage> {
                           initialStartTime: _startTime,
                           initialEndTime: _endTime,
                           initialIsAllDay: _isAllDay,
-                          onConfirm:
-                              (start, due, startTime, endTime, isAllDay) {
+                          initialReminderTime: reminderTime,
+                          onConfirm: (start, due, startTime, endTime, isAllDay,
+                              reminder) {
                             setState(() {
                               _selectedStartDate = start;
                               _selectedDueDate = due;
                               _startTime = startTime;
                               _endTime = endTime;
                               _isAllDay = isAllDay;
+                              reminderTime = reminder;
                             });
                           },
                         ),
@@ -488,6 +491,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
     // Create DateTime objects for DB
     DateTime startDateTime;
     DateTime? endDateTime;
+    DateTime? reminderDateTime;
 
     if (_startTime != null && !_isAllDay) {
       // Task có giờ cụ thể
@@ -531,6 +535,15 @@ class _AddTaskPageState extends State<AddTaskPage> {
         );
       }
     }
+    if (reminderTime != null) {
+      reminderDateTime = DateTime(
+        startDateTime.year,
+        startDateTime.month,
+        startDateTime.day,
+        reminderTime!.hour,
+        reminderTime!.minute,
+      );
+    }
 
     int? priorityToSend = _hasPriority ? _selectedPriority : null;
 
@@ -542,6 +555,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
       date: startDateTime,
       dueDate: endDateTime,
       priority: priorityToSend,
+      reminderTime: reminderDateTime,
     );
 
     print("✅ Creating task:");

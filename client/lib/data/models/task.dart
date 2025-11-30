@@ -15,6 +15,7 @@ class Task {
   bool isDeleted;
   int? priority;
   DateTime? completedAt;
+  DateTime? reminderTime;
 
   Task({
     this.id,
@@ -31,6 +32,7 @@ class Task {
     this.isDeleted = false,
     this.priority,
     this.completedAt,
+    this.reminderTime,
   });
 
   /// Chuyển đổi từ JSON sang `Task` object
@@ -93,6 +95,7 @@ class Task {
       'updated_at': updatedAt?.toIso8601String(),
       'priority': priority,
       'is_deleted': isDeleted,
+      "reminder_time": reminderTime?.toUtc().toIso8601String(),
     };
   }
 
