@@ -3,7 +3,6 @@ from datetime import datetime
 from pydantic import BaseModel
 
 class NotificationRequest(BaseModel):
-    user_id: int
     title: str
     body: str
     send_at: datetime
@@ -11,7 +10,6 @@ class NotificationRequest(BaseModel):
 
 
 class NotificationCreate(BaseModel):
-    user_id: int
     title: str
     body: str
     send_at: datetime

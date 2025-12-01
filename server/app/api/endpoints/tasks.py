@@ -30,27 +30,6 @@ async def websocket_endpoint(client_id: int, websocket: WebSocket):
         active_connections.remove(websocket)
 
 
-# @router.post("/tasks/", response_model=TaskResponse)
-# async def create_task(
-#     task: TaskCreate, 
-#     db: Session = Depends(get_db), 
-#     current_user: User = Depends(get_current_user) 
-#     ):
-#     print(f"📝 Received task data: {task}")  
-#     print(f"📝 Task dict: {task.dict()}") 
-#     # task_date = task.date if task.date else datetime.now(timezone.utc)
-#     new_task = Task(
-#     title=task.title,
-#     description=task.description,
-#     category_id= task.category_id,
-#     owner_id=current_user.id,
-#     date=task.date, 
-#     due_date=task.due_date
-#     )
-#     db.add(new_task)
-#     await db.commit()
-#     await db.refresh(new_task)
-#     return new_task
 @router.post("/tasks/", response_model=TaskResponse)
 async def create_task(
     task: TaskCreate, 
@@ -74,19 +53,6 @@ async def create_task(
     db.add(new_task)
     await db.commit()
     await db.refresh(new_task)
-
-    if new_task.reminder_time is not None:
-        notification = Notification(
-            user_id=current_user.id,
-            title="Task time!",
-            body=new_task.description or new_task.title,
-            send_at=new_task.reminder_time,
-            sent=False,
-        )
-        db.add(notification)
-        await db.commit()
-        await db.refresh(notification)
-
     return new_task
 @router.get("/tasks/by-date/", response_model=List[TaskResponse])
 async def get_tasks_by_date(

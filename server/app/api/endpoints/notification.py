@@ -10,8 +10,9 @@ from app.db.database import get_db
 from app.core.config import settings
 from datetime import datetime, timedelta
 from app.api.models.notification import NotificationCreate, NotificationRequest
-from app.db.db_structure import Notification
-
+from app.db.db_structure import Notification, User
+from app.core.session import get_current_user
+from sqlalchemy.orm import Session
 router = APIRouter()
 
 SCOPES = ["https://www.googleapis.com/auth/firebase.messaging"]
@@ -31,53 +32,16 @@ def get_access_token():
     credentials.refresh(Request())
     return credentials.token
 
-# async def send_push_notification(token: str, title: str, body: str):
-#     access_token = get_access_token()
-#     url = f"https://fcm.googleapis.com/v1/projects/{settings.FCM_PROJECT_ID}/messages:send"
-
-#     headers = {
-#         "Authorization": f"Bearer {access_token}",
-#         "Content-Type": "application/json; UTF-8"
-#     }
-#     payload = {
-#         "message": {
-#             "token": token,
-#             "notification": {"title": title, "body": body},
-#             "data": {"extra": "info"}  # tùy chọn
-#         }
-#     }
-#     async with httpx.AsyncClient() as client:
-#         resp = await client.post(url, headers=headers, json=payload)
-#         print("FCM v1 status:", resp.status_code)
-#         print("FCM v1 response:", resp.text)
-#         if resp.status_code != 200:
-#             return {"error": "FCM v1 error", "details": resp.text}
-#         return resp.json()
-
-# @router.post("/send-notification")
-# async def send_notification(req: NotificationRequest, db: AsyncSession = Depends(get_db)):
-#     token = await get_token_from_db(req.user_id, db)
-#     if not token:
-#         return {"error": "User has no FCM token"}
-#     result = await send_push_notification(token, req.title, req.body)
-#     return result
-
-
-# def check_scheduled_notifications(db: AsyncSession = Depends(get_db)):
-#     now = datetime.utcnow()
-#     upcoming = db.fetch_notifications(send_at=now)
-
-#     for n in upcoming:
-#         send_notification(title=n.title, body=n.body, token=n.token)
-#         db.mark_as_sent(n.id)
-
-async def save_scheduled_notification(data, db: AsyncSession):
+async def save_scheduled_notification(
+    data: NotificationCreate,
+    db: Session,
+    current_user: User
+):
     """
-    Lưu thông báo cần gửi vào DB.
-    data = ScheduledNotificationCreate
+    Lưu thông báo cần gửi vào DB với user hiện tại.
     """
     new_notif = Notification(
-        user_id=data.user_id,
+        user_id=current_user.id,  # dùng current_user truyền vào
         title=data.title,
         body=data.body,
         send_at=data.send_at,
@@ -90,9 +54,14 @@ async def save_scheduled_notification(data, db: AsyncSession):
 
     return new_notif
 
+
 @router.post("/schedule-notification")
-async def schedule_notification(data: NotificationCreate, db: AsyncSession = Depends(get_db)):
-    result = await save_scheduled_notification(data, db)
+async def schedule_notification(
+    data: NotificationCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    result = await save_scheduled_notification(data, db, current_user)
     return {"message": "Scheduled notification saved", "data": result}
 
 

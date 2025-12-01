@@ -30,7 +30,8 @@ class _AddTaskPageState extends State<AddTaskPage> {
   DateTime? _selectedDueDate; // nullable - có thể không có due date
   TimeOfDay? _startTime; // null = all day task
   TimeOfDay? _endTime;
-  TimeOfDay? reminderTime;
+  DateTime? reminderTime;
+  int? reminderDays;
 
   bool _isAllDay = true; // Mặc định là all day task
   List<Category> listCategories = [];
@@ -127,8 +128,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
                     _buildActionChip(
                       icon: Icons.calendar_today_outlined,
                       label: _buildDateLabel(),
-                      isSelected: true, // Luôn sáng vì mặc định là Today
-                      // onTap: () => _showDateTimeBottomSheet(),
+                      isSelected: true,
                       onTap: () => showModalBottomSheet(
                         context: context,
                         isScrollControlled: true,
@@ -139,15 +139,35 @@ class _AddTaskPageState extends State<AddTaskPage> {
                           initialEndTime: _endTime,
                           initialIsAllDay: _isAllDay,
                           initialReminderTime: reminderTime,
+                          initialReminderDays: reminderDays,
                           onConfirm: (start, due, startTime, endTime, isAllDay,
-                              reminder) {
+                              reminder, remDays) {
                             setState(() {
                               _selectedStartDate = start;
                               _selectedDueDate = due;
                               _startTime = startTime;
                               _endTime = endTime;
                               _isAllDay = isAllDay;
-                              reminderTime = reminder;
+                              // reminderTime = reminder;
+                              // reminderDays = remDays;
+                              // ✅ XỬ LÝ: Tính toán reminderTime từ start date và remDays
+                              if (reminder != null && remDays != null) {
+                                // Tạo DateTime cho reminder = start date - remDays
+                                DateTime reminderDateTime = DateTime(
+                                  start.year,
+                                  start.month,
+                                  start.day,
+                                  reminder.hour,
+                                  reminder.minute,
+                                ).subtract(Duration(days: remDays));
+
+                                reminderTime =
+                                    reminderDateTime; // ✅ Lưu DateTime đã tính toán
+                              } else {
+                                reminderTime = null;
+                              }
+
+                              reminderDays = remDays;
                             });
                           },
                         ),
@@ -491,7 +511,6 @@ class _AddTaskPageState extends State<AddTaskPage> {
     // Create DateTime objects for DB
     DateTime startDateTime;
     DateTime? endDateTime;
-    DateTime? reminderDateTime;
 
     if (_startTime != null && !_isAllDay) {
       // Task có giờ cụ thể
@@ -535,15 +554,8 @@ class _AddTaskPageState extends State<AddTaskPage> {
         );
       }
     }
-    if (reminderTime != null) {
-      reminderDateTime = DateTime(
-        startDateTime.year,
-        startDateTime.month,
-        startDateTime.day,
-        reminderTime!.hour,
-        reminderTime!.minute,
-      );
-    }
+
+    DateTime? reminderDateTime = reminderTime;
 
     int? priorityToSend = _hasPriority ? _selectedPriority : null;
 
@@ -561,6 +573,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
     print("✅ Creating task:");
     print("   Start: $startDateTime");
     print("   Due: $endDateTime");
+    print("   Reminder: $reminderDateTime");
     print("   All Day: $_isAllDay");
 
     taskController.addTask(task: newTask);
