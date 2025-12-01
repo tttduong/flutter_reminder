@@ -39,8 +39,16 @@ class _DateTimePickerModalState extends State<DateTimePickerModal> {
   TimeOfDay? tempStartTime;
   TimeOfDay? tempEndTime;
   late bool tempIsAllDay;
-  String selectedTab = 'Date'; // Date or Duration
+  String selectedTab = 'Date';
   TimeOfDay? tempReminderTime;
+  String? selectedReminderOption;
+  bool isConstantReminder = false;
+
+  // Thêm biến để lưu thông tin custom reminder
+  int customReminderDays = 0;
+  int customReminderHour = 9;
+  int customReminderMinute = 0;
+  String customReminderPeriod = 'AM';
 
   @override
   void initState() {
@@ -59,6 +67,549 @@ class _DateTimePickerModalState extends State<DateTimePickerModal> {
     return DateFormat('HH:mm').format(dt);
   }
 
+  String _getReminderDisplayText() {
+    if (selectedReminderOption == null) return 'None';
+    if (selectedReminderOption == 'Custom' && tempReminderTime != null) {
+      return _formatTimeOfDay(tempReminderTime!);
+    }
+    return selectedReminderOption!;
+  }
+
+  String _getCustomReminderLabel() {
+    if (selectedReminderOption != 'Custom') return 'Custom';
+
+    // Chuyển đổi hour về định dạng 12h để hiển thị
+    int displayHour = customReminderHour;
+    String period = customReminderPeriod;
+
+    if (customReminderHour > 12) {
+      displayHour = customReminderHour - 12;
+      period = 'PM';
+    } else if (customReminderHour == 12) {
+      period = 'PM';
+    } else if (customReminderHour == 0) {
+      displayHour = 12;
+      period = 'AM';
+    }
+
+    String timeStr =
+        '${displayHour.toString().padLeft(2, '0')}:${customReminderMinute.toString().padLeft(2, '0')} $period';
+
+    if (customReminderDays == 0) {
+      return 'Custom (On the day, $timeStr)';
+    } else if (customReminderDays == 1) {
+      return 'Custom (1 day early, $timeStr)';
+    } else {
+      return 'Custom ($customReminderDays days early, $timeStr)';
+    }
+  }
+
+  void _showReminderDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          'Reminder',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                    _buildReminderOption('None', setDialogState),
+                    _buildReminderOption('On the day (09:00)', setDialogState),
+                    _buildReminderOption('1 day early (09:00)', setDialogState),
+                    _buildReminderOption(
+                        '2 days early (09:00)', setDialogState),
+                    _buildReminderOption(
+                        '3 days early (09:00)', setDialogState),
+                    _buildReminderOption(
+                        '1 week early (09:00)', setDialogState),
+                    ListTile(
+                      contentPadding: EdgeInsets.symmetric(horizontal: 0),
+                      title: Row(
+                        children: [
+                          Radio<String>(
+                            value: 'Custom',
+                            groupValue: selectedReminderOption,
+                            onChanged: (value) {
+                              _showCustomReminderDialog(setDialogState);
+                            },
+                            activeColor: AppColors.primary,
+                          ),
+                          Expanded(
+                            child: Text(
+                              _getCustomReminderLabel(),
+                              style: TextStyle(fontSize: 16),
+                            ),
+                          ),
+                        ],
+                      ),
+                      trailing: Icon(Icons.chevron_right, color: Colors.grey),
+                      onTap: () {
+                        _showCustomReminderDialog(setDialogState);
+                      },
+                    ),
+                    Divider(),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(
+                          style: TextButton.styleFrom(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
+                            minimumSize: Size(0, 0),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
+                          child: Text(
+                            'CANCEL',
+                            style: TextStyle(color: AppColors.primary),
+                          ),
+                        ),
+                        TextButton(
+                          style: TextButton.styleFrom(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
+                            minimumSize: Size(0, 0),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          onPressed: () {
+                            setState(() {});
+                            Navigator.pop(context);
+                          },
+                          child: Text(
+                            'OK',
+                            style: TextStyle(color: AppColors.primary),
+                          ),
+                        ),
+                      ],
+                    )
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildReminderOption(String option, StateSetter setDialogState) {
+    return RadioListTile<String>(
+      contentPadding: EdgeInsets.symmetric(horizontal: 0),
+      title: Text(option),
+      value: option,
+      groupValue: selectedReminderOption,
+      onChanged: (value) {
+        setDialogState(() {
+          selectedReminderOption = value;
+        });
+        setState(() {
+          selectedReminderOption = value;
+        });
+      },
+      activeColor: AppColors.primary,
+    );
+  }
+
+  void _showCustomReminderDialog(StateSetter parentSetState) {
+    int selectedDays = customReminderDays;
+    int selectedHour = customReminderHour == 0
+        ? 12
+        : (customReminderHour > 12
+            ? customReminderHour - 12
+            : customReminderHour);
+    int selectedMinute = customReminderMinute;
+    String selectedPeriod = customReminderPeriod;
+    String customSelectedTab = 'Day';
+
+    // ----- HOUR (1–12) -----
+    final List<int> hourValues = List.generate(12, (i) => i + 1);
+    final List<int> repeatedHours =
+        List.generate(12 * 5, (i) => hourValues[i % 12]);
+    final int middleHourIndex = (repeatedHours.length ~/ 2) -
+        ((repeatedHours.length ~/ 2) % 12) +
+        (selectedHour - 1);
+    final FixedExtentScrollController hourController =
+        FixedExtentScrollController(initialItem: middleHourIndex);
+
+    // ----- MINUTE (0–59) -----
+    final List<int> minuteValues = List.generate(60, (i) => i);
+    final List<int> repeatedMinutes =
+        List.generate(60 * 5, (i) => minuteValues[i % 60]);
+    final int middleMinuteIndex = (repeatedMinutes.length ~/ 2) -
+        ((repeatedMinutes.length ~/ 2) % 60) +
+        selectedMinute;
+    final FixedExtentScrollController minuteController =
+        FixedExtentScrollController(initialItem: middleMinuteIndex);
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setCustomDialogState) {
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              setCustomDialogState(() {
+                                customSelectedTab = 'Day';
+                              });
+                            },
+                            child: Container(
+                              padding: EdgeInsets.symmetric(vertical: 8),
+                              decoration: BoxDecoration(
+                                border: Border(
+                                  bottom: BorderSide(
+                                    color: customSelectedTab == 'Day'
+                                        ? AppColors.primary
+                                        : Colors.transparent,
+                                    width: 2,
+                                  ),
+                                ),
+                              ),
+                              child: Text(
+                                'Day',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: customSelectedTab == 'Day'
+                                      ? AppColors.primary
+                                      : Colors.grey,
+                                  fontWeight: customSelectedTab == 'Day'
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              setCustomDialogState(() {
+                                customSelectedTab = 'Week';
+                              });
+                            },
+                            child: Container(
+                              padding: EdgeInsets.symmetric(vertical: 8),
+                              decoration: BoxDecoration(
+                                border: Border(
+                                  bottom: BorderSide(
+                                    color: customSelectedTab == 'Week'
+                                        ? AppColors.primary
+                                        : Colors.transparent,
+                                    width: 2,
+                                  ),
+                                ),
+                              ),
+                              child: Text(
+                                'Week',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: customSelectedTab == 'Week'
+                                      ? AppColors.primary
+                                      : Colors.grey,
+                                  fontWeight: customSelectedTab == 'Week'
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 16),
+                    Container(
+                      height: 150,
+                      child: Row(
+                        children: [
+                          //date-------------
+                          Expanded(
+                            flex: 2,
+                            child: ListWheelScrollView.useDelegate(
+                              itemExtent: 40,
+                              perspective: 0.005,
+                              diameterRatio: 1.5,
+                              physics: FixedExtentScrollPhysics(),
+                              onSelectedItemChanged: (index) {
+                                setCustomDialogState(() {
+                                  selectedDays = index;
+                                });
+                              },
+                              childDelegate: ListWheelChildBuilderDelegate(
+                                  childCount: 61,
+                                  builder: (context, index) {
+                                    final day = 0 + index;
+                                    final isSelected = day == selectedDays;
+
+                                    return Center(
+                                      child: Text(
+                                        '$day days early',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: isSelected
+                                              ? FontWeight.bold
+                                              : FontWeight.normal,
+                                          color: isSelected
+                                              ? Colors.black
+                                              : Colors.grey,
+                                        ),
+                                      ),
+                                    );
+                                  }),
+                            ),
+                          ),
+                          // hour
+                          Expanded(
+                            flex: 1,
+                            child: ListWheelScrollView.useDelegate(
+                              controller: hourController,
+                              itemExtent: 40,
+                              perspective: 0.005,
+                              diameterRatio: 1.5,
+                              physics: FixedExtentScrollPhysics(),
+                              onSelectedItemChanged: (index) {
+                                final hour = repeatedHours[index];
+
+                                setCustomDialogState(() {
+                                  selectedHour = hour;
+                                });
+
+                                if (index <= 3 ||
+                                    index >= repeatedHours.length - 3) {
+                                  Future.microtask(() {
+                                    hourController.jumpToItem(middleHourIndex);
+                                  });
+                                }
+                              },
+                              childDelegate: ListWheelChildBuilderDelegate(
+                                childCount: repeatedHours.length,
+                                builder: (context, index) {
+                                  final hour = repeatedHours[index];
+                                  final isSelected = hour == selectedHour;
+
+                                  return Center(
+                                    child: Text(
+                                      hour.toString().padLeft(2, '0'),
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: isSelected
+                                            ? FontWeight.bold
+                                            : FontWeight.normal,
+                                        color: isSelected
+                                            ? Colors.black
+                                            : Colors.grey,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                          //minute-----------------
+                          Expanded(
+                            flex: 1,
+                            child: ListWheelScrollView.useDelegate(
+                              controller: minuteController,
+                              itemExtent: 40,
+                              perspective: 0.005,
+                              diameterRatio: 1.5,
+                              physics: FixedExtentScrollPhysics(),
+                              onSelectedItemChanged: (index) {
+                                final minute = repeatedMinutes[index];
+
+                                setCustomDialogState(() {
+                                  selectedMinute = minute;
+                                });
+
+                                if (index <= 3 ||
+                                    index >= repeatedMinutes.length - 3) {
+                                  Future.microtask(() {
+                                    minuteController
+                                        .jumpToItem(middleMinuteIndex);
+                                  });
+                                }
+                              },
+                              childDelegate: ListWheelChildBuilderDelegate(
+                                childCount: repeatedMinutes.length,
+                                builder: (context, index) {
+                                  final minute = repeatedMinutes[index];
+                                  final isSelected = minute == selectedMinute;
+
+                                  return Center(
+                                    child: Text(
+                                      minute.toString().padLeft(2, '0'),
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: isSelected
+                                            ? FontWeight.bold
+                                            : FontWeight.normal,
+                                        color: isSelected
+                                            ? Colors.black
+                                            : Colors.grey,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                          // am/pm
+                          Expanded(
+                            flex: 1,
+                            child: ListWheelScrollView.useDelegate(
+                              itemExtent: 40,
+                              perspective: 0.005,
+                              diameterRatio: 1.5,
+                              physics: FixedExtentScrollPhysics(),
+                              onSelectedItemChanged: (index) {
+                                setCustomDialogState(() {
+                                  selectedPeriod = index == 0 ? 'AM' : 'PM';
+                                });
+                              },
+                              childDelegate: ListWheelChildBuilderDelegate(
+                                  childCount: 2,
+                                  builder: (context, index) {
+                                    final period = index == 0 ? 'AM' : 'PM';
+                                    final isSelected = period == selectedPeriod;
+
+                                    return Center(
+                                      child: Text(
+                                        period,
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: isSelected
+                                              ? FontWeight.bold
+                                              : FontWeight.normal,
+                                          color: isSelected
+                                              ? Colors.black
+                                              : Colors.grey,
+                                        ),
+                                      ),
+                                    );
+                                  }),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: 16),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'The reminder has expired.',
+                        style: TextStyle(color: Colors.red, fontSize: 12),
+                      ),
+                    ),
+                    SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(
+                          style: TextButton.styleFrom(
+                            padding: EdgeInsets.zero,
+                            minimumSize: Size(0, 0),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
+                          child: Text(
+                            'CANCEL',
+                            style: TextStyle(color: AppColors.primary),
+                          ),
+                        ),
+                        SizedBox(
+                          width: 20,
+                        ),
+                        TextButton(
+                          style: TextButton.styleFrom(
+                            padding: EdgeInsets.zero,
+                            minimumSize: Size(0, 0),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          onPressed: () {
+                            // Chuyển đổi về 24h format để lưu
+                            int hour24 = selectedHour;
+                            if (selectedPeriod == 'PM' && selectedHour != 12) {
+                              hour24 = selectedHour + 12;
+                            } else if (selectedPeriod == 'AM' &&
+                                selectedHour == 12) {
+                              hour24 = 0;
+                            }
+
+                            parentSetState(() {
+                              selectedReminderOption = 'Custom';
+                              customReminderDays = selectedDays;
+                              customReminderHour = hour24;
+                              customReminderMinute = selectedMinute;
+                              customReminderPeriod = selectedPeriod;
+                              tempReminderTime = TimeOfDay(
+                                hour: hour24,
+                                minute: selectedMinute,
+                              );
+                            });
+
+                            setState(() {
+                              selectedReminderOption = 'Custom';
+                              customReminderDays = selectedDays;
+                              customReminderHour = hour24;
+                              customReminderMinute = selectedMinute;
+                              customReminderPeriod = selectedPeriod;
+                              tempReminderTime = TimeOfDay(
+                                hour: hour24,
+                                minute: selectedMinute,
+                              );
+                            });
+
+                            Navigator.pop(context);
+                          },
+                          child: Text(
+                            'DONE',
+                            style: TextStyle(color: AppColors.primary),
+                          ),
+                        ),
+                      ],
+                    )
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return DraggableScrollableSheet(
@@ -73,7 +624,6 @@ class _DateTimePickerModalState extends State<DateTimePickerModal> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header with tabs and confirm
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -130,17 +680,11 @@ class _DateTimePickerModalState extends State<DateTimePickerModal> {
                 ],
               ),
               const SizedBox(height: 10),
-
               if (selectedTab == 'Date') ...[
-                // Calendar (simplified)
-                // _buildCalendarSection(),
-
                 _buildCalendarSection(tempStartDate, (date) {
                   setState(() => tempStartDate = date);
                 }),
                 const SizedBox(height: 20),
-
-                // Time
                 ListTile(
                   leading: Icon(Icons.access_time, color: AppColors.primary),
                   title:
@@ -172,32 +716,17 @@ class _DateTimePickerModalState extends State<DateTimePickerModal> {
                     }
                   },
                 ),
-
-                // Reminder & Repeat placeholders
-                // Reminder
                 ListTile(
                   leading:
                       Icon(Icons.notifications_none, color: AppColors.primary),
                   title: Text('Reminder',
                       style: TextStyle(color: AppColors.primary)),
                   trailing: Text(
-                    tempReminderTime != null
-                        ? _formatTimeOfDay(tempReminderTime!)
-                        : 'None',
+                    _getReminderDisplayText(),
                     style: TextStyle(color: Colors.grey),
                   ),
-                  onTap: () async {
-                    // Chọn giờ cho reminder
-                    TimeOfDay? picked = await showTimePicker(
-                      context: context,
-                      initialTime: tempReminderTime ?? TimeOfDay.now(),
-                    );
-                    if (picked != null) {
-                      setState(() => tempReminderTime = picked);
-                    }
-                  },
+                  onTap: _showReminderDialog,
                 ),
-
                 ListTile(
                   leading: Icon(Icons.repeat, color: AppColors.primary),
                   title: Text('Repeat',
@@ -205,10 +734,7 @@ class _DateTimePickerModalState extends State<DateTimePickerModal> {
                   trailing: Text('None', style: TextStyle(color: Colors.grey)),
                   onTap: () {},
                 ),
-
                 const SizedBox(height: 20),
-
-                // Clear
                 Center(
                   child: TextButton(
                     onPressed: () {
@@ -219,6 +745,12 @@ class _DateTimePickerModalState extends State<DateTimePickerModal> {
                         tempEndTime = null;
                         tempIsAllDay = true;
                         tempReminderTime = null;
+                        selectedReminderOption = null;
+                        isConstantReminder = false;
+                        customReminderDays = 0;
+                        customReminderHour = 9;
+                        customReminderMinute = 0;
+                        customReminderPeriod = 'AM';
                       });
                     },
                     child: Text('CLEAR',
@@ -227,7 +759,6 @@ class _DateTimePickerModalState extends State<DateTimePickerModal> {
                   ),
                 ),
               ] else ...[
-                // Duration tab
                 ListTile(
                   title: Text('Start Date',
                       style: TextStyle(color: AppColors.primary)),
@@ -277,7 +808,6 @@ class _DateTimePickerModalState extends State<DateTimePickerModal> {
     );
   }
 
-  // ================= Calendar Section =================
   Widget _buildCalendarSection(
       DateTime selectedDate, void Function(DateTime) onDateSelected) {
     return Column(
@@ -313,10 +843,8 @@ class _DateTimePickerModalState extends State<DateTimePickerModal> {
     );
   }
 
-  // ================= Calendar Grid =================
   Widget _buildCalendarGrid(
       DateTime selectedDate, void Function(DateTime) onDateSelected) {
-    // tính ngày đầu tuần của tháng
     final firstDayOfMonth = DateTime(selectedDate.year, selectedDate.month, 1);
     final lastDayOfMonth =
         DateTime(selectedDate.year, selectedDate.month + 1, 0);
@@ -324,12 +852,10 @@ class _DateTimePickerModalState extends State<DateTimePickerModal> {
 
     List<Widget> dayWidgets = [];
 
-    // thêm ngày trống trước ngày đầu tháng
     for (int i = 0; i < weekdayOffset; i++) {
       dayWidgets.add(Container());
     }
 
-    // thêm ngày thực tế
     for (int day = 1; day <= lastDayOfMonth.day; day++) {
       DateTime dayDate = DateTime(selectedDate.year, selectedDate.month, day);
       dayWidgets.add(
