@@ -128,31 +128,62 @@ async def read_tasks(
     return tasks
 
 @router.get("/tasks/{task_id}", response_model=TaskResponse)
-def read_task(task_id: int, db: Session = Depends(get_db)):
-    task = db.query(Task).filter(Task.id == task_id).first()
+async def read_task(
+    task_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    # 1️⃣ Tìm task theo ID và user hiện tại
+    result = await db.execute(
+        select(Task).where(Task.id == task_id, Task.owner_id == current_user.id)
+    )
+    task = result.scalar_one_or_none()
+
     if task is None:
         raise HTTPException(status_code=404, detail="Task not found")
+
     return task
 
+# update task content
+@router.put("/tasks/{task_id}", response_model=TaskResponse)
+async def update_task(
+    task_id: int,
+    task_update: TaskUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    # 1️⃣ Tìm task theo ID và người dùng hiện tại
+    result = await db.execute(
+        select(Task).where(Task.id == task_id, Task.owner_id == current_user.id)
+    )
+    db_task = result.scalar_one_or_none()
+    if db_task is None:
+        raise HTTPException(status_code=404, detail="Task not found")
 
-#update full task
-# @router.put("/tasks/{task_id}", response_model=TaskResponse)
-# def update_task(task_id: int, task_update: TaskUpdate, db: Session = Depends(get_db)):
-#     db_task = db.query(Task).filter(Task.id == task_id).first()
-#     if db_task is None:
-#         raise HTTPException(status_code=404, detail="Task not found")
-#     for key, value in task_update.dict().items():
-#         setattr(db_task, key, value)
-#     db.commit()
-#     db.refresh(db_task)
-#     for connection in active_connections:
-#         connection.send_text(f"Task {db_task.id} updated")
-#     return db_task
+    # 2️⃣ Cập nhật các field
+    update_data = task_update.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_task, key, value)
+
+    # 3️⃣ Nếu có update completed thì set completed_at
+    if "completed" in update_data:
+        if update_data["completed"]:
+            db_task.completed_at = datetime.utcnow()
+        else:
+            db_task.completed_at = None
+
+    # 4️⃣ Commit và refresh
+    await db.commit()
+    await db.refresh(db_task)
+
+    # 5️⃣ Nếu có WebSocket connection gửi thông báo (nếu bạn dùng)
+    for connection in active_connections:
+        connection.send_text(f"Task {db_task.id} updated")
+
+    return db_task
 
 
-
-# patch task
-
+# patch task -- cái này để đánh complete 
 @router.patch("/tasks/{task_id}/", response_model=TaskResponse)
 async def partial_update_task(
     task_id: int,
