@@ -35,28 +35,40 @@ class TaskService {
   //     return false;
   //   }
   // }
-
-  //update tasks
-  static Future<void> updateTask(Task updatedTask) async {
-    final url = Uri.parse('$baseUrl/tasks/${updatedTask.id}/');
+// Update a task
+  static Future<bool> updateTask(Task updatedTask) async {
     try {
-      final response = await http.patch(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
+      final response = await ApiService.dio.put(
+        '/api/v1/tasks/${updatedTask.id}', // không có dấu / cuối nếu BE không có route với /
+        data: {
           'title': updatedTask.title,
           'description': updatedTask.description,
-          'is_completed': updatedTask.isCompleted,
-          // ... các trường khác
-        }),
+          'completed': updatedTask.isCompleted, // hoặc 'is_completed' tùy BE
+          'date': updatedTask.date?.toIso8601String(),
+          'due_date': updatedTask.dueDate?.toIso8601String(),
+          'priority': updatedTask.priority,
+          'reminder_time': updatedTask.reminderTime?.toIso8601String(),
+          'category_id': updatedTask.categoryId,
+        },
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          followRedirects: false,
+          validateStatus: (status) => status! < 500,
+        ),
       );
+
       if (response.statusCode == 200) {
-        print("Task updated successfully");
+        print("✅ Task updated successfully: ${response.data}");
+        return true;
       } else {
-        print("Failed to update task: ${response.body}");
+        print("❌ Failed to update task: ${response.data}");
+        return false;
       }
     } catch (e) {
-      print("Error: $e");
+      print("🔥 Error updating task: $e");
+      return false;
     }
   }
 
@@ -130,6 +142,30 @@ class TaskService {
     final response = await ApiService.dio.get('/api/v1/tasks/');
     List<dynamic> jsonData = response.data;
     return jsonData.map((task) => Task.fromJson(task)).toList();
+  }
+
+// 🔹 Lấy task theo ID
+  static Future<Task?> getTaskById(int taskId) async {
+    try {
+      final response = await ApiService.dio.get(
+        '/api/v1/tasks/$taskId/', // chỉ dùng path
+        options: Options(
+          followRedirects: false,
+          validateStatus: (status) => status! < 500,
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        print("✅ Task fetched successfully: ${response.data}");
+        return Task.fromJson(response.data);
+      } else {
+        print("❌ Failed to fetch task: ${response.data}");
+        return null;
+      }
+    } catch (e) {
+      print("❌ Error fetching task: $e");
+      return null;
+    }
   }
 
 //get all completed tasks
@@ -211,17 +247,33 @@ class TaskService {
   }
 
 //delete tasks
-  static Future<void> deleteTask(int taskId) async {
-    final url = Uri.parse('$baseUrl/tasks/${taskId}/');
+  // static Future<void> deleteTask(int taskId) async {
+  //   final url = Uri.parse('$baseUrl/tasks/${taskId}/');
+  //   try {
+  //     final response = await ApiService.dio.delete('$baseUrl/tasks/${taskId}/');
+  //     if (response.statusCode == 200) {
+  //       print("Task Deleted Successfully");
+  //     } else {
+  //       print("Failed to delete task: ${response.data}");
+  //     }
+  //   } catch (e) {
+  //     print("Error: $e");
+  //   }
+  // }
+  static Future<bool> deleteTask(int taskId) async {
     try {
-      final response = await ApiService.dio.delete('$baseUrl/tasks/${taskId}/');
+      final response = await ApiService.dio.delete('$baseUrl/tasks/$taskId/');
+
       if (response.statusCode == 200) {
         print("Task Deleted Successfully");
+        return true;
       } else {
         print("Failed to delete task: ${response.data}");
+        return false; // ❗ MUST RETURN
       }
     } catch (e) {
-      print("Error: $e");
+      print("Error deleting task: $e");
+      return false; // ❗ MUST RETURN
     }
   }
 

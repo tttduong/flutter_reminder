@@ -127,7 +127,7 @@ async def read_tasks(
     tasks = result.scalars().all()
     return tasks
 
-@router.get("/tasks/{task_id}", response_model=TaskResponse)
+@router.get("/tasks/{task_id}/", response_model=TaskResponse)
 async def read_task(
     task_id: int,
     db: AsyncSession = Depends(get_db),

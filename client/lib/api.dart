@@ -6,16 +6,19 @@ import 'package:flutter_to_do_app/data/models/task_intent_response.dart';
 import 'package:path_provider/path_provider.dart';
 
 class ApiService {
+  static var baseUrl = "http://10.244.81.30:8000";
+
   // static late Dio dio;
   // static late PersistCookieJar cookieJar;
   static final Dio dio = Dio(BaseOptions(
-    baseUrl: "http://10.244.81.30:8000", // đổi theo BE
+    baseUrl: baseUrl, // đổi theo BE
     headers: {
       'Content-Type': 'application/json',
     },
   ));
 
   static final cookieJar = CookieJar();
+
   static void init() {
     dio.interceptors.add(CookieManager(cookieJar));
   }

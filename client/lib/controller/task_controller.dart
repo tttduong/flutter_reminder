@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter_to_do_app/api.dart';
 import 'package:flutter_to_do_app/controller/category_controller.dart';
 import 'package:flutter_to_do_app/data/models/task.dart';
 import 'package:flutter_to_do_app/data/services/notification_service.dart';
@@ -22,6 +23,7 @@ class TaskController extends GetxController {
   RxList<Task> matrixTasks = <Task>[].obs;
   final RxList<Task> fullDayTaskList = <Task>[].obs;
   final RxBool isFullDayExpanded = true.obs;
+  final RxList<Task> taskListByCategory = <Task>[].obs;
 
   @override
   void onInit() {
@@ -38,18 +40,6 @@ class TaskController extends GetxController {
       taskList
           .assignAll(tasks); // dùng assignAll thay vì .value để reactive hơn
       print("✅ Loaded all tasks: ${taskList.length}");
-
-      // 🔔 Đặt thông báo
-      // for (var task in tasks) {
-      //   if (task.date != null && task.date!.isAfter(DateTime.now())) {
-      //     await notificationService.scheduleNotification(
-      //       id: task.id!,
-      //       title: "Nhắc nhở công việc",
-      //       body: task.title,
-      //       dateTime: task.date!,
-      //     );
-      //   }
-      // }
     } catch (e) {
       print("❌ Failed to load tasks: $e");
     } finally {
@@ -58,20 +48,39 @@ class TaskController extends GetxController {
   }
 
   // 🔹 Lấy task theo category (dành cho màn hình CategoryTask)
+  // Future<void> getTasksByCategory(int? categoryId) async {
+  //   if (categoryId == null) return;
+  //   try {
+  //     isLoading.value = true;
+  //     selectedCategoryId = categoryId;
+  //     final tasks = await TaskService.getTasksByCategoryId(categoryId);
+  //     taskList.assignAll(tasks);
+  //     print("✅ Loaded category tasks: ${taskList.length}");
+  //   } catch (e) {
+  //     print("❌ Failed to load category tasks: $e");
+  //   } finally {
+  //     isLoading.value = false;
+  //   }
+  // }
   Future<void> getTasksByCategory(int? categoryId) async {
     if (categoryId == null) return;
     try {
       isLoading.value = true;
       selectedCategoryId = categoryId;
+
       final tasks = await TaskService.getTasksByCategoryId(categoryId);
-      taskList.assignAll(tasks);
-      print("✅ Loaded category tasks: ${taskList.length}");
+
+      // Gán vào taskListByCategory để dùng cho màn hình category
+      taskListByCategory.assignAll(tasks);
+
+      print("✅ Loaded category tasks: ${taskListByCategory.length}");
     } catch (e) {
       print("❌ Failed to load category tasks: $e");
     } finally {
       isLoading.value = false;
     }
   }
+
   // TaskController
 
   Future<void> getMatrixTasks() async {
@@ -110,38 +119,6 @@ class TaskController extends GetxController {
           task.dueDate == null; // Chỉ lấy task không có due_date
     }).toList();
   }
-// Trong task_controller.dart
-// // Trong task_controller.dart
-// void toggleTaskCompletion(Task task) async {
-//   final taskId = task.id;
-//   final newStatus = !task.isCompleted;
-
-//   // Update immediately
-//   task.isCompleted = newStatus;
-//   task.completedAt = newStatus ? DateTime.now() : null;
-//   pendingUpdates[taskId!] = newStatus;
-//   taskList.refresh();
-
-//   // Update category tương ứng
-//   final categoryController = Get.find<CategoryController>();
-//   categoryController.updateCategoryStatsByTask(task);
-
-//   try {
-//     await _taskService.updateTask(task);
-//     pendingUpdates.remove(taskId);
-//   } catch (e) {
-//     // Revert on error
-//     task.isCompleted = !newStatus;
-//     task.completedAt = !newStatus ? DateTime.now() : null;
-//     pendingUpdates.remove(taskId);
-//     taskList.refresh();
-
-//     // Revert category stats
-//     categoryController.updateCategoryStatsByTask(task);
-
-//     Get.snackbar('Error', 'Failed to update task');
-//   }
-// }
 
 // Trong task_controller.dart ----đang dùng trong homepage
   void toggleTaskCompletion(Task task) async {
@@ -205,14 +182,28 @@ class TaskController extends GetxController {
     return pendingUpdates.containsKey(taskId.toString());
   }
 
-  Future<void> deleteTask(int? taskId) async {
-    if (taskId == null) {
-      print("❌ Task ID is null. Cannot delete task.");
-      return;
+  // Future<void> deleteTask(int? taskId) async {
+  //   if (taskId == null) {
+  //     print("❌ Task ID is null. Cannot delete task.");
+  //     return;
+  //   }
+  //   await TaskService.deleteTask(taskId);
+  //   taskList.removeWhere((t) => t.id == taskId);
+  //   update(); // Cập nhật UI
+  // }
+
+  Future<bool> deleteTask({required int taskId}) async {
+    try {
+      bool result = await TaskService.deleteTask(taskId);
+      if (result) {
+        taskList.removeWhere((task) => task.id == taskId);
+        taskList.refresh();
+      }
+      return result;
+    } catch (e) {
+      print("Error deleting task: $e");
+      return false;
     }
-    await TaskService.deleteTask(taskId);
-    taskList.removeWhere((t) => t.id == taskId);
-    update(); // Cập nhật UI
   }
 
   Future<void> getTasksByDate(DateTime date) async {
@@ -229,12 +220,6 @@ class TaskController extends GetxController {
     }
   }
 
-  // Future<void> refreshTasks(int? categoryId) async {
-  //   if (categoryId != null) {
-  //     selectedCategoryId = null; // Force refresh
-  //     await getTasksByCategory(categoryId);
-  //   }
-  // }
   Future<void> refreshTasks([int? categoryId]) async {
     if (categoryId != null) {
       await getTasksByCategory(categoryId);
@@ -242,67 +227,6 @@ class TaskController extends GetxController {
       await getTasks();
     }
   }
-  // Future<void> getTasksByCategory(int? categoryId) async {
-  //   print("🔍 Getting tasks for category: $categoryId");
-  //   print("🔍 Current selectedCategoryId: $selectedCategoryId");
-  //   print("🔍 Current taskList count: ${taskList.length}");
-
-  //   // 🔥 LUÔN LUÔN clear và fetch lại khi switch category
-  //   if (selectedCategoryId != categoryId) {
-  //     print(
-  //         "📝 Category changed from $selectedCategoryId to $categoryId - clearing cache");
-  //     taskList.clear();
-  //     selectedCategoryId = categoryId;
-  //   } else {
-  //     print("📝 Same category but forcing refresh anyway");
-  //     taskList.clear(); // 👈 FORCE clear để đảm bảo
-  //   }
-
-  //   isLoading.value = true;
-
-  //   try {
-  //     print("🌐 Calling API for category: $categoryId");
-  //     final tasks = await TaskService.getTasksByCategoryId(categoryId);
-  //     print("📊 API returned ${tasks.length} tasks for category $categoryId");
-
-  //     // Debug: In ra từng task
-  //     for (int i = 0; i < tasks.length; i++) {
-  //       print(
-  //           "  Task $i: ${tasks[i].title} (Category: ${tasks[i].categoryId})");
-  //     }
-
-  //     taskList.value = tasks;
-  //     print("✅ TaskList updated with ${taskList.length} tasks");
-  //   } catch (e) {
-  //     print("❌ Error getting tasks for category $categoryId: $e");
-  //     taskList.clear();
-  //   } finally {
-  //     isLoading.value = false;
-  //   }
-  // }
-
-  // Future<void> getTasksByCategory(int categoryId) async {
-  //   print("🔍 Getting tasks for category: $categoryId");
-
-  //   // 👈 Nếu category khác, clear cache
-  //   if (selectedCategoryId != categoryId) {
-  //     taskList.clear();
-  //     selectedCategoryId = categoryId;
-  //   }
-
-  //   isLoading.value = true;
-
-  //   try {
-  //     final tasks = await TaskService.getTasksByCategoryId(categoryId);
-  //     print("📊 API returned ${tasks.length} tasks");
-
-  //     taskList.value = tasks;
-  //   } catch (e) {
-  //     print("❌ Error: $e");
-  //   } finally {
-  //     isLoading.value = false;
-  //   }
-  // }
 
   Future<void> addTask({Task? task}) async {
     print("call add task on controller");
@@ -316,11 +240,6 @@ class TaskController extends GetxController {
       getTasks(); // Refresh danh sách task sau khi thêm
     }
   }
-
-  //get all the data from table
-  // void getTasks() async {
-  //   taskList.value = await TaskService.fetchTasks();
-  // }
 
   Future<bool> updateTaskStatus(Task updatedTask, bool newStatus) async {
     // final task = taskList.firstWhere((t) => t.id == id);
@@ -337,4 +256,104 @@ class TaskController extends GetxController {
       return false;
     }
   }
+  // Thêm method này vào TaskController
+
+  // Future<Task?> getTaskById(int taskId) async {
+  //   try {
+  //     final response =
+  //         await ApiService.dio.get('${ApiService.baseUrl}/tasks/$taskId');
+
+  //     if (response.statusCode == 200) {
+  //       print("✅ Task fetched successfully: ${response.data}");
+  //       return Task.fromJson(response.data);
+  //     } else {
+  //       print("❌ Failed to fetch task: ${response.data}");
+  //       return null;
+  //     }
+  //   } catch (e) {
+  //     print("❌ Error fetching task: $e");
+  //     return null;
+  //   }
+  // }
+  Future<Task?> getTaskById(int taskId) async {
+    try {
+      isLoading.value = true;
+      final task = await TaskService.getTaskById(taskId);
+      if (task != null) {
+        print("Task loaded: ${task.title}");
+        return task; // trả về task cho caller
+      } else {
+        print("Task not found for ID: $taskId");
+        return null;
+      }
+    } catch (e) {
+      print("Error loading task by ID: $e");
+      return null;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<bool> updateTask(Task task) async {
+    isLoading.value = true;
+
+    try {
+      final success = await TaskService.updateTask(task);
+      if (!success) return false;
+
+      // 🔄 Update task trong danh sách chính
+      int index = taskList.indexWhere((t) => t.id == task.id);
+      if (index != -1) {
+        taskList[index] = task;
+        taskList.refresh();
+      }
+
+      // 🔄 Update ở các list khác nếu bạn có dùng
+      _updateTaskInList(matrixTasks, task);
+      _updateTaskInList(fullDayTaskList, task);
+      _updateTaskInList(taskListByCategory, task);
+
+      // 🔔 Notification logic (nếu có reminderTime)
+      if (task.reminderTime != null &&
+          task.reminderTime!.isAfter(DateTime.now())) {
+        print("🔔 TODO: Update scheduled notification...");
+      }
+
+      print("🎉 [Controller] Task updated");
+      return true;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  // helper update cho list phụ
+  void _updateTaskInList(RxList<Task> list, Task updated) {
+    int index = list.indexWhere((t) => t.id == updated.id);
+    if (index != -1) {
+      list[index] = updated;
+      list.refresh();
+    }
+  }
+  // Future<bool> deleteTask({required int taskId}) async {
+  //   try {
+  //     final response =
+  //         await ApiService.dio.delete('${ApiService.baseUrl}/tasks/$taskId');
+
+  //     if (response.statusCode == 200 || response.statusCode == 204) {
+  //       print("✅ Task deleted successfully!");
+
+  //       // Xóa task khỏi list local
+  //       taskListByCategory.removeWhere((task) => task.id == taskId);
+  //       taskList.removeWhere((task) => task.id == taskId);
+
+  //       return true;
+  //     } else {
+  //       print("❌ Failed to delete task: ${response.data}");
+  //       return false;
+  //     }
+  //   } catch (e) {
+  //     print("❌ Error deleting task: $e");
+  //     return false;
+  //   }
+  // }
 }

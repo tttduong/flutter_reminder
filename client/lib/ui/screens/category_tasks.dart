@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_to_do_app/data/models/category.dart';
 import 'package:flutter_to_do_app/data/models/task.dart';
 import 'package:flutter_to_do_app/ui/screens/bottom_navbar_screen.dart';
+import 'package:flutter_to_do_app/ui/screens/detail_task.dart';
 import 'package:flutter_to_do_app/ui/widgets/gradient_bg.dart';
 import 'package:get/get.dart';
 import 'package:flutter_to_do_app/consts.dart';
@@ -141,49 +142,210 @@ class _AllTasksPageState extends State<CategoryTasksPage> {
   // }
 
 // 2. Improved Widget with better state management
+  // Widget _showTasksByCategory() {
+  //   // Fetch data khi widget init
+  //   // taskController.getTasksByCategory(widget.category?.id);
+
+  //   return Obx(() {
+  //     print("Selected Category 3: ${widget.category.toString()}");
+  //     print("Selected Category ID: ${widget.category?.id}");
+  //     if (taskController.isLoading.value) {
+  //       return const Center(child: CircularProgressIndicator());
+  //     }
+
+  //     if (taskController.taskList.isEmpty) {
+  //       return const Center(child: Text("No tasks"));
+  //     }
+
+  //     final allTasks = taskController.taskList;
+  //     final incompleteTasks = allTasks.where((t) => !t.isCompleted).toList();
+  //     final completedTasks = allTasks.where((t) => t.isCompleted).toList();
+
+  //     return RefreshIndicator(
+  //       onRefresh: () async {
+  //         await taskController.refreshTasks(widget.category?.id);
+  //       },
+  //       child: SingleChildScrollView(
+  //         child: Column(
+  //           crossAxisAlignment: CrossAxisAlignment.start,
+  //           children: [
+  //             // Incomplete Tasks Section
+  //             _buildTaskSection("Active Tasks", incompleteTasks, false),
+  //             const SizedBox(height: 16),
+
+  //             // Completed Tasks Section
+  //             if (completedTasks.isNotEmpty)
+  //               _buildTaskSection("Completed Tasks", completedTasks, true),
+  //           ],
+  //         ),
+  //       ),
+  //     );
+  //   });
+  // }
   Widget _showTasksByCategory() {
-    // Fetch data khi widget init
-    // taskController.getTasksByCategory(widget.category?.id);
-
     return Obx(() {
-      print("Selected Category 3: ${widget.category.toString()}");
-      print("Selected Category ID: ${widget.category?.id}");
-      if (taskController.isLoading.value) {
-        return const Center(child: CircularProgressIndicator());
-      }
+      // if (taskController.isTaskLoading.value) {
+      //   return const Center(child: CircularProgressIndicator());
+      // }
 
-      if (taskController.taskList.isEmpty) {
-        return const Center(child: Text("No tasks"));
-      }
+      final tasks = taskController.taskListByCategory
+          .where((task) => !task.isCompleted)
+          .toList();
 
-      final allTasks = taskController.taskList;
-      final incompleteTasks = allTasks.where((t) => !t.isCompleted).toList();
-      final completedTasks = allTasks.where((t) => t.isCompleted).toList();
-
-      return RefreshIndicator(
-        onRefresh: () async {
-          await taskController.refreshTasks(widget.category?.id);
-        },
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Incomplete Tasks Section
-              _buildTaskSection("Active Tasks", incompleteTasks, false),
-              const SizedBox(height: 16),
-
-              // Completed Tasks Section
-              if (completedTasks.isNotEmpty)
-                _buildTaskSection("Completed Tasks", completedTasks, true),
-            ],
+      if (tasks.isEmpty) {
+        return const Center(
+          child: Text(
+            'No tasks yet',
+            style: TextStyle(color: Colors.grey, fontSize: 16),
           ),
-        ),
+        );
+      }
+
+      return ListView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: tasks.length,
+        itemBuilder: (context, index) {
+          final task = tasks[index];
+          return GestureDetector(
+            onTap: () {
+              // ✅ Mở bottom sheet khi click vào task
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (context) => TaskDetailBottomSheet(taskId: task.id!),
+              ).then((_) {
+                // Refresh tasks sau khi đóng bottom sheet
+                if (widget.category?.id != null) {
+                  taskController.getTasksByCategory(widget.category!.id);
+                }
+              });
+            },
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.1),
+                    spreadRadius: 1,
+                    blurRadius: 5,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  // Checkbox
+                  Checkbox(
+                    value: task.isCompleted,
+                    onChanged: (bool? value) async {
+                      if (value != null && task.id != null) {
+                        setState(() {
+                          _pendingUpdates[task.id] = true;
+                        });
+
+                        bool success = await taskController.updateTaskStatus(
+                          task,
+                          value,
+                        );
+
+                        setState(() {
+                          _pendingUpdates.remove(task.id);
+                        });
+
+                        if (success) {
+                          taskController
+                              .getTasksByCategory(widget.category!.id);
+                        }
+                      }
+                    },
+                    activeColor: AppColors.primary,
+                  ),
+
+                  const SizedBox(width: 12),
+
+                  // Task Info
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          task.title,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.black,
+                          ),
+                        ),
+                        if (task.description != null) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            task.description!,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                        if (task.date != null) ...[
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Icon(Icons.calendar_today,
+                                  size: 14, color: Colors.grey[600]),
+                              const SizedBox(width: 4),
+                              Text(
+                                DateFormat('MMM d, yyyy').format(task.date!),
+                                style: TextStyle(
+                                    fontSize: 12, color: Colors.grey[600]),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+
+                  // Priority indicator (nếu có)
+                  if (task.priority != null)
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: _getPriorityColor(task.priority!),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          );
+        },
       );
     });
   }
 
-// // 3. Reusable task section builder
-// 🧩 Reusable Task Section
+  Color _getPriorityColor(int priority) {
+    switch (priority) {
+      case 1:
+        return Colors.red;
+      case 2:
+        return Colors.orange;
+      case 3:
+        return Colors.blue;
+      case 4:
+        return Colors.green;
+      default:
+        return Colors.grey;
+    }
+  }
+
   Widget _buildTaskSection(String title, List<Task> tasks, bool isCompleted) {
     if (tasks.isEmpty && !isCompleted) return const SizedBox.shrink();
 
@@ -208,7 +370,6 @@ class _AllTasksPageState extends State<CategoryTasksPage> {
           itemCount: tasks.length,
           itemBuilder: (context, index) {
             final task = tasks[index];
-
             return AnimatedContainer(
               duration: const Duration(milliseconds: 300),
               margin: const EdgeInsets.only(bottom: 12),
@@ -241,7 +402,7 @@ class _AllTasksPageState extends State<CategoryTasksPage> {
                   );
                 },
                 onDismissed: (direction) async {
-                  await taskController.deleteTask(task.id);
+                  await taskController.deleteTask(taskId: task.id!);
                 },
                 background: Container(
                   alignment: Alignment.centerRight,
@@ -256,134 +417,155 @@ class _AllTasksPageState extends State<CategoryTasksPage> {
                     size: 28,
                   ),
                 ),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(8),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // 🟢 Header row (checkbox + title)
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            GestureDetector(
-                              onTap: taskController.isTaskPending(task.id!)
-                                  ? null
-                                  : () {
-                                      taskController.toggleTaskStatus(
-                                          task, !task.isCompleted);
-                                    },
-                              child: Container(
-                                width: 22,
-                                height: 22,
-                                margin:
-                                    const EdgeInsets.only(right: 10, top: 2),
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: task.isCompleted
-                                        ? Colors.transparent
-                                        : AppColors.primary,
-                                    width: 2,
-                                  ),
-                                  color: task.isCompleted
-                                      ? AppColors.primary
-                                      : Colors.white,
-                                ),
-                                child: task.isCompleted
-                                    ? const Icon(Icons.check,
-                                        size: 14, color: Colors.white)
-                                    : null,
-                              ),
-                            ),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    task.title,
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                      decoration: task.isCompleted
-                                          ? TextDecoration.lineThrough
-                                          : TextDecoration.none,
+                child: GestureDetector(
+                  // ✅ Thêm onTap để mở bottom sheet
+                  onTap: () {
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (context) =>
+                          TaskDetailBottomSheet(taskId: task.id!),
+                    ).then((_) {
+                      // Refresh tasks sau khi đóng bottom sheet
+                      if (widget.category?.id != null) {
+                        taskController.getTasksByCategory(widget.category!.id);
+                      }
+                    });
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // 🟢 Header row (checkbox + title)
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              GestureDetector(
+                                onTap: taskController.isTaskPending(task.id!)
+                                    ? null
+                                    : () {
+                                        taskController.toggleTaskStatus(
+                                            task, !task.isCompleted);
+                                      },
+                                child: Container(
+                                  width: 22,
+                                  height: 22,
+                                  margin:
+                                      const EdgeInsets.only(right: 10, top: 2),
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
                                       color: task.isCompleted
-                                          ? Colors.grey
-                                          : Colors.black87,
+                                          ? Colors.transparent
+                                          : AppColors.primary,
+                                      width: 2,
                                     ),
+                                    color: task.isCompleted
+                                        ? AppColors.primary
+                                        : Colors.white,
                                   ),
-                                  if (task.description?.isNotEmpty == true) ...[
-                                    const SizedBox(height: 4),
+                                  child: task.isCompleted
+                                      ? const Icon(Icons.check,
+                                          size: 14, color: Colors.white)
+                                      : null,
+                                ),
+                              ),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
                                     Text(
-                                      task.description!,
+                                      task.title,
                                       style: TextStyle(
                                         fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        decoration: task.isCompleted
+                                            ? TextDecoration.lineThrough
+                                            : TextDecoration.none,
                                         color: task.isCompleted
-                                            ? Colors.grey.shade400
-                                            : Colors.grey.shade600,
+                                            ? Colors.grey
+                                            : Colors.black87,
                                       ),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
                                     ),
+                                    if (task.description?.isNotEmpty ==
+                                        true) ...[
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        task.description!,
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: task.isCompleted
+                                              ? Colors.grey.shade400
+                                              : Colors.grey.shade600,
+                                        ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
                                   ],
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-
-                        // 🕒 Time & Date Row (ẩn nếu không có time)
-                        if (_hasTime(task.date, task.dueDate))
-                          Row(
-                            children: [
-                              const SizedBox(width: 30),
-                              Icon(Icons.access_time,
-                                  size: 14, color: Colors.grey.shade500),
-                              const SizedBox(width: 4),
-                              Text(
-                                _formatTimeRange(task.date, task.dueDate),
-                                style: TextStyle(
-                                    fontSize: 12, color: Colors.grey.shade600),
-                              ),
-                              const SizedBox(width: 16),
-                              Icon(Icons.calendar_today,
-                                  size: 14, color: Colors.grey.shade500),
-                              const SizedBox(width: 4),
-                              Text(
-                                _formatDateRange(task.date, task.dueDate),
-                                style: TextStyle(
-                                    fontSize: 12, color: Colors.grey.shade600),
-                              ),
-                            ],
-                          )
-                        else
-                          Row(
-                            children: [
-                              const SizedBox(width: 30),
-                              Icon(Icons.calendar_today,
-                                  size: 14, color: Colors.grey.shade500),
-                              const SizedBox(width: 4),
-                              Text(
-                                _formatDateRange(task.date, task.dueDate),
-                                style: TextStyle(
-                                    fontSize: 12, color: Colors.grey.shade600),
+                                ),
                               ),
                             ],
                           ),
-                      ],
+                          const SizedBox(height: 4),
+
+                          // 🕒 Time & Date Row (ẩn nếu không có time)
+                          if (_hasTime(task.date, task.dueDate))
+                            Row(
+                              children: [
+                                const SizedBox(width: 30),
+                                Icon(Icons.access_time,
+                                    size: 14, color: Colors.grey.shade500),
+                                const SizedBox(width: 4),
+                                Text(
+                                  _formatTimeRange(task.date, task.dueDate),
+                                  style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey.shade600),
+                                ),
+                                const SizedBox(width: 16),
+                                Icon(Icons.calendar_today,
+                                    size: 14, color: Colors.grey.shade500),
+                                const SizedBox(width: 4),
+                                Text(
+                                  _formatDateRange(task.date, task.dueDate),
+                                  style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey.shade600),
+                                ),
+                              ],
+                            )
+                          else
+                            Row(
+                              children: [
+                                const SizedBox(width: 30),
+                                Icon(Icons.calendar_today,
+                                    size: 14, color: Colors.grey.shade500),
+                                const SizedBox(width: 4),
+                                Text(
+                                  _formatDateRange(task.date, task.dueDate),
+                                  style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey.shade600),
+                                ),
+                              ],
+                            ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -394,6 +576,217 @@ class _AllTasksPageState extends State<CategoryTasksPage> {
       ],
     );
   }
+// // 3. Reusable task section builder
+// 🧩 Reusable Task Section
+  // Widget _buildTaskSection(String title, List<Task> tasks, bool isCompleted) {
+  //   if (tasks.isEmpty && !isCompleted) return const SizedBox.shrink();
+
+  //   return Column(
+  //     crossAxisAlignment: CrossAxisAlignment.start,
+  //     children: [
+  //       SizedBox(
+  //         height: 10,
+  //       ),
+  //       if (isCompleted)
+  //         Padding(
+  //           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+  //           child: Text(
+  //             title,
+  //             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+  //           ),
+  //         ),
+  //       ListView.builder(
+  //         shrinkWrap: true,
+  //         physics: const NeverScrollableScrollPhysics(),
+  //         padding: const EdgeInsets.symmetric(horizontal: 2),
+  //         itemCount: tasks.length,
+  //         itemBuilder: (context, index) {
+  //           final task = tasks[index];
+  //           return AnimatedContainer(
+  //             duration: const Duration(milliseconds: 300),
+  //             margin: const EdgeInsets.only(bottom: 12),
+  //             child: Dismissible(
+  //               key: Key('task_${task.id}'),
+  //               direction: DismissDirection.endToStart,
+  //               confirmDismiss: (direction) async {
+  //                 return await showDialog(
+  //                   context: context,
+  //                   builder: (BuildContext context) {
+  //                     return AlertDialog(
+  //                       title: const Text('Delete Task'),
+  //                       content: const Text(
+  //                           'Are you sure you want to delete this task?'),
+  //                       actions: [
+  //                         TextButton(
+  //                           onPressed: () => Navigator.of(context).pop(false),
+  //                           child: const Text('Cancel'),
+  //                         ),
+  //                         TextButton(
+  //                           onPressed: () => Navigator.of(context).pop(true),
+  //                           style: TextButton.styleFrom(
+  //                             foregroundColor: Colors.red,
+  //                           ),
+  //                           child: const Text('Delete'),
+  //                         ),
+  //                       ],
+  //                     );
+  //                   },
+  //                 );
+  //               },
+  //               onDismissed: (direction) async {
+  //                 await taskController.deleteTask(taskId: task.id!);
+  //               },
+  //               background: Container(
+  //                 alignment: Alignment.centerRight,
+  //                 padding: const EdgeInsets.only(right: 20),
+  //                 decoration: BoxDecoration(
+  //                   color: Colors.red,
+  //                   borderRadius: BorderRadius.circular(12),
+  //                 ),
+  //                 child: const Icon(
+  //                   Icons.delete_outline,
+  //                   color: Colors.white,
+  //                   size: 28,
+  //                 ),
+  //               ),
+  //               child: Container(
+  //                 decoration: BoxDecoration(
+  //                   color: Colors.white,
+  //                   borderRadius: BorderRadius.circular(12),
+  //                   boxShadow: [
+  //                     BoxShadow(
+  //                       color: Colors.black.withOpacity(0.05),
+  //                       blurRadius: 8,
+  //                       offset: const Offset(0, 2),
+  //                     ),
+  //                   ],
+  //                 ),
+  //                 child: Padding(
+  //                   padding: const EdgeInsets.all(8),
+  //                   child: Column(
+  //                     crossAxisAlignment: CrossAxisAlignment.start,
+  //                     children: [
+  //                       // 🟢 Header row (checkbox + title)
+  //                       Row(
+  //                         crossAxisAlignment: CrossAxisAlignment.start,
+  //                         children: [
+  //                           GestureDetector(
+  //                             onTap: taskController.isTaskPending(task.id!)
+  //                                 ? null
+  //                                 : () {
+  //                                     taskController.toggleTaskStatus(
+  //                                         task, !task.isCompleted);
+  //                                   },
+  //                             child: Container(
+  //                               width: 22,
+  //                               height: 22,
+  //                               margin:
+  //                                   const EdgeInsets.only(right: 10, top: 2),
+  //                               decoration: BoxDecoration(
+  //                                 shape: BoxShape.circle,
+  //                                 border: Border.all(
+  //                                   color: task.isCompleted
+  //                                       ? Colors.transparent
+  //                                       : AppColors.primary,
+  //                                   width: 2,
+  //                                 ),
+  //                                 color: task.isCompleted
+  //                                     ? AppColors.primary
+  //                                     : Colors.white,
+  //                               ),
+  //                               child: task.isCompleted
+  //                                   ? const Icon(Icons.check,
+  //                                       size: 14, color: Colors.white)
+  //                                   : null,
+  //                             ),
+  //                           ),
+  //                           Expanded(
+  //                             child: Column(
+  //                               crossAxisAlignment: CrossAxisAlignment.start,
+  //                               children: [
+  //                                 Text(
+  //                                   task.title,
+  //                                   style: TextStyle(
+  //                                     fontSize: 14,
+  //                                     fontWeight: FontWeight.w600,
+  //                                     decoration: task.isCompleted
+  //                                         ? TextDecoration.lineThrough
+  //                                         : TextDecoration.none,
+  //                                     color: task.isCompleted
+  //                                         ? Colors.grey
+  //                                         : Colors.black87,
+  //                                   ),
+  //                                 ),
+  //                                 if (task.description?.isNotEmpty == true) ...[
+  //                                   const SizedBox(height: 4),
+  //                                   Text(
+  //                                     task.description!,
+  //                                     style: TextStyle(
+  //                                       fontSize: 14,
+  //                                       color: task.isCompleted
+  //                                           ? Colors.grey.shade400
+  //                                           : Colors.grey.shade600,
+  //                                     ),
+  //                                     maxLines: 2,
+  //                                     overflow: TextOverflow.ellipsis,
+  //                                   ),
+  //                                 ],
+  //                               ],
+  //                             ),
+  //                           ),
+  //                         ],
+  //                       ),
+  //                       const SizedBox(height: 4),
+
+  //                       // 🕒 Time & Date Row (ẩn nếu không có time)
+  //                       if (_hasTime(task.date, task.dueDate))
+  //                         Row(
+  //                           children: [
+  //                             const SizedBox(width: 30),
+  //                             Icon(Icons.access_time,
+  //                                 size: 14, color: Colors.grey.shade500),
+  //                             const SizedBox(width: 4),
+  //                             Text(
+  //                               _formatTimeRange(task.date, task.dueDate),
+  //                               style: TextStyle(
+  //                                   fontSize: 12, color: Colors.grey.shade600),
+  //                             ),
+  //                             const SizedBox(width: 16),
+  //                             Icon(Icons.calendar_today,
+  //                                 size: 14, color: Colors.grey.shade500),
+  //                             const SizedBox(width: 4),
+  //                             Text(
+  //                               _formatDateRange(task.date, task.dueDate),
+  //                               style: TextStyle(
+  //                                   fontSize: 12, color: Colors.grey.shade600),
+  //                             ),
+  //                           ],
+  //                         )
+  //                       else
+  //                         Row(
+  //                           children: [
+  //                             const SizedBox(width: 30),
+  //                             Icon(Icons.calendar_today,
+  //                                 size: 14, color: Colors.grey.shade500),
+  //                             const SizedBox(width: 4),
+  //                             Text(
+  //                               _formatDateRange(task.date, task.dueDate),
+  //                               style: TextStyle(
+  //                                   fontSize: 12, color: Colors.grey.shade600),
+  //                             ),
+  //                           ],
+  //                         ),
+  //                     ],
+  //                   ),
+  //                 ),
+  //               ),
+  //             ),
+  //           );
+  //         },
+  //       ),
+  //     ],
+  //   );
+  // }
 
   bool _hasTime(DateTime? start, DateTime? end) {
     if (start == null) return false;
