@@ -81,7 +81,42 @@ class TaskController extends GetxController {
     }
   }
 
-  // TaskController
+//helper function update tất cả lists
+  void _refreshAllTaskLists() {
+    taskList.refresh();
+    taskListByCategory.refresh();
+    matrixTasks.refresh();
+    fullDayTaskList.refresh();
+  }
+
+//Trong task_controller.dart ----đang dùng
+  void toggleTaskCompletion(Task task) async {
+    final taskId = task.id;
+    final newStatus = !task.isCompleted;
+
+    task.isCompleted = newStatus;
+    task.completedAt = newStatus ? DateTime.now() : null;
+    pendingUpdates[taskId!] = newStatus;
+
+    _refreshAllTaskLists(); // ← Gọn hơn nhiều!
+
+    final categoryController = Get.find<CategoryController>();
+    categoryController.updateCategoryStatsByTask(task);
+
+    try {
+      await updateTaskStatus(task, newStatus);
+      pendingUpdates.remove(taskId);
+    } catch (e) {
+      task.isCompleted = !newStatus;
+      task.completedAt = !newStatus ? DateTime.now() : null;
+      pendingUpdates.remove(taskId);
+
+      _refreshAllTaskLists(); // ← Revert cũng gọn!
+
+      categoryController.updateCategoryStatsByTask(task);
+      Get.snackbar('Error', 'Failed to update task');
+    }
+  }
 
   Future<void> getMatrixTasks() async {
     try {
@@ -120,40 +155,7 @@ class TaskController extends GetxController {
     }).toList();
   }
 
-// Trong task_controller.dart ----đang dùng trong homepage
-  void toggleTaskCompletion(Task task) async {
-    final taskId = task.id;
-    final newStatus = !task.isCompleted;
-
-    // Update immediately
-    task.isCompleted = newStatus;
-    task.completedAt = newStatus ? DateTime.now() : null;
-    pendingUpdates[taskId!] = newStatus;
-    taskList.refresh();
-
-    // Update category tương ứng
-    final categoryController = Get.find<CategoryController>();
-    categoryController.updateCategoryStatsByTask(task);
-
-    try {
-      // Dùng updateTaskStatus thay vì _taskService.updateTask
-      await updateTaskStatus(task, newStatus);
-      pendingUpdates.remove(taskId);
-    } catch (e) {
-      // Revert on error
-      task.isCompleted = !newStatus;
-      task.completedAt = !newStatus ? DateTime.now() : null;
-      pendingUpdates.remove(taskId);
-      taskList.refresh();
-
-      // Revert category stats
-      categoryController.updateCategoryStatsByTask(task);
-
-      Get.snackbar('Error', 'Failed to update task');
-    }
-  }
-
-  // Toggle method với String key fix  --- đnag dùng trong category task page
+  // Toggle method với String key fix --------ko dùng
   Future<void> toggleTaskStatus(Task task, bool newStatus) async {
     final taskId = task.id;
 
@@ -181,16 +183,6 @@ class TaskController extends GetxController {
   bool isTaskPending(int taskId) {
     return pendingUpdates.containsKey(taskId.toString());
   }
-
-  // Future<void> deleteTask(int? taskId) async {
-  //   if (taskId == null) {
-  //     print("❌ Task ID is null. Cannot delete task.");
-  //     return;
-  //   }
-  //   await TaskService.deleteTask(taskId);
-  //   taskList.removeWhere((t) => t.id == taskId);
-  //   update(); // Cập nhật UI
-  // }
 
   Future<bool> deleteTask({required int taskId}) async {
     try {
@@ -256,25 +248,7 @@ class TaskController extends GetxController {
       return false;
     }
   }
-  // Thêm method này vào TaskController
 
-  // Future<Task?> getTaskById(int taskId) async {
-  //   try {
-  //     final response =
-  //         await ApiService.dio.get('${ApiService.baseUrl}/tasks/$taskId');
-
-  //     if (response.statusCode == 200) {
-  //       print("✅ Task fetched successfully: ${response.data}");
-  //       return Task.fromJson(response.data);
-  //     } else {
-  //       print("❌ Failed to fetch task: ${response.data}");
-  //       return null;
-  //     }
-  //   } catch (e) {
-  //     print("❌ Error fetching task: $e");
-  //     return null;
-  //   }
-  // }
   Future<Task?> getTaskById(int taskId) async {
     try {
       isLoading.value = true;
@@ -334,26 +308,4 @@ class TaskController extends GetxController {
       list.refresh();
     }
   }
-  // Future<bool> deleteTask({required int taskId}) async {
-  //   try {
-  //     final response =
-  //         await ApiService.dio.delete('${ApiService.baseUrl}/tasks/$taskId');
-
-  //     if (response.statusCode == 200 || response.statusCode == 204) {
-  //       print("✅ Task deleted successfully!");
-
-  //       // Xóa task khỏi list local
-  //       taskListByCategory.removeWhere((task) => task.id == taskId);
-  //       taskList.removeWhere((task) => task.id == taskId);
-
-  //       return true;
-  //     } else {
-  //       print("❌ Failed to delete task: ${response.data}");
-  //       return false;
-  //     }
-  //   } catch (e) {
-  //     print("❌ Error deleting task: $e");
-  //     return false;
-  //   }
-  // }
 }
