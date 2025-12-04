@@ -57,6 +57,9 @@ class _TaskDetailBottomSheetState extends State<TaskDetailBottomSheet> {
   }
 
   Future<void> _loadTaskDetails() async {
+    print(">>> TaskDetailBottomSheet opened with id = ${widget.taskId}");
+    print("TaskController hash = ${taskController.hashCode}");
+
     try {
       // Gọi API để lấy task details
       final task = await taskController.getTaskById(widget.taskId);

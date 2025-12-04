@@ -44,12 +44,9 @@ class Task(Base):
     
     owner_id = Column(Integer, ForeignKey("user.id"))
     category_id = Column(Integer, ForeignKey("category.id", ondelete="CASCADE"), nullable=True)
-     # Nếu task thuộc goal
-    goal_id = Column(UUID(as_uuid=True), ForeignKey("goal_drafts.id"), nullable=True)
 
     owner = relationship("User", back_populates="tasks")
     category = relationship("Category", back_populates="tasks")
-    goal = relationship("GoalDraft", back_populates="tasks")
 
 
 
@@ -129,21 +126,4 @@ class Notification(Base):
 
 
 
-class GoalDraft(Base):
-    __tablename__ = "goal_drafts"
-
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
-    
-    goal_title = Column(String, nullable=True)
-    measurable_target = Column(String, nullable=True)
-    daily_action = Column(String, nullable=True)
-    start_date = Column(TIMESTAMP(timezone=True), nullable=True)
-    duration = Column(String, nullable=True)
-    end_date = Column(TIMESTAMP(timezone=True), nullable=True)
-    
-    fields_missing = Column(ARRAY(String), nullable=True)
-    status = Column(String, default="collecting")  # collecting | ready | confirmed
-
-    tasks = relationship("Task", back_populates="goal")
 

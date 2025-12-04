@@ -224,6 +224,8 @@ class _AllTasksPageState extends State<CategoryTasksPage> {
                 ),
                 child: GestureDetector(
                   onTap: () {
+                    print("TaskController hash = ${taskController.hashCode}");
+
                     // Mở bottom sheet chi tiết task
                     showModalBottomSheet(
                       context: context,
