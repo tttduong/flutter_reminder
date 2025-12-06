@@ -17,7 +17,6 @@ from ...core.security import get_password_hash, create_access_token, get_user_by
 from ...db.database import get_db
 from ...db.db_structure import Category, User
 
-# colen ne
 router = APIRouter()
 # pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
