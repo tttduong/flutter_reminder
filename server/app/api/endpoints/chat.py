@@ -220,19 +220,19 @@ async def chat_endpoint(
     session: AsyncSession = Depends(get_db),
 ):
     # ---------- 1. Classify intent ----------
-    intent_messages = [
-    {"role": "system", "content": INTENT_PROMPT.format(user_message=request.message)}
-    ]
+    # intent_messages = [
+    # {"role": "system", "content": INTENT_PROMPT.format(user_message=request.message)}
+    # ]
 
-    intent_result = await llm_service.generate_response_with_messages(
-        messages=intent_messages,
-        # model="llama-3.1-8b-instant"
-        model="gpt-4o-mini"
-    )
+    # intent_result = await llm_service.generate_response_with_messages(
+    #     messages=intent_messages,
+    #     # model="llama-3.1-8b-instant"
+    #     model="gpt-4o-mini"
+    # )
 
 
-    intent = intent_result["response"].strip().lower()
-    print("RAW intent_result:", intent_result)
+    # intent = intent_result["response"].strip().lower()
+    # print("RAW intent_result:", intent_result)
 
     # ---------- 2. Nếu intent = goal → dùng logic goal ----------
     # if intent == "goal":
