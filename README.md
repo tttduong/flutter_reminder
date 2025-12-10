@@ -39,4 +39,3 @@ In case port 8000 is occupied:
 netstat -ano | findstr :8000
 taskkill /PID <PID> /F                 (ex: taskkill /PID 11840 /F )
 
-xx
