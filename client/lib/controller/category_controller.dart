@@ -176,9 +176,22 @@ class CategoryController extends GetxController {
   }
 
   // Xóa category theo ID
-  Future<void> deleteCategory(int categoryId) async {
-    await CategoryService.deleteCategory(categoryId);
-    categoryList.removeWhere((category) => category.id == categoryId);
-    update(); // Cập nhật UI
+  // Future<void> deleteCategory(int categoryId) async {
+  //   await CategoryService.deleteCategory(categoryId);
+  //   categoryList.removeWhere((category) => category.id == categoryId);
+  //   update(); // Cập nhật UI
+  // }
+  Future<bool> deleteCategory(Category category) async {
+    // ❌ Không cho xóa default category
+    if (category.isDefault) {
+      return false;
+    }
+
+    await CategoryService.deleteCategory(category.id);
+
+    categoryList.removeWhere((c) => c.id == category.id);
+    update();
+
+    return true;
   }
 }

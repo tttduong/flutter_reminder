@@ -82,7 +82,8 @@ class Conversation(Base):
 
     user = relationship("User", back_populates="conversations")
     messages = relationship("Message", back_populates="conversation", cascade="all, delete")
-
+    #add
+    schedule_draft = relationship("ScheduleDraft", back_populates="conversation", uselist=False, cascade="all, delete-orphan")
 class Message(Base):
     __tablename__ = "messages"
 
@@ -95,15 +96,23 @@ class Message(Base):
 
     conversation = relationship("Conversation", back_populates="messages")
 
-class ScheduleDraft(Base):
-    __tablename__ = "schedule_drafts"
+# class ScheduleDraft(Base):
+#     __tablename__ = "schedule_drafts"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
-    schedule_json = Column(JSONB, default=dict)
+#     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+#     user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
+#     schedule_json = Column(JSONB, default=dict)
+#     updated_at = Column(DateTime, default=datetime.utcnow)
+
+class ScheduleDraft(Base): 
+    __tablename__ = "schedule_drafts" 
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4) 
+    user_id = Column(Integer, ForeignKey("user.id"), nullable=False) 
+    conversation_id = Column(String, ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False, unique=True) # ← THÊM 
+    schedule_json = Column(JSONB, default=dict) 
     updated_at = Column(DateTime, default=datetime.utcnow)
-
-
+# Relationships 
+    conversation = relationship("Conversation", back_populates="schedule_draft")
 
 class ScheduleDraftInput(BaseModel):
     schedule_json: Dict[str, Any]

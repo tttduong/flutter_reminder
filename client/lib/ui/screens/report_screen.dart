@@ -84,16 +84,16 @@ class _ReportScreenState extends State<ReportScreen> {
                 _buildCategoryStats(),
                 const SizedBox(height: 24),
 
-                // Goals & Achievements
-                _buildGoalsSection(),
-                const SizedBox(height: 24),
+                // // Goals & Achievements
+                // _buildGoalsSection(),
+                // const SizedBox(height: 24),
 
-                // Trends Comparison
-                _buildTrendsSection(),
-                const SizedBox(height: 24),
+                // // Trends Comparison
+                // _buildTrendsSection(),
+                // const SizedBox(height: 24),
 
-                // Badges/Achievements
-                _buildBadgesSection(),
+                // // Badges/Achievements
+                // _buildBadgesSection(),
               ],
             ),
           ),
@@ -176,16 +176,16 @@ class _ReportScreenState extends State<ReportScreen> {
             icon: Icons.calendar_view_week,
           ),
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildStatCard(
-            title: 'Streak',
-            value: '5 days',
-            subtitle: '>80% task',
-            color: Colors.orange,
-            icon: Icons.local_fire_department,
-          ),
-        ),
+        // const SizedBox(width: 12),
+        // Expanded(
+        //   child: _buildStatCard(
+        //     title: 'Streak',
+        //     value: '5 days',
+        //     subtitle: '>80% task',
+        //     color: Colors.orange,
+        //     icon: Icons.local_fire_department,
+        //   ),
+        // ),
       ],
     );
   }

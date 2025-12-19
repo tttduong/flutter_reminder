@@ -8,7 +8,7 @@ class Category {
   final Color color;
   final IconData icon;
   final int? ownerId;
-  final bool? isDefault;
+  final bool isDefault;
   final List<Task>? tasks;
   final DateTime? createdAt;
 
@@ -21,7 +21,7 @@ class Category {
     required this.color,
     required this.icon,
     this.ownerId,
-    this.isDefault,
+    required this.isDefault,
     this.tasks,
     this.createdAt,
     this.totalCount = 0,
@@ -55,7 +55,7 @@ class Category {
       color: _parseColor(json['color']),
       icon: _parseIcon(json['icon']),
       ownerId: json['owner_id'],
-      isDefault: json['is_default'],
+      isDefault: json['is_default'] ?? true,
       tasks: (json['tasks'] as List<dynamic>?)
               ?.map((taskJson) => Task.fromJson(taskJson))
               .toList() ??

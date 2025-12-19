@@ -482,9 +482,9 @@ class _NewListBottomSheetState extends State<NewListBottomSheet> {
     if (_titleController.text.isNotEmpty) {
       _addListToDb();
     } else if (_titleController.text.isEmpty) {
-      Get.snackbar("Required", "All fields are required!",
+      Get.snackbar("Required", "Title is required!",
           snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.white,
+          backgroundColor: Colors.red.shade100,
           colorText: Colors.red,
           icon: const Icon(Icons.warning_amber_rounded, color: Colors.red));
     }
@@ -498,6 +498,7 @@ class _NewListBottomSheetState extends State<NewListBottomSheet> {
       title: _titleController.text,
       color: Color(selectedColor.value),
       icon: IconData(selectedIcon.codePoint, fontFamily: 'MaterialIcons'),
+      isDefault: false,
     );
 
     bool success = await CategoryService.createCategory(category: category);
@@ -505,16 +506,16 @@ class _NewListBottomSheetState extends State<NewListBottomSheet> {
       Get.back();
       Get.snackbar("Success", "Category added successfully!",
           snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
+          backgroundColor: Colors.green.shade100,
+          colorText: Colors.green,
           icon: const Icon(Icons.check_circle, color: Colors.white));
 
       categoryController.getCategories();
     } else {
       Get.snackbar("Error", "Failed to add category!",
           snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
+          backgroundColor: Colors.red.shade100,
+          colorText: Colors.red,
           icon: const Icon(Icons.error, color: Colors.white));
     }
   }

@@ -391,8 +391,9 @@ class _EisenhowerMatrixState extends State<EisenhowerMatrix> {
   TaskItem convertToTaskItem(Task task) {
     return TaskItem(
       title: task.title,
-      subtitle:
-          task.date != null ? "${task.date!.day}/${task.date!.month}" : null,
+      subtitle: task.dueDate != null
+          ? "${task.dueDate!.day}/${task.dueDate!.month}"
+          : null,
       isCompleted: task.isCompleted ?? false,
       icon: _getTaskIcon(task),
       iconColor: _getTaskIconColor(task),
@@ -524,7 +525,7 @@ class _EisenhowerMatrixState extends State<EisenhowerMatrix> {
                           // Quadrant 3: Urgent & Unimportant (Priority 3)
                           Expanded(
                             child: QuadrantWidget(
-                              title: 'Urgent & Unimportant',
+                              title: 'Urgent & Not Important',
                               color: Colors.blue,
                               tasks: getTasksByPriority(3)
                                   .map((task) => convertToTaskItem(task))
@@ -540,7 +541,7 @@ class _EisenhowerMatrixState extends State<EisenhowerMatrix> {
                           // Quadrant 4: Not Urgent & Unimportant (Priority 4)
                           Expanded(
                             child: QuadrantWidget(
-                              title: 'Not Urgent & Unimportant',
+                              title: 'Not Urgent & Not Important',
                               color: Colors.green,
                               tasks: getTasksByPriority(4)
                                   .map((task) => convertToTaskItem(task))
@@ -622,7 +623,7 @@ class QuadrantWidget extends StatelessWidget {
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
-                SizedBox(width: 8),
+                SizedBox(width: 4),
                 Expanded(
                   child: Text(
                     title,
@@ -631,7 +632,7 @@ class QuadrantWidget extends StatelessWidget {
                       fontWeight: FontWeight.w600,
                       color: Colors.black87,
                     ),
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -730,17 +731,17 @@ class TaskItemWidget extends StatelessWidget {
       onTap: onTap,
       child: Container(
         margin: EdgeInsets.only(bottom: 8),
-        padding: EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: Colors.grey[50],
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: task.isCompleted
-                ? Colors.green.withOpacity(0.3)
-                : Colors.transparent,
-            width: 1,
-          ),
-        ),
+        padding: EdgeInsets.all(0),
+        // decoration: BoxDecoration(
+        //   color: Colors.grey[50],
+        //   borderRadius: BorderRadius.circular(8),
+        //   // border: Border.all(
+        //   //   color: task.isCompleted
+        //   //       ? Colors.green.withOpacity(0.3)
+        //   //       : Colors.transparent,
+        //   //   width: 1,
+        //   // ),
+        // ),
         child: Row(
           children: [
             // Checkbox or Icon
@@ -748,9 +749,9 @@ class TaskItemWidget extends StatelessWidget {
               width: 20,
               height: 20,
               decoration: BoxDecoration(
-                color: task.isCompleted ? Colors.green : Colors.transparent,
+                color: task.isCompleted ? Colors.grey : Colors.transparent,
                 border: Border.all(
-                  color: task.isCompleted ? Colors.green : Colors.grey,
+                  color: task.isCompleted ? Colors.transparent : Colors.grey,
                   width: 1,
                 ),
                 borderRadius: BorderRadius.circular(4),
@@ -761,11 +762,11 @@ class TaskItemWidget extends StatelessWidget {
             ),
             SizedBox(width: 8),
             // Task Icon
-            Icon(
-              task.icon,
-              size: 16,
-              color: task.iconColor ?? Colors.grey[600],
-            ),
+            // Icon(
+            //   task.icon,
+            //   size: 16,
+            //   color: task.iconColor ?? Colors.grey[600],
+            // ),
             SizedBox(width: 8),
             // Task Text
             Expanded(

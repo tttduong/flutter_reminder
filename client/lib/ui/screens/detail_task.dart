@@ -41,7 +41,7 @@ class _TaskDetailBottomSheetState extends State<TaskDetailBottomSheet> {
   int? _selectedCategoryId;
   bool _hasPriority = false;
   int? _selectedPriority;
-
+  bool _isCompleted = false;
   final Map<int, String> priorityLabels = {
     1: 'Urgent & Important',
     2: 'Not Urgent & Important',
@@ -181,6 +181,51 @@ class _TaskDetailBottomSheetState extends State<TaskDetailBottomSheet> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          Container(
+                            // padding: const EdgeInsets.symmetric(
+                            //     horizontal: 12, vertical: 8),
+                            // decoration: BoxDecoration(
+                            //   color: _isCompleted
+                            //       ? Colors.green
+                            //       : Colors.grey.shade200,
+                            //   borderRadius: BorderRadius.circular(20),
+                            // ),
+                            child: InkWell(
+                              onTap: () {
+                                setState(() {
+                                  _isCompleted = !_isCompleted;
+                                });
+                              },
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    _isCompleted
+                                        ? Icons.check_box
+                                        : Icons.check_box_outline_blank,
+                                    color: _isCompleted
+                                        ? AppColors.primary
+                                        : AppColors.primary,
+                                    size: 28, // Kích thước icon lớn hơn
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    _isCompleted
+                                        ? 'Completed'
+                                        : 'Mark Complete',
+                                    style: TextStyle(
+                                      color: _isCompleted
+                                          ? AppColors.primary
+                                          : Colors.grey.shade600,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 14),
                           // Action Buttons
                           SingleChildScrollView(
                             scrollDirection: Axis.horizontal,

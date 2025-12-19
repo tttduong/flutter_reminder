@@ -210,6 +210,34 @@ async def get_messages(
     )
     messages = result.scalars().all()
     return messages
+@router.post("/conversations", response_model=ConversationResponse)
+async def create_conversation(
+    session: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    # 1️⃣ Tạo conversation
+    conversation = Conversation(
+        id=str(uuid.uuid4()),
+        user_id=current_user.id,
+        title="New Chat",
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
+    )
+    session.add(conversation)
+    await session.flush()  # đảm bảo conversation.id tồn tại
+
+    # 2️⃣ Tạo schedule draft tương ứng (1–1)
+    schedule_draft = ScheduleDraft(
+        user_id=current_user.id,
+        conversation_id=conversation.id,
+        schedule_json={}
+    )
+    session.add(schedule_draft)
+
+    # 3️⃣ Commit
+    await session.commit()
+
+    return conversation
 
 #--------------SEND MESSAGE----------------------
 @router.post("/chat/", response_model=ChatResponse)
@@ -326,6 +354,7 @@ async def handle_small_talk_chat(
         usage=result["usage"],
         model=result["model"]
     )
+
 # -------generate plan
 # @router.post("/chat/schedule", response_model=ChatResponse)
 # async def chat_schedule(
@@ -433,12 +462,29 @@ async def chat_schedule(
     current_time_str = now_vn.strftime("%H:%M")
     
     # 0️⃣ Lấy hoặc tạo conversation
+    # conversation = await session.scalar(
+    #     select(Conversation).where(
+    #         Conversation.user_id == current_user.id,
+    #         Conversation.id == req.conversation_id  # nếu client truyền lên
+    #     )
+    # )
+    # if not conversation:
+    #     conversation = Conversation(
+    #         id=str(uuid.uuid4()),
+    #         user_id=current_user.id,
+    #         title="Schedule Chat",
+    #         created_at=datetime.utcnow(),
+    #         updated_at=datetime.utcnow()
+    #     )
+    #     session.add(conversation)
+    #     await session.flush()  # có conversation.id
     conversation = await session.scalar(
         select(Conversation).where(
             Conversation.user_id == current_user.id,
-            Conversation.id == req.conversation_id  # nếu client truyền lên
+            Conversation.id == req.conversation_id
         )
     )
+
     if not conversation:
         conversation = Conversation(
             id=str(uuid.uuid4()),
@@ -448,15 +494,25 @@ async def chat_schedule(
             updated_at=datetime.utcnow()
         )
         session.add(conversation)
-        await session.flush()  # có conversation.id
+        await session.flush()
+
 
     # 1️⃣ Lấy hoặc tạo ScheduleDraft
+    # draft = await session.scalar(
+    #     select(ScheduleDraft).where(ScheduleDraft.user_id == current_user.id)
+    # )
     draft = await session.scalar(
-        select(ScheduleDraft).where(ScheduleDraft.user_id == current_user.id)
+        select(ScheduleDraft).where(
+            ScheduleDraft.user_id == current_user.id,
+            ScheduleDraft.conversation_id == conversation.id
+        )
     )
+
+
     if not draft:
         draft = ScheduleDraft(
             user_id=current_user.id,
+            conversation_id=conversation.id, 
             schedule_json={
                 "schedule_title": None,
                 "start_date": None,

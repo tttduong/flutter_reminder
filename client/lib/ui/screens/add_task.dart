@@ -585,8 +585,8 @@ class _AddTaskPageState extends State<AddTaskPage> {
       "Error",
       message,
       snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Colors.red,
-      colorText: Colors.white,
+      backgroundColor: Colors.red.shade100,
+      colorText: Colors.red,
     );
   }
 

@@ -26,3 +26,5 @@ uvicorn==0.34.0
 tenacity=9.1.2
 openai
 firebase_messaging: ^14.0.0
+aiohttp
+itsdangerous

@@ -633,12 +633,42 @@ class _CustomSidebarState extends State<CustomSidebar> {
                 style: TextStyle(color: Colors.black),
               ),
             ),
+            // TextButton(
+            //   onPressed: () {
+            //     categoryController.deleteCategory(category.id);
+            //     Navigator.of(context).pop();
+            //   },
+            //   child: const Text("Delete", style: TextStyle(color: Colors.red)),
+            // ),
             TextButton(
-              onPressed: () {
-                categoryController.deleteCategory(category.id);
+              onPressed: () async {
+                final success =
+                    await categoryController.deleteCategory(category);
+
                 Navigator.of(context).pop();
+
+                if (!success) {
+                  Get.snackbar(
+                    "Can not delete!",
+                    "The default category can not be deleted.",
+                    snackPosition: SnackPosition.BOTTOM,
+                    backgroundColor: Colors.red.shade100,
+                    colorText: Colors.red,
+                  );
+                } else {
+                  Get.snackbar(
+                    "Success",
+                    "Category deleted successfully.",
+                    snackPosition: SnackPosition.BOTTOM,
+                    backgroundColor: Colors.green.shade100,
+                    colorText: Colors.green,
+                  );
+                }
               },
-              child: const Text("Delete", style: TextStyle(color: Colors.red)),
+              child: const Text(
+                "Delete",
+                style: TextStyle(color: Colors.red),
+              ),
             ),
           ],
         );

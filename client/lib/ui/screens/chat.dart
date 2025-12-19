@@ -523,9 +523,10 @@ class _ChatPageState extends State<ChatPage> {
                     height: 40,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: _textController.text.isEmpty
-                          ? Colors.grey[300]
-                          : AppColors.primary,
+                      // color: !_textController.text.isEmpty
+                      //     ? AppColors.primary
+                      //     : Colors.grey[300],
+                      color: AppColors.primary,
                     ),
                     child: Icon(
                       Icons.arrow_upward,
@@ -540,25 +541,85 @@ class _ChatPageState extends State<ChatPage> {
         ]));
   }
 
+// // 2️⃣ Hàm show bottom sheet chọn mode
+//   void _showModeBottomSheet() {
+//     showModalBottomSheet(
+//       context: context,
+//       backgroundColor: Colors.white,
+//       shape: const RoundedRectangleBorder(
+//         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+//       ),
+//       builder: (context) {
+//         return Padding(
+//           padding: const EdgeInsets.all(16),
+//           child: Wrap(
+//             spacing: 12,
+//             runSpacing: 12,
+//             children: [
+//               _buildModeButton("Normal Chat", "normal"),
+//               _buildModeButton("Generate Plan", "generate_plan"),
+//               // thêm mode
+//             ],
+//           ),
+//         );
+//       },
+//     );
+//   }
+
+// // 3️⃣ Widget nút mode
+//   Widget _buildModeButton(String label, String mode) {
+//     return ElevatedButton(
+//       onPressed: () {
+//         Navigator.pop(context); // đóng bottom sheet
+//         setState(() {
+//           _selectedMode = mode;
+//         });
+//       },
+//       style: ElevatedButton.styleFrom(
+//         backgroundColor: AppColors.white,
+//         shape: RoundedRectangleBorder(
+//           borderRadius: BorderRadius.circular(12),
+//         ),
+//         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+//       ),
+//       child: Text(label),
+//     );
+//   }
 // 2️⃣ Hàm show bottom sheet chọn mode
   void _showModeBottomSheet() {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
       builder: (context) {
         return Padding(
-          padding: const EdgeInsets.all(16),
-          child: Wrap(
-            spacing: 12,
-            runSpacing: 12,
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              // Header
+              Text(
+                "Select Mode",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+
+              // Các nút mode
               _buildModeButton("Normal Chat", "normal"),
+              const SizedBox(height: 12),
               _buildModeButton("Generate Plan", "generate_plan"),
-              _buildModeButton("Small Talk", "small_talk"),
-              // thêm mode khác nếu muốn
+              // thêm mode khác
+
+              const SizedBox(height: 20),
             ],
           ),
         );
@@ -568,21 +629,38 @@ class _ChatPageState extends State<ChatPage> {
 
 // 3️⃣ Widget nút mode
   Widget _buildModeButton(String label, String mode) {
-    return ElevatedButton(
-      onPressed: () {
-        Navigator.pop(context); // đóng bottom sheet
-        setState(() {
-          _selectedMode = mode;
-        });
-      },
-      style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.primary,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+    bool isSelected = _selectedMode == mode;
+
+    return SizedBox(
+      width: double.infinity, // Chiếm full chiều ngang
+      child: ElevatedButton(
+        onPressed: () {
+          Navigator.pop(context); // đóng bottom sheet
+          setState(() {
+            _selectedMode = mode;
+          });
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: isSelected ? AppColors.primary : AppColors.white,
+          foregroundColor: isSelected ? Colors.white : AppColors.primary,
+          elevation: 0,
+          side: BorderSide(
+            color: isSelected ? AppColors.primary : AppColors.secondary,
+            width: 1.5,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 16),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+          ),
+        ),
       ),
-      child: Text(label),
     );
   }
 
@@ -1036,9 +1114,10 @@ class _ChatPageState extends State<ChatPage> {
       Navigator.pop(context);
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Tasks created successfully! 🎉"),
-          backgroundColor: Colors.green,
+        SnackBar(
+          content: Text("Tasks created successfully!",
+              style: const TextStyle(color: Colors.green)),
+          backgroundColor: Colors.green.shade100,
         ),
       );
     } catch (e) {

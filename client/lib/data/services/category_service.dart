@@ -68,19 +68,24 @@ class CategoryService {
   // }
 
   // Xóa category theo ID
-  static Future<void> deleteCategory(int categoryId) async {
-    try {
-      final response =
-          await ApiService.dio.delete('/api/v1/categories/$categoryId/');
+  // static Future<void> deleteCategory(int categoryId) async {
+  //   try {
+  //     final response =
+  //         await ApiService.dio.delete('/api/v1/categories/$categoryId/');
 
-      if (response.statusCode == 201 || response.statusCode == 200) {
-        print("Category deleted successfully!");
-      } else {
-        print("Failed to create category: ${response.data}");
-      }
-    } catch (e) {
-      print("Error: $e");
-    }
+  //     if (response.statusCode == 201 || response.statusCode == 200) {
+  //       print("Category deleted successfully!");
+  //     } else {
+  //       print("Failed to create category: ${response.data}");
+  //     }
+  //   } catch (e) {
+  //     print("Error: $e");
+  //   }
+  // }
+  static Future<void> deleteCategory(int categoryId) async {
+    await ApiService.dio.delete(
+      '/api/v1/categories/$categoryId/',
+    );
   }
 
   // Tạo category mới
