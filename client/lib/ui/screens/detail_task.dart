@@ -52,8 +52,13 @@ class _TaskDetailBottomSheetState extends State<TaskDetailBottomSheet> {
   @override
   void initState() {
     super.initState();
-    _loadTaskDetails();
-    _loadCategories();
+    // _loadTaskDetails();
+    // _loadCategories();
+    // ✅ Đợi build xong mới load data
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadTaskDetails();
+      _loadCategories();
+    });
   }
 
   Future<void> _loadTaskDetails() async {
@@ -70,7 +75,7 @@ class _TaskDetailBottomSheetState extends State<TaskDetailBottomSheet> {
           _titleController.text = task.title;
           _noteController.text = task.description ?? '';
           _selectedCategoryId = task.categoryId;
-
+          _isCompleted = task.isCompleted;
           // Parse date
           if (task.date != null) {
             _selectedStartDate = task.date!;
@@ -626,7 +631,7 @@ class _TaskDetailBottomSheetState extends State<TaskDetailBottomSheet> {
       dueDate: endDateTime,
       priority: _hasPriority ? _selectedPriority : null,
       reminderTime: reminderTime,
-      isCompleted: _task?.isCompleted ?? false,
+      isCompleted: _isCompleted,
     );
 
     bool success = await taskController.updateTask(updatedTask);
