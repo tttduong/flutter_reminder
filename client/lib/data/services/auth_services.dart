@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_to_do_app/api.dart';
+import 'package:flutter_to_do_app/data/services/local_store_services.dart';
 import 'package:flutter_to_do_app/providers/user_provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
@@ -91,30 +92,59 @@ class AuthService {
           'password': password,
         },
         options: Options(
-          contentType: Headers.jsonContentType, // JSON
+          contentType: Headers.jsonContentType,
         ),
       );
 
       if (res.statusCode == 200) {
+        print("✅ Login successful!");
+
+        // Debug: Kiểm tra cookies sau login
+        final cookies = await ApiService.cookieJar
+            .loadForRequest(Uri.parse("${ApiService.baseUrl}/api/v1/tasks/"));
+
+        print("🍪 Cookies saved after login:");
+        for (var cookie in cookies) {
+          print("  - ${cookie.name}: ${cookie.value}");
+          print("    Domain: ${cookie.domain}");
+          print("    Path: ${cookie.path}");
+          print("    Expires: ${cookie.expires}");
+        }
+
         final data = res.data;
         print("📦 Full login response: $data");
 
-        return LoginModel(
+        final loginModel = LoginModel(
           user: data['user'] != null ? User.fromJson(data['user']) : null,
           defaultCategory: data['default_category'] != null
               ? Category.fromJson(data['default_category'])
               : null,
         );
+
+        // ✅ Lưu user vào UserProvider
+        if (loginModel.user != null) {
+          final userProvider = Provider.of<UserProvider>(
+            context,
+            listen: false,
+          );
+          userProvider.setUserFromLoginModel(loginModel);
+
+          // ✅ Lưu vào local storage
+          await LocalStoreServices.saveUser(loginModel.user!);
+          print("✅ User saved: ${loginModel.user!.username}");
+        }
+
+        return loginModel;
       } else {
         print("Đăng nhập thất bại: ${res.data}");
       }
     } catch (e) {
       Utils.showSnackBar(context, e.toString());
+      print("❌ Login error: $e");
     }
 
     return null;
   }
-
   // static Future<User?> getUser({
   //   // required BuildContext context,
   //   required String token,

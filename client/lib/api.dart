@@ -1,4 +1,6 @@
 // api.dart
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:cookie_jar/cookie_jar.dart';
@@ -17,10 +19,56 @@ class ApiService {
     },
   ));
 
-  static final cookieJar = CookieJar();
+  // static final cookieJar = CookieJar();
 
-  static void init() {
+  // static void init() {
+  //   dio.interceptors.add(CookieManager(cookieJar));
+  // }
+  // ✅ Sử dụng PersistCookieJar thay vì CookieJar
+  static late PersistCookieJar cookieJar;
+
+  // ✅ Cần khởi tạo async vì PersistCookieJar cần path
+  static Future<void> init() async {
+    // Lấy thư mục lưu cookies
+    final Directory appDocDir = await getApplicationDocumentsDirectory();
+    final String appDocPath = appDocDir.path;
+
+    // Khởi tạo PersistCookieJar với path
+    cookieJar = PersistCookieJar(
+      ignoreExpires: false, // Tùy chọn: giữ cookie dù hết hạn
+      storage: FileStorage(appDocPath + "/.cookies/"),
+    );
+
+    // ✅ Clear interceptors cũ trước (nếu có)
+    dio.interceptors.clear();
+
+    // Thêm cookie manager vào dio
     dio.interceptors.add(CookieManager(cookieJar));
+
+    // ✅ Thêm logging interceptor để debug
+    dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) async {
+          // Debug: In cookies sẽ được gửi
+          final cookies = await cookieJar.loadForRequest(options.uri);
+          print("📤 Sending request to: ${options.uri}");
+          print(
+              "📤 Cookies to send: ${cookies.map((c) => '${c.name}=${c.value.substring(0, 10)}...').join(', ')}");
+          return handler.next(options);
+        },
+        onError: (error, handler) {
+          print("❌ Request error: ${error.message}");
+          return handler.next(error);
+        },
+      ),
+    );
+
+    print(
+        "✅ ApiService initialized with PersistCookieJar at: $appDocPath/.cookies/");
+    // // Thêm cookie manager vào dio
+    // dio.interceptors.add(CookieManager(cookieJar));
+
+    // print("✅ ApiService initialized with PersistCookieJar");
   }
 
   // ⭐ Thêm method để clear cookies (khi logout)
@@ -30,12 +78,39 @@ class ApiService {
   }
 
   // ⭐ Thêm method để check login status
+  // static Future<bool> hasValidSession() async {
+  //   final cookies = await cookieJar
+  //       .loadForRequest(Uri.parse("${dio.options.baseUrl}/api/v1/categories/"));
+  //   // Django session thường có cookie name là 'sessionid'
+  //   return cookies.any((c) => c.name == 'sessionid' || c.name == 'csrftoken');
+  // }
   static Future<bool> hasValidSession() async {
-    final cookies = await cookieJar
-        .loadForRequest(Uri.parse("${dio.options.baseUrl}/api/v1/categories/"));
-    // Django session thường có cookie name là 'sessionid'
-    return cookies.any((c) => c.name == 'sessionid' || c.name == 'csrftoken');
+    try {
+      final uri =
+          Uri.parse("$baseUrl/api/v1/categories/"); // hoặc endpoint nào đó
+      final cookies = await cookieJar.loadForRequest(uri);
+
+      print("🍪 Cookies loaded for ${uri.toString()}:");
+      if (cookies.isEmpty) {
+        print("  ❌ No cookies found!");
+        return false;
+      }
+
+      for (var cookie in cookies) {
+        print(
+            "  - ${cookie.name}: ${cookie.value.substring(0, 20)}... (expires: ${cookie.expires})");
+      }
+
+      // ✅ Check sessionid tồn tại và còn hạn
+      bool hasSessionId =
+          cookies.any((c) => c.name == 'sessionid' && c.value.isNotEmpty);
+      return hasSessionId;
+    } catch (e) {
+      print("❌ Error checking session: $e");
+      return false;
+    }
   }
+
   // Gửi chat
 
   static Future<Map<String, dynamic>> sendChat({

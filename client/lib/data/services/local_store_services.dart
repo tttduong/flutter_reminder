@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_to_do_app/data/models/login_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -8,6 +10,7 @@ import '../../ui/utils/utils.dart';
 
 class LocalStoreServices {
   static late SharedPreferences pref;
+  static const String _userKey = 'user_data';
   static Future<void> init() async {
     pref = await SharedPreferences.getInstance();
   }
@@ -83,6 +86,61 @@ class LocalStoreServices {
       //        just for a possible failure
       Utils.showSnackBar(context, e.toString());
       return null;
+    }
+  }
+
+  // ✅ Lưu user vào local storage
+  static Future<void> saveUser(User user) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userJson = jsonEncode(user.toJson());
+      await prefs.setString(_userKey, userJson);
+      print("✅ User saved to local storage: ${user.username}");
+    } catch (e) {
+      print("❌ Error saving user: $e");
+    }
+  }
+
+  // ✅ Lấy user từ local storage
+  static Future<User?> getUser() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userJson = prefs.getString(_userKey);
+
+      if (userJson != null) {
+        final userMap = jsonDecode(userJson);
+        final user = User.fromJson(userMap);
+        print("✅ User loaded from local: ${user.username}");
+        return user;
+      }
+
+      print("⚠️ No user in local storage");
+      return null;
+    } catch (e) {
+      print("❌ Error loading user: $e");
+      return null;
+    }
+  }
+
+  // ✅ Xóa user khỏi local storage
+  static Future<void> clearUser() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_userKey);
+      print("🗑️ User cleared from local storage");
+    } catch (e) {
+      print("❌ Error clearing user: $e");
+    }
+  }
+
+  // ✅ Xóa toàn bộ local storage
+  static Future<void> clearAll() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+      print("🗑️ All local storage cleared!");
+    } catch (e) {
+      print("❌ Error clearing all: $e");
     }
   }
 }
