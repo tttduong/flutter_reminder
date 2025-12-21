@@ -1754,14 +1754,21 @@ class _CalendarTasksState extends State<CalendarTasks> {
 
     return DragTarget<Task>(
       onAcceptWithDetails: (details) {
-        final renderBox = context.findRenderObject() as RenderBox?;
-        if (renderBox == null) return;
-        final localOffset = renderBox.globalToLocal(details.offset);
-        final dy = localOffset.dy;
+        if (!_scrollController.hasClients) return;
 
-        final newHour = dy / hourHeight;
-        final hour = newHour.floor();
-        final minutes = ((newHour - hour) * 60).round();
+        final RenderBox? renderBox = context.findRenderObject() as RenderBox?;
+        if (renderBox == null) return;
+
+        final localPosition = renderBox.globalToLocal(details.offset);
+        final scrollOffset = _scrollController.offset;
+
+        // ✅ Cộng scroll để có vị trí thực trong calendar
+        final actualY = localPosition.dy + scrollOffset;
+
+        // ✅ Thả ở đâu thì rơi ngay đó (không snap)
+        final hourDecimal = actualY / hourHeight - 2.4;
+        final hour = hourDecimal.floor().clamp(0, 23);
+        final minutes = ((hourDecimal - hour) * 60).round().clamp(0, 59);
 
         final newStart = DateTime(
           date.year,
@@ -1779,22 +1786,32 @@ class _CalendarTasksState extends State<CalendarTasks> {
         setState(() {
           task.date = newStart;
           task.dueDate = newEnd;
+          _hoverHour = null;
         });
       },
       onMove: (details) {
-        final renderBox = context.findRenderObject() as RenderBox?;
-        if (renderBox == null) return;
-        final localOffset = renderBox.globalToLocal(details.offset);
-        final dy = localOffset.dy;
+        if (!_scrollController.hasClients) return;
 
-        final newHour = dy / hourHeight;
-        final slot = (newHour * 12).floor() / 12;
+        final RenderBox? renderBox = context.findRenderObject() as RenderBox?;
+        if (renderBox == null) return;
+
+        final localPosition = renderBox.globalToLocal(details.offset);
+        final scrollOffset = _scrollController.offset;
+
+        // ✅ Cộng scroll để có vị trí thực trong calendar
+        final actualY = localPosition.dy + scrollOffset;
+
+        // ✅ Hover đi theo feedback (không snap vào grid)
+        final hourDecimal = actualY / hourHeight;
 
         setState(() {
-          _hoverHour = slot;
+          _hoverHour = hourDecimal -
+              2.4; // Không làm tròn, đi theo chính xác vị trí ngón tay
         });
       },
-      onLeave: (data) => setState(() => _hoverHour = null),
+      onLeave: (data) => setState(() {
+        _hoverHour = null;
+      }),
       builder: (context, candidateData, rejectedData) {
         return Container(
           color: Colors.transparent,
@@ -1804,6 +1821,49 @@ class _CalendarTasksState extends State<CalendarTasks> {
                 size: Size.infinite,
                 painter: _GridPainter(hourHeight: hourHeight),
               ),
+
+              // ✅ Hover indicator - snap vào grid
+              if (_hoverHour != null)
+                Positioned(
+                  top: _hoverHour! * hourHeight,
+                  left: 0,
+                  right: 0,
+                  child: Container(
+                    height: 3,
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withOpacity(0.6),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.blue.withOpacity(0.3),
+                          blurRadius: 4,
+                          spreadRadius: 1,
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.blue,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            '${(_hoverHour! * 60).toInt()} min',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+              // Tasks
               ...tasksForDay.map((task) {
                 return _buildTaskWidget(task, date);
               }).toList(),
@@ -1814,7 +1874,7 @@ class _CalendarTasksState extends State<CalendarTasks> {
     );
   }
 
-  // ✅ CẬP NHẬT: Thêm GestureDetector để mở detail sheet
+  // ✅ Task widget - Feedback tự do di chuyển theo ngón tay
   Widget _buildTaskWidget(Task task, DateTime date) {
     final categoryController = Get.find<CategoryController>();
     final category = categoryController.categoryList
@@ -1837,9 +1897,11 @@ class _CalendarTasksState extends State<CalendarTasks> {
       right: 4,
       child: LongPressDraggable<Task>(
         data: task,
+        // ✅ Feedback đi theo ngón tay, không snap
         feedback: Material(
           elevation: 4,
           borderRadius: BorderRadius.circular(8),
+          color: Colors.transparent,
           child: Container(
             width: 120,
             height: height,
@@ -1856,21 +1918,14 @@ class _CalendarTasksState extends State<CalendarTasks> {
             borderRadius: BorderRadius.circular(8),
           ),
         ),
-        // ✅ Wrap với GestureDetector để bắt sự kiện tap
         child: GestureDetector(
           onTap: () {
-            print(
-                "[CALENDAR] Tapped task id = ${task.id}, title = ${task.title}");
-            print("TaskController hash = ${_taskController.hashCode}");
-
-            // Mở bottom sheet chi tiết task
             showModalBottomSheet(
               context: context,
               isScrollControlled: true,
               backgroundColor: Colors.transparent,
               builder: (context) => TaskDetailBottomSheet(taskId: task.id!),
             ).then((_) {
-              // ✅ Refresh tasks sau khi đóng bottom sheet
               _loadTasksForDisplayedDays();
             });
           },
