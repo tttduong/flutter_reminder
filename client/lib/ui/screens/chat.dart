@@ -7,6 +7,7 @@ import 'package:flutter_to_do_app/controller/chat_controller.dart';
 import 'package:flutter_to_do_app/controller/conversation_controller.dart';
 import 'package:flutter_to_do_app/data/models/conversation.dart';
 import 'package:flutter_to_do_app/data/models/task_intent_response.dart';
+import 'package:flutter_to_do_app/data/services/category_service.dart';
 import 'package:flutter_to_do_app/data/services/conversation_service.dart';
 import 'package:flutter_to_do_app/ui/widgets/my_chat_message.dart';
 import 'package:flutter_to_do_app/ui/widgets/typing_indicator.dart';
@@ -47,6 +48,7 @@ class _ChatPageState extends State<ChatPage> {
 
   String _selectedMode = "normal"; //"generate_plan" / "normal"
 
+  String? _lastCreatedCategoryId;
   @override
   void initState() {
     super.initState();
@@ -411,10 +413,6 @@ class _ChatPageState extends State<ChatPage> {
                                     : AppColors.secondary,
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              // child: _buildMessageContent(
-                              //   message.text,
-                              //   isUserMessage,
-                              // ),
                               child: _buildMessageContent(
                                 message.text,
                                 isUserMessage,
@@ -541,50 +539,6 @@ class _ChatPageState extends State<ChatPage> {
         ]));
   }
 
-// // 2️⃣ Hàm show bottom sheet chọn mode
-//   void _showModeBottomSheet() {
-//     showModalBottomSheet(
-//       context: context,
-//       backgroundColor: Colors.white,
-//       shape: const RoundedRectangleBorder(
-//         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-//       ),
-//       builder: (context) {
-//         return Padding(
-//           padding: const EdgeInsets.all(16),
-//           child: Wrap(
-//             spacing: 12,
-//             runSpacing: 12,
-//             children: [
-//               _buildModeButton("Normal Chat", "normal"),
-//               _buildModeButton("Generate Plan", "generate_plan"),
-//               // thêm mode
-//             ],
-//           ),
-//         );
-//       },
-//     );
-//   }
-
-// // 3️⃣ Widget nút mode
-//   Widget _buildModeButton(String label, String mode) {
-//     return ElevatedButton(
-//       onPressed: () {
-//         Navigator.pop(context); // đóng bottom sheet
-//         setState(() {
-//           _selectedMode = mode;
-//         });
-//       },
-//       style: ElevatedButton.styleFrom(
-//         backgroundColor: AppColors.white,
-//         shape: RoundedRectangleBorder(
-//           borderRadius: BorderRadius.circular(12),
-//         ),
-//         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-//       ),
-//       child: Text(label),
-//     );
-//   }
 // 2️⃣ Hàm show bottom sheet chọn mode
   void _showModeBottomSheet() {
     showModalBottomSheet(
@@ -664,214 +618,6 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
-  // Widget _buildMessageContent(
-  //   String text,
-  //   bool isUser, {
-  //   Map<String, dynamic>? customProps,
-  // }) {
-  //   final scheduleDraft = customProps?["schedule_draft"];
-
-  //   // Kiểm tra xem scheduleDraft có phải là schedule data hợp lệ
-  //   // Schedule có thể có 2 format:
-  //   // 1. Format cũ: {schedule_title, start_date, end_date, days: [...]}
-  //   // 2. Format mới: {date1: [...], date2: [...], ...}
-
-  //   bool hasValidSchedule = false;
-  //   List<MapEntry<String, dynamic>> scheduleEntries = [];
-
-  //   if (scheduleDraft != null && scheduleDraft is Map<String, dynamic>) {
-  //     // Check format cũ (có schedule_title)
-  //     if (scheduleDraft.containsKey('schedule_title') &&
-  //         scheduleDraft.containsKey('days') &&
-  //         scheduleDraft['days'] is List &&
-  //         (scheduleDraft['schedule_title']?.toString().isNotEmpty ?? false)) {
-  //       hasValidSchedule = true;
-  //     }
-  //     // Check format mới (key là ngày, value là List)
-  //     else if (scheduleDraft.isNotEmpty) {
-  //       final entries = scheduleDraft.entries
-  //           .where((e) => e.value is List && (e.value as List).isNotEmpty)
-  //           .toList();
-
-  //       if (entries.isNotEmpty) {
-  //         hasValidSchedule = true;
-  //         scheduleEntries = entries;
-  //       }
-  //     }
-  //   }
-
-  //   if (hasValidSchedule) {
-  //     // Format cũ
-  //     if (scheduleDraft.containsKey('schedule_title')) {
-  //       final days = scheduleDraft['days'] as List<dynamic>;
-
-  //       return Column(
-  //         crossAxisAlignment: CrossAxisAlignment.start,
-  //         children: [
-  //           Text(
-  //             text,
-  //             style: TextStyle(
-  //               color: isUser ? Colors.white : Colors.black,
-  //               fontWeight: FontWeight.bold,
-  //             ),
-  //           ),
-  //           const SizedBox(height: 8),
-  //           Card(
-  //             color: Colors.grey[100],
-  //             child: Padding(
-  //               padding: const EdgeInsets.all(12.0),
-  //               child: Column(
-  //                 crossAxisAlignment: CrossAxisAlignment.start,
-  //                 children: [
-  //                   Text(
-  //                     scheduleDraft['schedule_title'] ?? "",
-  //                     style: const TextStyle(
-  //                       fontSize: 16,
-  //                       fontWeight: FontWeight.bold,
-  //                     ),
-  //                   ),
-  //                   Text("Start: ${scheduleDraft['start_date'] ?? '-'}"),
-  //                   Text("End: ${scheduleDraft['end_date'] ?? '-'}"),
-  //                   const SizedBox(height: 8),
-  //                   ...days.map((dayItem) {
-  //                     final day = dayItem as Map<String, dynamic>? ?? {};
-  //                     final tasks = day['tasks'] as List<dynamic>? ?? [];
-
-  //                     return Padding(
-  //                       padding: const EdgeInsets.only(bottom: 10),
-  //                       child: Column(
-  //                         crossAxisAlignment: CrossAxisAlignment.start,
-  //                         children: [
-  //                           Text(
-  //                             day['date'] ?? '-',
-  //                             style: const TextStyle(
-  //                               fontWeight: FontWeight.bold,
-  //                               decoration: TextDecoration.underline,
-  //                             ),
-  //                           ),
-  //                           const SizedBox(height: 4),
-  //                           ...tasks.map((taskItem) {
-  //                             final task =
-  //                                 taskItem as Map<String, dynamic>? ?? {};
-  //                             return Padding(
-  //                               padding: const EdgeInsets.only(bottom: 2.0),
-  //                               child: Text(
-  //                                 "- ${task['time'] ?? '-'} | ${task['description'] ?? '-'} (${task['length'] ?? '-'})",
-  //                                 style: const TextStyle(fontSize: 14),
-  //                               ),
-  //                             );
-  //                           }).toList(),
-  //                         ],
-  //                       ),
-  //                     );
-  //                   }).toList(),
-  //                   const SizedBox(height: 8),
-  //                 ],
-  //               ),
-  //             ),
-  //           ),
-  //           ElevatedButton(
-  //             style: ElevatedButton.styleFrom(
-  //               backgroundColor: Colors.grey[100],
-  //               foregroundColor: AppColors.primary,
-  //               padding:
-  //                   const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-  //               shape: RoundedRectangleBorder(
-  //                 borderRadius: BorderRadius.circular(12),
-  //               ),
-  //               elevation: 2,
-  //             ),
-  //             onPressed: () => _createSchedule(customProps, context),
-  //             child: const Text("Create Schedule"),
-  //           ),
-  //         ],
-  //       );
-  //     }
-  //     // Format mới (key là ngày)
-  //     else {
-  //       return Column(
-  //         crossAxisAlignment: CrossAxisAlignment.start,
-  //         children: [
-  //           Text(
-  //             text,
-  //             style: TextStyle(
-  //               color: isUser ? Colors.white : Colors.black,
-  //               fontWeight: FontWeight.bold,
-  //             ),
-  //           ),
-  //           const SizedBox(height: 8),
-  //           Card(
-  //             color: Colors.grey[100],
-  //             child: Padding(
-  //               padding: const EdgeInsets.all(12.0),
-  //               child: Column(
-  //                 crossAxisAlignment: CrossAxisAlignment.start,
-  //                 children: [
-  //                   ...scheduleEntries.map((entry) {
-  //                     final date = entry.key;
-  //                     final tasks = entry.value as List<dynamic>;
-
-  //                     return Padding(
-  //                       padding: const EdgeInsets.only(bottom: 10),
-  //                       child: Column(
-  //                         crossAxisAlignment: CrossAxisAlignment.start,
-  //                         children: [
-  //                           Text(
-  //                             date,
-  //                             style: const TextStyle(
-  //                               fontWeight: FontWeight.bold,
-  //                               fontSize: 14,
-  //                               decoration: TextDecoration.underline,
-  //                             ),
-  //                           ),
-  //                           const SizedBox(height: 4),
-  //                           ...tasks.map((taskItem) {
-  //                             final task =
-  //                                 taskItem as Map<String, dynamic>? ?? {};
-  //                             return Padding(
-  //                               padding: const EdgeInsets.only(bottom: 2.0),
-  //                               child: Text(
-  //                                 "- ${task['time'] ?? '-'} | ${task['description'] ?? '-'} (${task['length'] ?? '-'})",
-  //                                 style: const TextStyle(fontSize: 14),
-  //                               ),
-  //                             );
-  //                           }).toList(),
-  //                         ],
-  //                       ),
-  //                     );
-  //                   }).toList(),
-  //                   const SizedBox(height: 8),
-  //                 ],
-  //               ),
-  //             ),
-  //           ),
-  //           ElevatedButton(
-  //             style: ElevatedButton.styleFrom(
-  //               backgroundColor: Colors.grey[100],
-  //               foregroundColor: AppColors.primary,
-  //               padding:
-  //                   const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-  //               shape: RoundedRectangleBorder(
-  //                 borderRadius: BorderRadius.circular(12),
-  //               ),
-  //               elevation: 2,
-  //             ),
-  //             onPressed: () => _createSchedule(customProps, context),
-  //             child: const Text("Create Schedule"),
-  //           ),
-  //         ],
-  //       );
-  //     }
-  //   }
-
-  //   // Nếu không có schedule hợp lệ → tin nhắn bình thường
-  //   return Text(
-  //     text,
-  //     style: TextStyle(
-  //       color: isUser ? Colors.white : Colors.black,
-  //     ),
-  //   );
-  // }
   Widget _buildMessageContent(
     String text,
     bool isUser, {
@@ -1090,6 +836,48 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
+  // Future<void> _createSchedule(
+  //   Map<String, dynamic>? customProps,
+  //   BuildContext context,
+  // ) async {
+  //   if (customProps == null || customProps["schedule_draft"] == null) return;
+
+  //   final draft = Map<String, dynamic>.from(customProps["schedule_draft"]);
+
+  //   showDialog(
+  //     context: context,
+  //     barrierDismissible: false,
+  //     builder: (_) => const Center(
+  //       child: CircularProgressIndicator(strokeWidth: 2.5),
+  //     ),
+  //   );
+
+  //   try {
+  //     final result = await ApiService.createTasksFromSchedule(
+  //       scheduleDraft: draft,
+  //     );
+
+  //     Navigator.pop(context);
+
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(
+  //         content: Text("Tasks created successfully!",
+  //             style: const TextStyle(color: Colors.green)),
+  //         backgroundColor: Colors.green.shade100,
+  //       ),
+  //     );
+  //   } catch (e) {
+  //     Navigator.pop(context);
+
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(
+  //         content: Text("Failed: $e"),
+  //         backgroundColor: Colors.red,
+  //       ),
+  //     );
+  //   }
+  // }
+
   Future<void> _createSchedule(
     Map<String, dynamic>? customProps,
     BuildContext context,
@@ -1107,17 +895,34 @@ class _ChatPageState extends State<ChatPage> {
     );
 
     try {
+      // ✅ 1. Tạo category mới
+      final categoryName = draft['schedule_title'] ??
+          'Schedule ${DateFormat('dd/MM/yyyy').format(DateTime.now())}';
+
+      final categoryResponse = await CategoryService.create_category(
+        title: categoryName,
+        color: '#6366F1',
+        iconCodePoint: Icons.calendar_today.codePoint,
+      );
+
+      final categoryId = categoryResponse['id']; // ✅ Lấy id từ response
+
+      // ✅ 2. Tạo tasks với categoryId vừa tạo
       final result = await ApiService.createTasksFromSchedule(
         scheduleDraft: draft,
+        categoryId: categoryId,
       );
 
       Navigator.pop(context);
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Tasks created successfully!",
-              style: const TextStyle(color: Colors.green)),
-          backgroundColor: Colors.green.shade100,
+          content: Text(
+            "Category '$categoryName' created with ${result['tasks_count'] ?? 'multiple'} tasks!",
+            style: const TextStyle(color: Colors.white),
+          ),
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 3),
         ),
       );
     } catch (e) {
@@ -1147,60 +952,6 @@ class _ChatPageState extends State<ChatPage> {
 
     try {
       Map<String, dynamic> responseData;
-
-      // if (_selectedMode == "generate_plan") {
-      //   // MOCK data
-      //   responseData = {
-      //     "response": "Here's your generated plan:",
-      //     "extra": {
-      //       "schedule_draft": {
-      //         "schedule_title": "Weight Loss Plan - 2 kg Target",
-      //         "start_date": "2023-10-01",
-      //         "end_date": "2023-10-03",
-      //         "is_complete": false,
-      //         "fields_missing": [],
-      //         "days": [
-      //           {
-      //             "date": "2025-12-01",
-      //             "tasks": [
-      //               {
-      //                 "time": "07:00",
-      //                 "length": "30 minutes",
-      //                 "description": "Morning jog or brisk walk"
-      //               },
-      //               {
-      //                 "time": "08:00",
-      //                 "length": "30 minutes",
-      //                 "description": "Prepare and eat a healthy breakfast"
-      //               }
-      //             ]
-      //           },
-      //           {
-      //             "date": "2023-10-02",
-      //             "tasks": [
-      //               {
-      //                 "time": "07:00",
-      //                 "length": "30 minutes",
-      //                 "description": "HIIT workout"
-      //               },
-      //               {
-      //                 "time": "08:00",
-      //                 "length": "30 minutes",
-      //                 "description": "Healthy breakfast"
-      //               }
-      //             ]
-      //           }
-      //         ]
-      //       }
-      //     }
-      //   };
-      // } else {
-      //   // Mock normal chat
-      //   responseData = {
-      //     "response": "This is a mocked chat reply.",
-      //     "extra": {}
-      //   };
-      // }
 
       // ==== CALL API REAL ====
       if (_selectedMode == "generate_plan") {

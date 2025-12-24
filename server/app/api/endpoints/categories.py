@@ -26,7 +26,7 @@ router = APIRouter()
 #         db.close()
 
 
-# get category by name
+# get category by name - hinh nhu ko dung ham nay
 
 @router.get("/category_title/", response_model=int)
 async def get_category_id_by_name(
@@ -67,15 +67,15 @@ async def create_category(
 ):
 
     # Kiểm tra trùng tiêu đề (của người dùng hiện tại)
-    result = await db.execute(
-        select(Category).where(
-            Category.title == category.title,
-            Category.owner_id == current_user.id
-        )
-    )
-    db_category = result.scalar_one_or_none()
-    if db_category:
-        raise HTTPException(status_code=400, detail="Category already exists")
+    # result = await db.execute(
+    #     select(Category).where(
+    #         Category.title == category.title,
+    #         Category.owner_id == current_user.id
+    #     )
+    # )
+    # db_category = result.scalar_one_or_none()
+    # if db_category:
+    #     raise HTTPException(status_code=400, detail="Category already exists")
 
     # Tạo category mới
     new_category = Category(

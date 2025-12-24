@@ -176,6 +176,7 @@ class ApiService {
 
   static Future<Map<String, dynamic>> createTasksFromSchedule({
     required Map<String, dynamic> scheduleDraft,
+    int? categoryId, // ✅ Thêm parameter này
   }) async {
     // Transform the schedule draft to include proper date/due_date
     final transformedDraft = _transformScheduleForTaskCreation(scheduleDraft);
@@ -184,6 +185,7 @@ class ApiService {
       "/api/v1/chat/create_tasks_from_schedule",
       data: {
         "schedule_json": transformedDraft,
+        "category_id": categoryId, // ✅ Gửi categoryId lên backend
       },
     );
     return response.data;

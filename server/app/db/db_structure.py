@@ -12,7 +12,7 @@ from app.api.models.enums import GoalStatus  # hoặc from models.enums import G
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import JSONB
 from pydantic import BaseModel
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 class User(Base):
     __tablename__ = "user"
@@ -116,7 +116,7 @@ class ScheduleDraft(Base):
 
 class ScheduleDraftInput(BaseModel):
     schedule_json: Dict[str, Any]
-
+    category_id: Optional[int] = None
 
 
 class Notification(Base):

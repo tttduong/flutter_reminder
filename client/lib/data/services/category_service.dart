@@ -115,4 +115,34 @@ class CategoryService {
       return false;
     }
   }
+
+  // Thêm method tạo category
+  // ignore: non_constant_identifier_names
+  static Future<Map<String, dynamic>> create_category({
+    required String title,
+    String? color,
+    int? iconCodePoint,
+  }) async {
+    try {
+      final response = await ApiService.dio.post(
+        '/api/v1/categories/',
+        data: {
+          "title": title,
+          "color": color ?? '#6366F1',
+          "icon": iconCodePoint?.toString() ?? '57521', // default icon
+          "is_default": false,
+        },
+      );
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        print("✅ Category created successfully!");
+        return response.data; // ✅ Return data thay vì bool
+      } else {
+        throw Exception('Failed to create category: ${response.data}');
+      }
+    } catch (e) {
+      print("❌ Error creating category: $e");
+      rethrow;
+    }
+  }
 }

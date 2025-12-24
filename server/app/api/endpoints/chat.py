@@ -356,97 +356,6 @@ async def handle_small_talk_chat(
     )
 
 # -------generate plan
-# @router.post("/chat/schedule", response_model=ChatResponse)
-# async def chat_schedule(
-#     req: ChatRequest,
-#     llm: LLMService = Depends(get_llm_service),
-#     current_user: User = Depends(get_current_user),
-#     session: AsyncSession = Depends(get_db)
-# ):
-#     # 0️⃣ Lấy hoặc tạo conversation
-#     conversation = await session.scalar(
-#         select(Conversation).where(
-#             Conversation.user_id == current_user.id,
-#             Conversation.id == req.conversation_id  # nếu client truyền lên
-#         )
-#     )
-#     if not conversation:
-#         conversation = Conversation(
-#             id=str(uuid.uuid4()),
-#             user_id=current_user.id,
-#             title="Schedule Chat",
-#             created_at=datetime.utcnow(),
-#             updated_at=datetime.utcnow()
-#         )
-#         session.add(conversation)
-#         await session.flush()  # có conversation.id
-
-#     # 1️⃣ Lấy hoặc tạo ScheduleDraft
-#     draft = await session.scalar(
-#         select(ScheduleDraft).where(ScheduleDraft.user_id == current_user.id)
-#     )
-#     if not draft:
-#         draft = ScheduleDraft(
-#             user_id=current_user.id,
-#             schedule_json={
-#                 "schedule_title": None,
-#                 "start_date": None,
-#                 "end_date": None,
-#                 "days": [],
-#                 "fields_missing": [],
-#                 "is_complete": False
-#             }
-#         )
-#         session.add(draft)
-#         await session.flush()
-
-#     # 2️⃣ Build messages cho LLM
-#     messages = [
-#         {"role": "system", "content": SCHEDULE_SYSTEM_PROMPT},
-#         {"role": "system", "content": f"Current schedule draft: {json.dumps(draft.schedule_json)}"},
-#         {"role": "system", "content": f"Mode: generate_plan"},
-#         {"role": "user", "content": req.message}
-#     ]
-
-#     # 3️⃣ Gọi LLM
-#     result = await llm.generate_response_with_messages(
-#         messages=messages,
-#         model=req.model
-#     )
-
-#     # 4️⃣ Parse JSON response
-#     try:
-#         parsed = json.loads(result["response"])
-#         ai_text = parsed["assistant_reply"]
-#         updated_draft = parsed["schedule_draft"]
-#     except:
-#         ai_text = result["response"]
-#         updated_draft = draft.schedule_json
-
-#     # 5️⃣ Lưu ScheduleDraft
-#     draft.schedule_json = updated_draft
-#     draft.updated_at = datetime.utcnow()
-#     await session.flush()
-
-#     # 6️⃣ Lưu message assistant với conversation_id
-#     assistant_message = Message(
-#         conversation_id=conversation.id,
-#         role="assistant",
-#         content=ai_text,
-#         custom_properties={"schedule_draft": updated_draft},
-#         created_at=datetime.utcnow()
-#     )
-#     session.add(assistant_message)
-#     await session.commit()
-
-#     # 7️⃣ Trả về response
-#     return ChatResponse(
-#         response=ai_text,
-#         usage=result["usage"],
-#         model=result["model"],
-#         extra={"schedule_draft": updated_draft, "conversation_id": conversation.id}
-#     )
-
 @router.post("/chat/schedule", response_model=ChatResponse)
 async def chat_schedule(
     req: ChatRequest,
@@ -454,7 +363,6 @@ async def chat_schedule(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_db)
 ):
-
     # ✅ Lấy thời gian HIỆN TẠI ngay đầu
     now_vn = datetime.now(VN_TZ)
     current_datetime_iso = now_vn.isoformat()
@@ -462,22 +370,6 @@ async def chat_schedule(
     current_time_str = now_vn.strftime("%H:%M")
     
     # 0️⃣ Lấy hoặc tạo conversation
-    # conversation = await session.scalar(
-    #     select(Conversation).where(
-    #         Conversation.user_id == current_user.id,
-    #         Conversation.id == req.conversation_id  # nếu client truyền lên
-    #     )
-    # )
-    # if not conversation:
-    #     conversation = Conversation(
-    #         id=str(uuid.uuid4()),
-    #         user_id=current_user.id,
-    #         title="Schedule Chat",
-    #         created_at=datetime.utcnow(),
-    #         updated_at=datetime.utcnow()
-    #     )
-    #     session.add(conversation)
-    #     await session.flush()  # có conversation.id
     conversation = await session.scalar(
         select(Conversation).where(
             Conversation.user_id == current_user.id,
@@ -496,18 +388,13 @@ async def chat_schedule(
         session.add(conversation)
         await session.flush()
 
-
     # 1️⃣ Lấy hoặc tạo ScheduleDraft
-    # draft = await session.scalar(
-    #     select(ScheduleDraft).where(ScheduleDraft.user_id == current_user.id)
-    # )
     draft = await session.scalar(
         select(ScheduleDraft).where(
             ScheduleDraft.user_id == current_user.id,
             ScheduleDraft.conversation_id == conversation.id
         )
     )
-
 
     if not draft:
         draft = ScheduleDraft(
@@ -552,23 +439,80 @@ async def chat_schedule(
         model=req.model
     )
 
-    # 4️⃣ Parse JSON response
+    # 4️⃣ Parse JSON response - ✅ CHUẨN HÓA FORMAT
+    ai_text = ""
+    updated_draft = {}
+    
     try:
         parsed = json.loads(result["response"])
-        ai_text = parsed["assistant_reply"]
-        updated_draft = parsed["schedule_draft"]
-        if not updated_draft.get("schedule_title"):
+        
+        # ✅ Trích xuất ai_text
+        if "assistant_reply" in parsed:
+            ai_text = parsed["assistant_reply"]
+        else:
+            ai_text = "Here's your schedule."
+        
+        # ✅ Trích xuất schedule_draft
+        if "schedule_draft" in parsed:
+            # Format cũ: {"assistant_reply": "...", "schedule_draft": {...}}
+            raw_draft = parsed["schedule_draft"]
+        elif "days" in parsed:
+            # Format mới: {"days": [...]}
+            raw_draft = parsed
+        else:
+            # Không có schedule → giữ nguyên draft cũ
+            raw_draft = draft.schedule_json
+        
+        # ✅ Chuẩn hóa thành format CHUẨN
+        updated_draft = {
+            "schedule_title": raw_draft.get("schedule_title", None),
+            "start_date": raw_draft.get("start_date", None),
+            "end_date": raw_draft.get("end_date", None),
+            "days": raw_draft.get("days", []),
+            "fields_missing": raw_draft.get("fields_missing", []),
+            "is_complete": raw_draft.get("is_complete", False)
+        }
+        
+        # ✅ Tự động điền start_date/end_date từ days
+        if updated_draft["days"] and len(updated_draft["days"]) > 0:
+            if not updated_draft["start_date"]:
+                updated_draft["start_date"] = updated_draft["days"][0].get("date")
+            if not updated_draft["end_date"]:
+                updated_draft["end_date"] = updated_draft["days"][0].get("date")
+        
+        # ✅ ĐẢM BẢO schedule_title LUÔN CÓ GIÁ TRỊ
+        if not updated_draft["schedule_title"]:
             updated_draft["schedule_title"] = "My Schedule"
+        
+        # ✅ Validate days structure
+        validated_days = []
+        for day_item in updated_draft["days"]:
+            if isinstance(day_item, dict) and "date" in day_item and "tasks" in day_item:
+                validated_days.append({
+                    "date": day_item["date"],
+                    "tasks": [
+                        {
+                            "time": task.get("time", ""),
+                            "length": task.get("length", ""),
+                            "description": task.get("description", "")
+                        }
+                        for task in day_item.get("tasks", [])
+                        if isinstance(task, dict)
+                    ]
+                })
+        updated_draft["days"] = validated_days
+        
+        print(f"✅ Parsed schedule successfully: {len(validated_days)} days")
+        print(f"📝 Final draft structure: {json.dumps(updated_draft, indent=2)}")
 
-        if not updated_draft.get("start_date") and updated_draft.get("days"):
-            updated_draft["start_date"] = updated_draft["days"][0]["date"]
-
-        if not updated_draft.get("end_date") and updated_draft.get("days"):
-            updated_draft["end_date"] = updated_draft["days"][-1]["date"]
-
+    except json.JSONDecodeError as e:
+        print(f"❌ JSON decode error: {e}")
+        ai_text = result["response"]  # Text thuần
+        updated_draft = draft.schedule_json  # Giữ nguyên draft cũ
+    
     except Exception as e:
-        print(f"❌ Error parsing schedule JSON: {e}")
-        ai_text = result["response"]
+        print(f"❌ Error processing schedule: {e}")
+        ai_text = result["response"] if isinstance(result["response"], str) else "Error processing schedule"
         updated_draft = draft.schedule_json
 
     # 5️⃣ Lưu ScheduleDraft
@@ -580,72 +524,263 @@ async def chat_schedule(
     assistant_message = Message(
         conversation_id=conversation.id,
         role="assistant",
-        content=ai_text,
-        custom_properties={"schedule_draft": updated_draft},
+        content=ai_text,  # ✅ Lưu text, không lưu JSON
+        custom_properties={"schedule_draft": updated_draft},  # ✅ Lưu schedule ở đây
         created_at=datetime.utcnow()
     )
     session.add(assistant_message)
     await session.commit()
 
     # 7️⃣ Trả về response
+    print(f"🔍 Response extra: {json.dumps({'schedule_draft': updated_draft}, indent=2)}")
+    
     return ChatResponse(
-        response=ai_text,
+        response=ai_text,  # ✅ Text để hiển thị
         usage=result["usage"],
         model=result["model"],
         extra={"schedule_draft": updated_draft, "conversation_id": conversation.id}
     )
-# -------------------------get schedule draft--------------------
-@router.get("/chat/schedule/get", response_model=ChatResponse)
-async def get_schedule(
-    current_user: User = Depends(get_current_user),
-    session: AsyncSession = Depends(get_db)
-):
-    draft = await session.scalar(
-        select(ScheduleDraft).where(ScheduleDraft.user_id == current_user.id)
-    )
+# @router.post("/chat/schedule", response_model=ChatResponse)
+# async def chat_schedule(
+#     req: ChatRequest,
+#     llm: LLMService = Depends(get_llm_service),
+#     current_user: User = Depends(get_current_user),
+#     session: AsyncSession = Depends(get_db)
+# ):
 
-    if not draft:
-        return ChatResponse(
-            response="No schedule found.",
-            usage={},
-            model="mock",
-            extra={}
-        )
+#     # ✅ Lấy thời gian HIỆN TẠI ngay đầu
+#     now_vn = datetime.now(VN_TZ)
+#     current_datetime_iso = now_vn.isoformat()
+#     current_date_str = now_vn.strftime("%Y-%m-%d")
+#     current_time_str = now_vn.strftime("%H:%M")
+    
+#     # 0️⃣ Lấy hoặc tạo conversation
+#     # conversation = await session.scalar(
+#     #     select(Conversation).where(
+#     #         Conversation.user_id == current_user.id,
+#     #         Conversation.id == req.conversation_id  # nếu client truyền lên
+#     #     )
+#     # )
+#     # if not conversation:
+#     #     conversation = Conversation(
+#     #         id=str(uuid.uuid4()),
+#     #         user_id=current_user.id,
+#     #         title="Schedule Chat",
+#     #         created_at=datetime.utcnow(),
+#     #         updated_at=datetime.utcnow()
+#     #     )
+#     #     session.add(conversation)
+#     #     await session.flush()  # có conversation.id
+#     conversation = await session.scalar(
+#         select(Conversation).where(
+#             Conversation.user_id == current_user.id,
+#             Conversation.id == req.conversation_id
+#         )
+#     )
 
-    return ChatResponse(
-        response="Your current schedule draft.",
-        usage={},
-        model="mock",
-        extra={"schedule_draft": draft.schedule_json}
-    )
+#     if not conversation:
+#         conversation = Conversation(
+#             id=str(uuid.uuid4()),
+#             user_id=current_user.id,
+#             title="Schedule Chat",
+#             created_at=datetime.utcnow(),
+#             updated_at=datetime.utcnow()
+#         )
+#         session.add(conversation)
+#         await session.flush()
 
+
+#     # 1️⃣ Lấy hoặc tạo ScheduleDraft
+#     # draft = await session.scalar(
+#     #     select(ScheduleDraft).where(ScheduleDraft.user_id == current_user.id)
+#     # )
+#     draft = await session.scalar(
+#         select(ScheduleDraft).where(
+#             ScheduleDraft.user_id == current_user.id,
+#             ScheduleDraft.conversation_id == conversation.id
+#         )
+#     )
+
+
+#     if not draft:
+#         draft = ScheduleDraft(
+#             user_id=current_user.id,
+#             conversation_id=conversation.id, 
+#             schedule_json={
+#                 "schedule_title": None,
+#                 "start_date": None,
+#                 "end_date": None,
+#                 "days": [],
+#                 "fields_missing": [],
+#                 "is_complete": False
+#             }
+#         )
+#         session.add(draft)
+#         await session.flush()
+
+#     # ✅ 1.5️⃣ Lưu user message vào DB
+#     user_message = Message(
+#         conversation_id=conversation.id,
+#         role="user",
+#         content=req.message,
+#         created_at=datetime.utcnow()
+#     )
+#     session.add(user_message)
+#     await session.flush()
+
+#     # 2️⃣ Build messages cho LLM
+#     messages = [
+#         {"role": "system", "content": f"You are Lumiere assistant. Current time: {current_datetime_iso}. Use this for all reasoning."},
+#         {"role": "system", "content": SCHEDULE_SYSTEM_PROMPT},
+#         {
+#             "role": "system", 
+#             "content": f"TODAY: {current_date_str} at {current_time_str}. Schedule from NOW onwards. Draft: {json.dumps(draft.schedule_json)}"
+#         },
+#         {"role": "user", "content": req.message}
+#     ]
+
+#     # 3️⃣ Gọi LLM
+#     result = await llm.generate_response_with_messages(
+#         messages=messages,
+#         model=req.model
+#     )
+
+#     # 4️⃣ Parse JSON response
+#     try:
+#         parsed = json.loads(result["response"])
+#         ai_text = parsed["assistant_reply"]
+#         updated_draft = parsed["schedule_draft"]
+#         if not updated_draft.get("schedule_title"):
+#             updated_draft["schedule_title"] = "My Schedule"
+
+#         if not updated_draft.get("start_date") and updated_draft.get("days"):
+#             updated_draft["start_date"] = updated_draft["days"][0]["date"]
+
+#         if not updated_draft.get("end_date") and updated_draft.get("days"):
+#             updated_draft["end_date"] = updated_draft["days"][-1]["date"]
+
+#     except Exception as e:
+#         print(f"❌ Error parsing schedule JSON: {e}")
+#         ai_text = result["response"]
+#         updated_draft = draft.schedule_json
+
+#     # 5️⃣ Lưu ScheduleDraft
+#     draft.schedule_json = updated_draft
+#     draft.updated_at = datetime.utcnow()
+#     await session.flush()
+
+#     # 6️⃣ Lưu message assistant với conversation_id
+#     assistant_message = Message(
+#         conversation_id=conversation.id,
+#         role="assistant",
+#         content=ai_text,
+#         custom_properties={"schedule_draft": updated_draft},
+#         created_at=datetime.utcnow()
+#     )
+#     session.add(assistant_message)
+#     await session.commit()
+
+#     # 7️⃣ Trả về response
+#     return ChatResponse(
+#         response=ai_text,
+#         usage=result["usage"],
+#         model=result["model"],
+#         extra={"schedule_draft": updated_draft, "conversation_id": conversation.id}
+#     )
+# # -------------------------get schedule draft--------------------
+# @router.get("/chat/schedule/get", response_model=ChatResponse)
+# async def get_schedule(
+#     current_user: User = Depends(get_current_user),
+#     session: AsyncSession = Depends(get_db)
+# ):
+#     draft = await session.scalar(
+#         select(ScheduleDraft).where(ScheduleDraft.user_id == current_user.id)
+#     )
+
+#     if not draft:
+#         return ChatResponse(
+#             response="No schedule found.",
+#             usage={},
+#             model="mock",
+#             extra={}
+#         )
+
+#     return ChatResponse(
+#         response="Your current schedule draft.",
+#         usage={},
+#         model="mock",
+#         extra={"schedule_draft": draft.schedule_json}
+#     )
+
+# -------------------------create tasks from schedule----------------
+# @router.post("/chat/create_tasks_from_schedule", response_model=ChatResponse)
+# async def create_tasks_from_schedule(
+#     draft: ScheduleDraftInput,
+#     session: AsyncSession = Depends(get_db),
+#     current_user: User = Depends(get_current_user)
+# ):
+#     tasks_created = []
+
+#     for day in draft.schedule_json.get("days", []):
+#         for t in day.get("tasks", []):
+#             # ✅ Now receiving date and due_date from Dart
+#             date_str = t.get("date")  # ISO 8601 string from Dart
+#             due_date_str = t.get("due_date")  # ISO 8601 string from Dart
+            
+#             try:
+#                 start_dt = datetime.fromisoformat(date_str)
+#                 due_dt = datetime.fromisoformat(due_date_str) if due_date_str else None
+#             except (ValueError, TypeError):
+#                 continue  # Skip if invalid date
+            
+#             task = Task(
+#                 owner_id=current_user.id,
+#                 category_id=94,
+#                 title=t.get("description", ""),
+#                 date=start_dt,  # ✅ Now properly set
+#                 due_date=due_dt,  # ✅ Now properly set
+#                 description=t.get("description", ""),
+#             )
+#             session.add(task)
+#             tasks_created.append(task)
+
+#     await session.commit()
+
+#     return ChatResponse(
+#         response=f"Created {len(tasks_created)} tasks from schedule.",
+#         usage={},
+#         model="mock"
+#     )
 # -------------------------create tasks from schedule----------------
 @router.post("/chat/create_tasks_from_schedule", response_model=ChatResponse)
 async def create_tasks_from_schedule(
     draft: ScheduleDraftInput,
+    # category_id: Optional[int] = None,  # ✅ Thêm parameter
     session: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     tasks_created = []
-
+    
+    # ✅ Sử dụng category_id được truyền vào, nếu không có thì dùng default
+    # target_category_id = category_id if category_id else 94
+    target_category_id = draft.category_id
     for day in draft.schedule_json.get("days", []):
         for t in day.get("tasks", []):
-            # ✅ Now receiving date and due_date from Dart
-            date_str = t.get("date")  # ISO 8601 string from Dart
-            due_date_str = t.get("due_date")  # ISO 8601 string from Dart
+            date_str = t.get("date")
+            due_date_str = t.get("due_date")
             
             try:
                 start_dt = datetime.fromisoformat(date_str)
                 due_dt = datetime.fromisoformat(due_date_str) if due_date_str else None
             except (ValueError, TypeError):
-                continue  # Skip if invalid date
+                continue
             
             task = Task(
                 owner_id=current_user.id,
-                category_id=94,
+                category_id=target_category_id,  # ✅ Dùng category_id động
                 title=t.get("description", ""),
-                date=start_dt,  # ✅ Now properly set
-                due_date=due_dt,  # ✅ Now properly set
+                date=start_dt,
+                due_date=due_dt,
                 description=t.get("description", ""),
             )
             session.add(task)
@@ -654,7 +789,7 @@ async def create_tasks_from_schedule(
     await session.commit()
 
     return ChatResponse(
-        response=f"Created {len(tasks_created)} tasks from schedule.",
+        response=f"Created {len(tasks_created)} tasks in category {target_category_id}.",
         usage={},
         model="mock"
     )
