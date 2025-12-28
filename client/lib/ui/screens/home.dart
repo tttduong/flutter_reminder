@@ -334,7 +334,7 @@ class _HomePageState extends State<HomePage> {
                                 context,
                                 MaterialPageRoute(
                                     builder: (_) => const ChatPage(
-                                          conversationId: "5",
+                                          conversationId: null,
                                         )),
                               );
                             }),

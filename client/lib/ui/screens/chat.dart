@@ -19,8 +19,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
 class ChatPage extends StatefulWidget {
-  final String conversationId;
-  const ChatPage({super.key, required this.conversationId});
+  final String? conversationId; // ✅ Cho phép null
+  const ChatPage({super.key, this.conversationId});
 
   @override
   State<ChatPage> createState() => _ChatPageState();
@@ -38,7 +38,16 @@ class _ChatPageState extends State<ChatPage> {
   final uuid = Uuid();
 
   List<Conversation> _conversations = [];
-  String _selectedConversationId = '1';
+
+  // ✅ Dùng GetX controller để persist state qua rebuilds
+  String? get _selectedConversationId =>
+      convController.currentConversationId.value;
+  set _selectedConversationId(String? value) =>
+      convController.currentConversationId.value = value;
+
+  bool get _isNewConversation => convController.isNewConversation.value;
+  set _isNewConversation(bool value) =>
+      convController.isNewConversation.value = value;
 
   final ConversationController convController =
       Get.put(ConversationController());
@@ -49,12 +58,21 @@ class _ChatPageState extends State<ChatPage> {
   String _selectedMode = "normal"; //"generate_plan" / "normal"
 
   String? _lastCreatedCategoryId;
+
   @override
   void initState() {
     super.initState();
     _textController = TextEditingController();
     convController.fetchConversations();
-    _loadMessages();
+
+    // ✅ Nếu có conversationId truyền vào thì load, không thì để trống
+    if (widget.conversationId != null) {
+      convController.setConversation(widget.conversationId, false);
+      _loadMessages();
+    } else {
+      // Conversation mới hoàn toàn, chưa có ID
+      convController.resetToNewConversation();
+    }
   }
 
   @override
@@ -64,13 +82,15 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Future<void> _loadMessages() async {
+    if (_selectedConversationId == null) return;
+
     setState(() {
       isLoading = true;
     });
 
     try {
       final data =
-          await ConversationService.fetchMessages(widget.conversationId);
+          await ConversationService.fetchMessages(_selectedConversationId!);
 
       List<MyChatMessage> loadedMessages = [];
 
@@ -89,7 +109,7 @@ class _ChatPageState extends State<ChatPage> {
             customProps['schedule_draft'] as Map<String, dynamic>?;
         loadedMessages.add(
           MyChatMessage(
-            conversationId: _selectedConversationId,
+            conversationId: _selectedConversationId!,
             text: msg['content'] ?? '',
             user: messageUser,
             createdAt: msg['created_at'] != null
@@ -128,6 +148,9 @@ class _ChatPageState extends State<ChatPage> {
       _conversationHistory = [];
     });
 
+    // ✅ Dùng controller để lưu state
+    convController.setConversation(conversationId, false);
+
     try {
       final data = await ConversationService.fetchMessages(conversationId);
 
@@ -142,14 +165,13 @@ class _ChatPageState extends State<ChatPage> {
         } else {
           continue;
         }
-// ✅ Extract scheduleDraft từ custom_properties
         final customProps =
             msg['custom_properties'] as Map<String, dynamic>? ?? {};
         final scheduleDraft =
             customProps['schedule_draft'] as Map<String, dynamic>?;
         loadedMessages.add(
           MyChatMessage(
-            conversationId: _selectedConversationId,
+            conversationId: conversationId,
             text: msg['content'] ?? '',
             user: messageUser,
             createdAt: msg['created_at'] != null
@@ -205,8 +227,8 @@ class _ChatPageState extends State<ChatPage> {
             ),
           ),
           backgroundColor: AppColors.background,
-          title: const Text(
-            "Lumiere",
+          title: Text(
+            _isNewConversation ? "New Chat" : "Lumiere",
             style: TextStyle(
                 color: AppColors.primary, fontWeight: FontWeight.w600),
           ),
@@ -262,19 +284,11 @@ class _ChatPageState extends State<ChatPage> {
                         width: double.infinity,
                         child: TextButton.icon(
                           onPressed: () {
+                            // ✅ Dùng controller
+                            convController.resetToNewConversation();
                             setState(() {
-                              final newId = uuid.v4();
-                              _conversations.insert(
-                                0,
-                                Conversation(
-                                  id: newId,
-                                  title: 'New conversation',
-                                  lastMessage: 'Bắt đầu trò chuyện với Lumiere',
-                                  createdAt: DateTime.now(),
-                                  updatedAt: DateTime.now(),
-                                ),
-                              );
-                              _selectedConversationId = newId;
+                              _messages = [];
+                              _conversationHistory = [];
                             });
                             Navigator.pop(context);
                           },
@@ -343,9 +357,9 @@ class _ChatPageState extends State<ChatPage> {
                                 )
                               : null,
                           onTap: () async {
-                            setState(() {
-                              _selectedConversationId = convo.id.toString();
-                            });
+                            // ✅ Dùng controller
+                            convController.setConversation(
+                                convo.id.toString(), false);
                             Navigator.pop(context);
                             await _loadMessagesForConversation(convo.id);
                           },
@@ -361,72 +375,93 @@ class _ChatPageState extends State<ChatPage> {
         ),
         body: Column(children: [
           Expanded(
-            child: ListView.builder(
-              reverse: true,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              itemCount: _messages.length + (isLoading ? 1 : 0),
-              itemBuilder: (context, index) {
-                if (isLoading && index == 0) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.end,
+            child: _messages.isEmpty && !isLoading
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const SizedBox(
-                          width: 40,
-                          height: 24,
-                          child: TypingIndicatorCustom(),
+                        Icon(
+                          Icons.chat_bubble_outline,
+                          size: 64,
+                          color: Colors.grey[400],
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Start a conversation with Lumiere',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey[600],
+                          ),
                         ),
                       ],
                     ),
-                  );
-                }
-
-                final messageIndex = isLoading ? index - 1 : index;
-                final message = _messages[messageIndex];
-                final isUserMessage = message.user.id == _currentUser.id;
-
-                return Padding(
-                  padding: const EdgeInsets.symmetric(
-                      vertical: 8), //padding giữa các message
-                  child: Column(
-                    crossAxisAlignment: isUserMessage
-                        ? CrossAxisAlignment.end
-                        : CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: isUserMessage
-                            ? MainAxisAlignment.end
-                            : MainAxisAlignment.start,
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Flexible(
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 10,
+                  )
+                : ListView.builder(
+                    reverse: true,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
+                    itemCount: _messages.length + (isLoading ? 1 : 0),
+                    itemBuilder: (context, index) {
+                      if (isLoading && index == 0) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              const SizedBox(
+                                width: 40,
+                                height: 24,
+                                child: TypingIndicatorCustom(),
                               ),
-                              decoration: BoxDecoration(
-                                color: isUserMessage
-                                    ? AppColors.primary
-                                    : AppColors.secondary,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: _buildMessageContent(
-                                message.text,
-                                isUserMessage,
-                                customProps: message.customProperties,
-                              ),
-                            ),
+                            ],
                           ),
-                        ],
-                      ),
-                    ],
+                        );
+                      }
+
+                      final messageIndex = isLoading ? index - 1 : index;
+                      final message = _messages[messageIndex];
+                      final isUserMessage = message.user.id == _currentUser.id;
+
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Column(
+                          crossAxisAlignment: isUserMessage
+                              ? CrossAxisAlignment.end
+                              : CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: isUserMessage
+                                  ? MainAxisAlignment.end
+                                  : MainAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Flexible(
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 10,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: isUserMessage
+                                          ? AppColors.primary
+                                          : AppColors.secondary,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: _buildMessageContent(
+                                      message.text,
+                                      isUserMessage,
+                                      customProps: message.customProperties,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      );
+                    },
                   ),
-                );
-              },
-            ),
           ),
           if (_messages.isNotEmpty &&
               _messages.first.user.id == _gptChatUser.id &&
@@ -450,11 +485,8 @@ class _ChatPageState extends State<ChatPage> {
               color: Colors.white,
               border: Border(top: BorderSide(color: Colors.grey[300]!)),
             ),
-
-            //textfield message
             child: Row(
               children: [
-                // Nút dấu cộng
                 GestureDetector(
                   onTap: () {
                     _showModeBottomSheet();
@@ -474,7 +506,6 @@ class _ChatPageState extends State<ChatPage> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                // TextField
                 Expanded(
                   child: TextField(
                     controller: _textController,
@@ -502,12 +533,11 @@ class _ChatPageState extends State<ChatPage> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                //send button
                 GestureDetector(
                   onTap: () {
                     if (_textController.text.isNotEmpty) {
                       final message = MyChatMessage(
-                        conversationId: _selectedConversationId,
+                        conversationId: _selectedConversationId ?? '',
                         text: _textController.text,
                         user: _currentUser,
                         createdAt: DateTime.now(),
@@ -521,9 +551,6 @@ class _ChatPageState extends State<ChatPage> {
                     height: 40,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      // color: !_textController.text.isEmpty
-                      //     ? AppColors.primary
-                      //     : Colors.grey[300],
                       color: AppColors.primary,
                     ),
                     child: Icon(
@@ -539,7 +566,6 @@ class _ChatPageState extends State<ChatPage> {
         ]));
   }
 
-// 2️⃣ Hàm show bottom sheet chọn mode
   void _showModeBottomSheet() {
     showModalBottomSheet(
       context: context,
@@ -555,7 +581,6 @@ class _ChatPageState extends State<ChatPage> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Header
               Text(
                 "Select Mode",
                 style: TextStyle(
@@ -566,13 +591,9 @@ class _ChatPageState extends State<ChatPage> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 20),
-
-              // Các nút mode
               _buildModeButton("Normal Chat", "normal"),
               const SizedBox(height: 12),
               _buildModeButton("Generate Plan", "generate_plan"),
-              // thêm mode khác
-
               const SizedBox(height: 20),
             ],
           ),
@@ -581,15 +602,14 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
-// 3️⃣ Widget nút mode
   Widget _buildModeButton(String label, String mode) {
     bool isSelected = _selectedMode == mode;
 
     return SizedBox(
-      width: double.infinity, // Chiếm full chiều ngang
+      width: double.infinity,
       child: ElevatedButton(
         onPressed: () {
-          Navigator.pop(context); // đóng bottom sheet
+          Navigator.pop(context);
           setState(() {
             _selectedMode = mode;
           });
@@ -629,15 +649,12 @@ class _ChatPageState extends State<ChatPage> {
     List<MapEntry<String, dynamic>> scheduleEntries = [];
 
     if (scheduleDraft != null && scheduleDraft is Map<String, dynamic>) {
-      // Check format cũ (có schedule_title)
       if (scheduleDraft.containsKey('schedule_title') &&
           scheduleDraft.containsKey('days') &&
           scheduleDraft['days'] is List &&
           (scheduleDraft['schedule_title']?.toString().isNotEmpty ?? false)) {
         hasValidSchedule = true;
-      }
-      // Check format mới (key là ngày, value là List)
-      else if (scheduleDraft.isNotEmpty) {
+      } else if (scheduleDraft.isNotEmpty) {
         final entries = scheduleDraft.entries
             .where((e) => e.value is List && (e.value as List).isNotEmpty)
             .toList();
@@ -649,7 +666,6 @@ class _ChatPageState extends State<ChatPage> {
       }
     }
 
-    // ✅ Nếu không có schedule hợp lệ → chỉ hiện text
     if (!hasValidSchedule) {
       return Text(
         text,
@@ -659,9 +675,7 @@ class _ChatPageState extends State<ChatPage> {
       );
     }
 
-    // ✅ Nếu có schedule hợp lệ → hiện schedule card
     if (scheduleDraft.containsKey('schedule_title')) {
-      // Format cũ
       final days = scheduleDraft['days'] as List<dynamic>;
 
       return Column(
@@ -682,7 +696,6 @@ class _ChatPageState extends State<ChatPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ✅ Chỉ hiện schedule_title nếu có
                   if (scheduleDraft['schedule_title'] != null &&
                       scheduleDraft['schedule_title'].toString().isNotEmpty)
                     Padding(
@@ -695,13 +708,11 @@ class _ChatPageState extends State<ChatPage> {
                         ),
                       ),
                     ),
-                  // ✅ Chỉ hiện start_date nếu có
                   if (scheduleDraft['start_date'] != null)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 4.0),
                       child: Text("Start: ${scheduleDraft['start_date']}"),
                     ),
-                  // ✅ Chỉ hiện end_date nếu có
                   if (scheduleDraft['end_date'] != null)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 8.0),
@@ -761,7 +772,6 @@ class _ChatPageState extends State<ChatPage> {
         ],
       );
     } else {
-      // Format mới (key là ngày)
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -836,48 +846,6 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
-  // Future<void> _createSchedule(
-  //   Map<String, dynamic>? customProps,
-  //   BuildContext context,
-  // ) async {
-  //   if (customProps == null || customProps["schedule_draft"] == null) return;
-
-  //   final draft = Map<String, dynamic>.from(customProps["schedule_draft"]);
-
-  //   showDialog(
-  //     context: context,
-  //     barrierDismissible: false,
-  //     builder: (_) => const Center(
-  //       child: CircularProgressIndicator(strokeWidth: 2.5),
-  //     ),
-  //   );
-
-  //   try {
-  //     final result = await ApiService.createTasksFromSchedule(
-  //       scheduleDraft: draft,
-  //     );
-
-  //     Navigator.pop(context);
-
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(
-  //         content: Text("Tasks created successfully!",
-  //             style: const TextStyle(color: Colors.green)),
-  //         backgroundColor: Colors.green.shade100,
-  //       ),
-  //     );
-  //   } catch (e) {
-  //     Navigator.pop(context);
-
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(
-  //         content: Text("Failed: $e"),
-  //         backgroundColor: Colors.red,
-  //       ),
-  //     );
-  //   }
-  // }
-
   Future<void> _createSchedule(
     Map<String, dynamic>? customProps,
     BuildContext context,
@@ -895,7 +863,6 @@ class _ChatPageState extends State<ChatPage> {
     );
 
     try {
-      // ✅ 1. Tạo category mới
       final categoryName = draft['schedule_title'] ??
           'Schedule ${DateFormat('dd/MM/yyyy').format(DateTime.now())}';
 
@@ -905,9 +872,8 @@ class _ChatPageState extends State<ChatPage> {
         iconCodePoint: Icons.calendar_today.codePoint,
       );
 
-      final categoryId = categoryResponse['id']; // ✅ Lấy id từ response
+      final categoryId = categoryResponse['id'];
 
-      // ✅ 2. Tạo tasks với categoryId vừa tạo
       final result = await ApiService.createTasksFromSchedule(
         scheduleDraft: draft,
         categoryId: categoryId,
@@ -937,18 +903,77 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
-  // Custom typing indicator
   List<Widget> _buildSuggestionButtons() {
-    return []; // Bạn có thể thêm suggestion buttons ở đây
+    return [];
   }
 
-  Future<void> _onSendMessage(MyChatMessage m) async {
+  Future<String> _createNewConversation(String firstMessage) async {
+    try {
+      final newConvId = uuid.v4();
+
+      final newConv = Conversation(
+        id: newConvId,
+        title: firstMessage.length > 30
+            ? '${firstMessage.substring(0, 30)}...'
+            : firstMessage,
+        lastMessage: firstMessage,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+
+      convController.conversations.insert(0, newConv);
+
+      print("✅ Created new conversation: $newConvId");
+      return newConvId;
+    } catch (e) {
+      print("❌ Error creating conversation: $e");
+      return uuid.v4();
+    }
+  }
+
+  // ✅ Xử lý gửi tin nhắn
+  Future<void> _onSendMessage(MyChatMessage message) async {
+    print("📤 _onSendMessage called");
+    print("   _isNewConversation: $_isNewConversation");
+    print("   _selectedConversationId: $_selectedConversationId");
+    print(
+        "   Controller isNewConversation: ${convController.isNewConversation.value}");
+    print(
+        "   Controller conversationId: ${convController.currentConversationId.value}");
+    // Nếu là conversation mới (chưa có ID), tạo mới
+    if (_isNewConversation && _selectedConversationId == null) {
+      final newConvId = await _createNewConversation(message.text);
+      // setState(() {
+      //   _selectedConversationId = newConvId;
+      //   _isNewConversation = false;
+      // });
+      convController.setConversation(newConvId, false);
+    }
+
+    // ✅ Đảm bảo có conversationId trước khi tiếp tục
+    if (_selectedConversationId == null) {
+      print("❌ No conversation ID available");
+      return;
+    }
+
+    // Cập nhật conversationId cho message
+    final updatedMessage = MyChatMessage(
+      conversationId: _selectedConversationId!,
+      text: message.text,
+      user: message.user,
+      createdAt: message.createdAt,
+      customProperties: message.customProperties,
+      scheduleDraft: message.scheduleDraft,
+    );
+
     setState(() {
-      _messages.insert(0, m); // user message
+      _messages.insert(0, updatedMessage);
+      _conversationHistory.add({
+        "role": "user",
+        "content": message.text,
+      });
       isLoading = true;
     });
-
-    _conversationHistory.add({"role": "user", "content": m.text});
 
     try {
       Map<String, dynamic> responseData;
@@ -957,7 +982,8 @@ class _ChatPageState extends State<ChatPage> {
       if (_selectedMode == "generate_plan") {
         // Gọi endpoint /chat/schedule
         responseData = await ApiService.sendScheduleMessage(
-            conversation_id: _selectedConversationId, message: m.text);
+            conversation_id: _selectedConversationId!, // ✅ Safe với !
+            message: message.text);
 
         final scheduleDraft = responseData["extra"]?["schedule_draft"];
         final reply = responseData['response'] ?? "No response";
@@ -965,14 +991,15 @@ class _ChatPageState extends State<ChatPage> {
 
         print(">>> SENDING schedule message:");
         print("conversation_id FE gửi: $_selectedConversationId");
-        print("body: {conversation_id: $_selectedConversationId, message: $m}");
+        print(
+            "body: {conversation_id: $_selectedConversationId, message: ${message.text}}");
 
         setState(() {
           _messages.insert(
             0,
             MyChatMessage(
-              conversationId: _selectedConversationId,
-              text: reply, // dùng nội dung trả về thật
+              conversationId: _selectedConversationId!,
+              text: reply,
               user: _gptChatUser,
               createdAt: DateTime.now(),
               customProperties: {
@@ -985,8 +1012,8 @@ class _ChatPageState extends State<ChatPage> {
       } else {
         // Gọi chat bình thường
         responseData = await ApiService.sendChat(
-          conversationId: _selectedConversationId,
-          message: m.text,
+          conversationId: _selectedConversationId!, // ✅ Safe với !
+          message: message.text,
           conversationHistory: _conversationHistory,
           model: "gpt-4o-mini",
         );
@@ -1006,7 +1033,7 @@ class _ChatPageState extends State<ChatPage> {
           _messages.insert(
             0,
             MyChatMessage(
-              conversationId: _selectedConversationId,
+              conversationId: _selectedConversationId!,
               text: reply,
               user: _gptChatUser,
               createdAt: DateTime.now(),
@@ -1016,12 +1043,15 @@ class _ChatPageState extends State<ChatPage> {
           isLoading = false;
         });
       }
+
+      print("✅ Message sent to conversation: $_selectedConversationId");
     } catch (e) {
+      print("❌ Error sending message: $e");
       setState(() {
         _messages.insert(
           0,
           MyChatMessage(
-            conversationId: _selectedConversationId,
+            conversationId: _selectedConversationId!,
             text: "Error Connection: ${e.toString()}",
             user: _gptChatUser,
             createdAt: DateTime.now(),

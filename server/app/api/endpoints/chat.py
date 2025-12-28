@@ -43,6 +43,7 @@ class ChatResponse(BaseModel):
     usage: dict = {}
     model: str
     extra: Optional[Dict[str, Any]] = None
+    conversation_id: Optional[str] = None
 
 class TaskIntentResponse(BaseModel):
     intent: str
@@ -287,26 +288,47 @@ async def handle_small_talk_chat(
     # session: AsyncSession = Depends(get_async_session),
     session: AsyncSession = Depends(get_db),
 ):
-    # 1️⃣ Lấy hoặc tạo mới conversation
-    conversation = await session.scalar(
-        select(Conversation).where(Conversation.id == request.conversation_id, Conversation.user_id == current_user.id )
-    )
+    # # 1️⃣ Lấy hoặc tạo mới conversation
+    # conversation = await session.scalar(
+    #     select(Conversation).where(Conversation.id == request.conversation_id, Conversation.user_id == current_user.id )
+    # )
+    # # if not conversation:
+    # #     conversation = Conversation(user_id=current_user.id, title="New Chat")
+    # #     session.add(conversation)
+    # #     await session.flush()  # để có conversation.id
     # if not conversation:
-    #     conversation = Conversation(user_id=current_user.id, title="New Chat")
-    #     session.add(conversation)
-    #     await session.flush()  # để có conversation.id
+    #     conversation = Conversation(
+    #         id=str(uuid.uuid4()),  
+    #         user_id=current_user.id,
+    #         title="New Chat",
+    #         created_at=datetime.utcnow(),
+    #         updated_at=datetime.utcnow()
+    #     )
+            
+    # session.add(conversation)
+    # await session.flush()
+
+ # 1️⃣ Lấy hoặc tạo mới conversation
+    conversation = await session.scalar(
+        select(Conversation).where(
+            Conversation.id == request.conversation_id, 
+            Conversation.user_id == current_user.id
+        )
+    )
+    
     if not conversation:
+        # ✅ SỬA: Dùng ID từ request nếu có, nếu không thì tạo mới
+        conversation_id = request.conversation_id if request.conversation_id else str(uuid.uuid4())
+        
         conversation = Conversation(
-            id=str(uuid.uuid4()),  
+            id=conversation_id,  # ✅ Dùng ID từ request hoặc tạo mới
             user_id=current_user.id,
             title="New Chat",
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow()
         )
-            
-    session.add(conversation)
-    await session.flush()
-
+        session.add(conversation)
+        await session.flush()
 
     # 2️⃣ Tạo danh sách messages (system + lịch sử từ DB + user message)
     messages = []
@@ -352,7 +374,8 @@ async def handle_small_talk_chat(
     return ChatResponse(
         response=result["response"],
         usage=result["usage"],
-        model=result["model"]
+        model=result["model"],
+        conversation_id=conversation.id 
     )
 
 # -------generate plan
@@ -369,7 +392,25 @@ async def chat_schedule(
     current_date_str = now_vn.strftime("%Y-%m-%d")
     current_time_str = now_vn.strftime("%H:%M")
     
-    # 0️⃣ Lấy hoặc tạo conversation
+    # # 0️⃣ Lấy hoặc tạo conversation
+    # conversation = await session.scalar(
+    #     select(Conversation).where(
+    #         Conversation.user_id == current_user.id,
+    #         Conversation.id == req.conversation_id
+    #     )
+    # )
+
+    # if not conversation:
+    #     conversation = Conversation(
+    #         id=str(uuid.uuid4()),
+    #         user_id=current_user.id,
+    #         title="Schedule Chat",
+    #         created_at=datetime.utcnow(),
+    #         updated_at=datetime.utcnow()
+    #     )
+    #     session.add(conversation)
+    #     await session.flush()
+      # 0️⃣ Lấy hoặc tạo conversation
     conversation = await session.scalar(
         select(Conversation).where(
             Conversation.user_id == current_user.id,
@@ -378,8 +419,11 @@ async def chat_schedule(
     )
 
     if not conversation:
+        # ✅ SỬA: Dùng ID từ request nếu có
+        conversation_id = req.conversation_id if req.conversation_id else str(uuid.uuid4())
+        
         conversation = Conversation(
-            id=str(uuid.uuid4()),
+            id=conversation_id,  # ✅ Dùng ID từ request hoặc tạo mới
             user_id=current_user.id,
             title="Schedule Chat",
             created_at=datetime.utcnow(),
