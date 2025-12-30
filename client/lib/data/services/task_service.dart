@@ -277,6 +277,70 @@ class TaskService {
     }
   }
 
+  // static Future<bool> createTask({Task? task}) async {
+  //   if (task == null) return false;
+
+  //   try {
+  //     String? formatDateTimeToUTC(DateTime? dateTime) {
+  //       if (dateTime == null) return null;
+  //       return dateTime.toUtc().toIso8601String().replaceAll('Z', '+00:00');
+  //     }
+
+  //     // 1️⃣ Tạo task trên server trước
+  //     final response = await ApiService.dio.post('$baseUrl/tasks/', data: {
+  //       "title": task.title,
+  //       "description": task.description,
+  //       "category_id": task.categoryId,
+  //       "date": formatDateTimeToUTC(task.date),
+  //       "due_date": formatDateTimeToUTC(task.dueDate),
+  //       "priority": task.priority,
+  //       "reminder_time": formatDateTimeToUTC(task.reminderTime),
+  //     });
+
+  //     if (response.statusCode == 201 || response.statusCode == 200) {
+  //       final taskIdFromServer = response.data['id'];
+  //       task.id = taskIdFromServer;
+
+  //       print("✅ Task created successfully with ID: $taskIdFromServer");
+
+  //       // 2️⃣ Schedule notification nếu có reminderTime
+  //       if (task.reminderTime != null &&
+  //           task.reminderTime!.isAfter(DateTime.now())) {
+  //         try {
+  //           final notificationResponse = await ApiService.dio.post(
+  //             '$baseUrl/schedule-notification',
+  //             data: {
+  //               "title": "Reminder",
+  //               "body": task.title,
+  //               "send_at": formatDateTimeToUTC(task.reminderTime),
+  //             },
+  //           );
+
+  //           if (notificationResponse.statusCode == 200) {
+  //             print("✅ Notification scheduled successfully!");
+  //             print("   Reminder will be sent at: ${task.reminderTime}");
+  //           } else {
+  //             print(
+  //                 "⚠️ Failed to schedule notification: ${notificationResponse.data}");
+  //           }
+  //         } catch (e) {
+  //           print("⚠️ Error scheduling notification: $e");
+  //           // Không return false vì task đã tạo thành công
+  //         }
+  //       } else {
+  //         print("ℹ️ No reminder set or reminder time is in the past");
+  //       }
+
+  //       return true;
+  //     } else {
+  //       print("❌ Failed to create task: ${response.data}");
+  //       return false;
+  //     }
+  //   } catch (e) {
+  //     print("❌ Error creating task: $e");
+  //     return false;
+  //   }
+  // }
   static Future<bool> createTask({Task? task}) async {
     if (task == null) return false;
 
@@ -303,32 +367,124 @@ class TaskService {
 
         print("✅ Task created successfully with ID: $taskIdFromServer");
 
-        // 2️⃣ Schedule notification nếu có reminderTime
-        if (task.reminderTime != null &&
-            task.reminderTime!.isAfter(DateTime.now())) {
+        // 2️⃣ Xác định thời gian thông báo
+        List<Map<String, dynamic>> notifications = [];
+        DateTime now = DateTime.now();
+        DateTime createdDate = DateTime(now.year, now.month, now.day);
+
+        // Nếu có reminderTime tùy chỉnh, ưu tiên dùng nó
+        if (task.reminderTime != null && task.reminderTime!.isAfter(now)) {
+          notifications.add({
+            "time": task.reminderTime!,
+            "type": "custom",
+            "title": "Task Reminder",
+            "body": task.title,
+          });
+        } else {
+          // Tự động tạo thông báo dựa trên date và dueDate
+          if (task.date != null) {
+            DateTime startDate = DateTime(
+              task.date!.year,
+              task.date!.month,
+              task.date!.day,
+            );
+
+            // Chỉ thêm thông báo nếu ngày bắt đầu khác ngày tạo
+            if (startDate.isAfter(createdDate)) {
+              // Đặt thông báo vào 9:00 AM của ngày bắt đầu
+              DateTime startNotification = DateTime(
+                task.date!.year,
+                task.date!.month,
+                task.date!.day,
+                9,
+                0,
+              );
+              if (startNotification.isAfter(now)) {
+                notifications.add({
+                  "time": startNotification,
+                  "type": "start_date",
+                  "title": "Task Starting Today",
+                  "body": "Today: ${task.title}",
+                });
+              }
+            }
+          }
+
+          if (task.dueDate != null) {
+            DateTime dueDate = DateTime(
+              task.dueDate!.year,
+              task.dueDate!.month,
+              task.dueDate!.day,
+            );
+
+            // Chỉ thêm thông báo due date nếu:
+            // - Ngày kết thúc khác ngày tạo
+            // - Ngày kết thúc khác ngày bắt đầu (để tránh trùng)
+            bool isDueDateDifferent = dueDate.isAfter(createdDate);
+            bool isDueDateDifferentFromStart = task.date == null ||
+                dueDate !=
+                    DateTime(
+                      task.date!.year,
+                      task.date!.month,
+                      task.date!.day,
+                    );
+
+            if (isDueDateDifferent && isDueDateDifferentFromStart) {
+              // Đặt thông báo vào 9:00 AM của ngày kết thúc
+              DateTime dueNotification = DateTime(
+                task.dueDate!.year,
+                task.dueDate!.month,
+                task.dueDate!.day,
+                9,
+                0,
+              );
+              if (dueNotification.isAfter(now)) {
+                notifications.add({
+                  "time": dueNotification,
+                  "type": "due_date",
+                  "title": "Task Due Today",
+                  "body": "Due today: ${task.title}",
+                });
+              }
+            }
+          }
+        }
+
+        // 3️⃣ Lên lịch tất cả thông báo
+        int successCount = 0;
+        for (var notification in notifications) {
           try {
             final notificationResponse = await ApiService.dio.post(
               '$baseUrl/schedule-notification',
               data: {
-                "title": "Reminder",
-                "body": task.title,
-                "send_at": formatDateTimeToUTC(task.reminderTime),
+                "task_id": taskIdFromServer, // ✅ Thêm task_id
+                "notification_type": notification["type"], // ✅ Thêm type
+                "title": notification["title"],
+                "body": notification["body"],
+                "send_at": formatDateTimeToUTC(notification["time"]),
               },
             );
 
             if (notificationResponse.statusCode == 200) {
-              print("✅ Notification scheduled successfully!");
-              print("   Reminder will be sent at: ${task.reminderTime}");
+              successCount++;
+              print(
+                  "✅ Notification (${notification['type']}) scheduled for: ${notification['time']}");
             } else {
               print(
                   "⚠️ Failed to schedule notification: ${notificationResponse.data}");
             }
           } catch (e) {
-            print("⚠️ Error scheduling notification: $e");
-            // Không return false vì task đã tạo thành công
+            print(
+                "⚠️ Error scheduling notification at ${notification['time']}: $e");
           }
+        }
+
+        if (notifications.isEmpty) {
+          print(
+              "ℹ️ No notifications scheduled (dates same as creation date or in the past)");
         } else {
-          print("ℹ️ No reminder set or reminder time is in the past");
+          print(
+              "✅ Successfully scheduled $successCount/${notifications.length} notifications");
         }
 
         return true;

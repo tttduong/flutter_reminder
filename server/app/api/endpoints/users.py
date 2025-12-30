@@ -1,5 +1,6 @@
 
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 from app.core.session import get_current_user
 from app.db.repositories.user_repository import authenticate_user, get_user_by_id
 from app.api.models.user_token import UserToken
@@ -19,7 +20,8 @@ from ...db.db_structure import Category, User
 
 router = APIRouter()
 # pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
+class FCMTokenRequest(BaseModel):
+    fcm_token: str
 @router.post("/logout")
 async def logout(request: Request):
     request.session.clear()
@@ -134,3 +136,89 @@ def read_user(db: Session = Depends(get_db), username: str = Depends(get_user_by
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
     return user
+
+@router.post("/register-fcm-token")
+async def register_fcm_token(
+    token_data: FCMTokenRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Đăng ký hoặc cập nhật FCM token cho user
+    """
+    try:
+        # Tìm token hiện tại của user
+        result = await db.execute(
+            select(UserToken).where(UserToken.user_id == current_user.id)
+        )
+        existing_token = result.scalar_one_or_none()
+        
+        if existing_token:
+            # Cập nhật token cũ
+            existing_token.fcm_token = token_data.fcm_token
+            await db.commit()
+            return {
+                "status": "updated",
+                "message": "FCM token updated successfully"
+            }
+        else:
+            # Tạo token mới
+            new_token = UserToken(
+                user_id=current_user.id,
+                fcm_token=token_data.fcm_token
+            )
+            db.add(new_token)
+            await db.commit()
+            return {
+                "status": "created",
+                "message": "FCM token registered successfully"
+            }
+            
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/unregister-fcm-token")
+async def unregister_fcm_token(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Xóa FCM token khi user logout hoặc uninstall app
+    """
+    try:
+        result = await db.execute(
+            select(UserToken).where(UserToken.user_id == current_user.id)
+        )
+        token = result.scalar_one_or_none()
+        
+        if token:
+            await db.delete(token)
+            await db.commit()
+            return {"status": "success", "message": "FCM token removed"}
+        else:
+            return {"status": "not_found", "message": "No token to remove"}
+            
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/check-fcm-token")
+async def check_fcm_token(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Kiểm tra xem user có FCM token hay không
+    """
+    result = await db.execute(
+        select(UserToken).where(UserToken.user_id == current_user.id)
+    )
+    token = result.scalar_one_or_none()
+    
+    return {
+        "has_token": token is not None,
+        "token_preview": token.fcm_token[:20] + "..." if token else None
+    }

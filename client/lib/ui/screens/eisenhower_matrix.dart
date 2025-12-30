@@ -331,8 +331,238 @@ import 'package:flutter_to_do_app/ui/widgets/task_tile.dart';
 //   }
 // }
 
-import 'package:flutter/material.dart';
+// import 'package:flutter/material.dart';
+// import 'package:get/get.dart';
+
+// class EisenhowerMatrix extends StatefulWidget {
+//   final VoidCallback? onBackPressed;
+
+//   const EisenhowerMatrix({super.key, this.onBackPressed});
+//   @override
+//   _EisenhowerMatrixState createState() => _EisenhowerMatrixState();
+// }
+
+// class _EisenhowerMatrixState extends State<EisenhowerMatrix> {
+//   final TaskController taskController = Get.find<TaskController>();
+//   List<Task> matrixTasks = []; // Separate list for matrix
+//   bool isLoading = true;
+
+//   @override
+//   void initState() {
+//     super.initState();
+//     _loadMatrixTasks();
+//   }
+
+//   // Load all tasks specifically for matrix
+//   Future<void> _loadMatrixTasks() async {
+//     setState(() {
+//       isLoading = true;
+//     });
+
+//     try {
+//       // Call API to get all tasks
+//       await taskController.getTasks();
+
+//       // Filter only tasks with priority (not null)
+//       matrixTasks = taskController.taskList
+//           .where((task) => task.priority != null)
+//           .toList();
+
+//       print("Matrix tasks loaded: ${matrixTasks.length}");
+//       for (var task in matrixTasks) {
+//         print("Task: ${task.title}, Priority: ${task.priority}");
+//       }
+//     } catch (e) {
+//       print("Error loading matrix tasks: $e");
+//       matrixTasks = [];
+//     }
+
+//     setState(() {
+//       isLoading = false;
+//     });
+//   }
+
+//   // Filter tasks by priority from matrix-specific list
+//   List<Task> getTasksByPriority(int priority) {
+//     return matrixTasks.where((task) => task.priority == priority).toList();
+//   }
+
+//   // Convert Task to TaskItem for display
+//   TaskItem convertToTaskItem(Task task) {
+//     return TaskItem(
+//       title: task.title,
+//       subtitle: task.dueDate != null
+//           ? "${task.dueDate!.day}/${task.dueDate!.month}"
+//           : null,
+//       isCompleted: task.isCompleted ?? false,
+//       icon: _getTaskIcon(task),
+//       iconColor: _getTaskIconColor(task),
+//       task: task, // Pass the original task object
+//     );
+//   }
+
+//   IconData _getTaskIcon(Task task) {
+//     if (task.isCompleted == true) return Icons.check_circle;
+//     if (task.categoryId != null) return Icons.category;
+//     return Icons.circle_outlined;
+//   }
+
+//   Color _getTaskIconColor(Task task) {
+//     if (task.isCompleted == true) return Colors.green;
+//     return Colors.grey[600] ?? Colors.grey;
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//         backgroundColor: Colors.grey[100],
+//         appBar: AppBar(
+//           backgroundColor: Colors.transparent,
+//           elevation: 0,
+//           // leading: IconButton(
+//           //   icon: const Icon(Icons.arrow_back_ios_new_rounded,
+//           //       color: Colors.black),
+//           //   onPressed: () {
+//           //     if (widget.onBackPressed != null) {
+//           //       widget.onBackPressed!();
+//           //     } else {
+//           //       //tam thoi de click back thì nav to home, lam back bth kho quaa
+//           //       //
+//           //       // if (Navigator.of(context).canPop()) {
+//           //       //   Navigator.of(context).pop();
+//           //       // } else {
+//           //       Navigator.of(context).pushReplacement(
+//           //         MaterialPageRoute(
+//           //             builder: (_) =>
+//           //                 BottomNavBarScreen(key: AppNavigation.bottomNavKey)),
+//           //       );
+//           //       // }
+//           //     }
+//           //   },
+//           // ),
+//           leadingWidth: 0,
+//           automaticallyImplyLeading: false,
+//           title: Text(
+//             'Eisenhower Matrix',
+//             style: const TextStyle(
+//               color: Colors.black,
+//               fontWeight: FontWeight.bold,
+//             ),
+//           ),
+//           actions: [
+//             IconButton(
+//               icon: Icon(Icons.refresh),
+//               onPressed: () {
+//                 _loadMatrixTasks(); // Use matrix-specific reload
+//               },
+//             ),
+//           ],
+//         ),
+//         // appBar: AppBar(
+//         //   title: Text('Eisenhower Matrix'),
+//         //   backgroundColor: Colors.white,
+//         //   foregroundColor: Colors.black,
+//         //   elevation: 0,
+//         //   actions: [
+//         //     IconButton(
+//         //       icon: Icon(Icons.refresh),
+//         //       onPressed: () {
+//         //         _loadMatrixTasks(); // Use matrix-specific reload
+//         //       },
+//         //     ),
+//         //   ],
+//         // ),
+//         body: isLoading
+//             ? Center(
+//                 child: CircularProgressIndicator(),
+//               )
+//             : Padding(
+//                 padding: EdgeInsets.all(16.0),
+//                 child: Column(
+//                   children: [
+//                     Expanded(
+//                       child: Row(
+//                         children: [
+//                           // Quadrant 1: Urgent & Important (Priority 1)
+//                           Expanded(
+//                             child: QuadrantWidget(
+//                               title: 'Urgent & Important',
+//                               color: Colors.red,
+//                               tasks: getTasksByPriority(1)
+//                                   .map((task) => convertToTaskItem(task))
+//                                   .toList(),
+//                               onTaskTap: (taskItem) {
+//                                 // Handle task tap - toggle completion
+//                                 if (taskItem.task != null) {
+//                                   _toggleTaskCompletion(taskItem.task!);
+//                                 }
+//                               },
+//                             ),
+//                           ),
+//                           SizedBox(width: 8),
+//                           // Quadrant 2: Not Urgent & Important (Priority 2)
+//                           Expanded(
+//                             child: QuadrantWidget(
+//                               title: 'Not Urgent & Important',
+//                               color: Colors.orange,
+//                               tasks: getTasksByPriority(2)
+//                                   .map((task) => convertToTaskItem(task))
+//                                   .toList(),
+//                               onTaskTap: (taskItem) {
+//                                 if (taskItem.task != null) {
+//                                   _toggleTaskCompletion(taskItem.task!);
+//                                 }
+//                               },
+//                             ),
+//                           ),
+//                         ],
+//                       ),
+//                     ),
+//                     SizedBox(height: 8),
+//                     Expanded(
+//                       child: Row(
+//                         children: [
+//                           // Quadrant 3: Urgent & Unimportant (Priority 3)
+//                           Expanded(
+//                             child: QuadrantWidget(
+//                               title: 'Urgent & Not Important',
+//                               color: Colors.blue,
+//                               tasks: getTasksByPriority(3)
+//                                   .map((task) => convertToTaskItem(task))
+//                                   .toList(),
+//                               onTaskTap: (taskItem) {
+//                                 if (taskItem.task != null) {
+//                                   _toggleTaskCompletion(taskItem.task!);
+//                                 }
+//                               },
+//                             ),
+//                           ),
+//                           SizedBox(width: 8),
+//                           // Quadrant 4: Not Urgent & Unimportant (Priority 4)
+//                           Expanded(
+//                             child: QuadrantWidget(
+//                               title: 'Not Urgent & Not Important',
+//                               color: Colors.green,
+//                               tasks: getTasksByPriority(4)
+//                                   .map((task) => convertToTaskItem(task))
+//                                   .toList(),
+//                               onTaskTap: (taskItem) {
+//                                 if (taskItem.task != null) {
+//                                   _toggleTaskCompletion(taskItem.task!);
+//                                 }
+//                               },
+//                             ),
+//                           ),
+//                         ],
+//                       ),
+//                     ),
+//                   ],
+//                 ),
+//               ));
+//   }
+import 'package:flutter_to_do_app/ui/screens/detail_task.dart';
 import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart'; // ✅ 1. Import TaskDetailBottomSheet
 
 class EisenhowerMatrix extends StatefulWidget {
   final VoidCallback? onBackPressed;
@@ -412,6 +642,21 @@ class _EisenhowerMatrixState extends State<EisenhowerMatrix> {
     return Colors.grey[600] ?? Colors.grey;
   }
 
+  // ✅ 2. Helper function to show task detail and refresh
+  void _showTaskDetail(Task task) {
+    if (task.id == null) return;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => TaskDetailBottomSheet(taskId: task.id!),
+    ).then((_) {
+      // ✅ Auto refresh after closing detail sheet
+      _loadMatrixTasks();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -419,27 +664,6 @@ class _EisenhowerMatrixState extends State<EisenhowerMatrix> {
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
-          // leading: IconButton(
-          //   icon: const Icon(Icons.arrow_back_ios_new_rounded,
-          //       color: Colors.black),
-          //   onPressed: () {
-          //     if (widget.onBackPressed != null) {
-          //       widget.onBackPressed!();
-          //     } else {
-          //       //tam thoi de click back thì nav to home, lam back bth kho quaa
-          //       //
-          //       // if (Navigator.of(context).canPop()) {
-          //       //   Navigator.of(context).pop();
-          //       // } else {
-          //       Navigator.of(context).pushReplacement(
-          //         MaterialPageRoute(
-          //             builder: (_) =>
-          //                 BottomNavBarScreen(key: AppNavigation.bottomNavKey)),
-          //       );
-          //       // }
-          //     }
-          //   },
-          // ),
           leadingWidth: 0,
           automaticallyImplyLeading: false,
           title: Text(
@@ -458,20 +682,6 @@ class _EisenhowerMatrixState extends State<EisenhowerMatrix> {
             ),
           ],
         ),
-        // appBar: AppBar(
-        //   title: Text('Eisenhower Matrix'),
-        //   backgroundColor: Colors.white,
-        //   foregroundColor: Colors.black,
-        //   elevation: 0,
-        //   actions: [
-        //     IconButton(
-        //       icon: Icon(Icons.refresh),
-        //       onPressed: () {
-        //         _loadMatrixTasks(); // Use matrix-specific reload
-        //       },
-        //     ),
-        //   ],
-        // ),
         body: isLoading
             ? Center(
                 child: CircularProgressIndicator(),
@@ -483,7 +693,7 @@ class _EisenhowerMatrixState extends State<EisenhowerMatrix> {
                     Expanded(
                       child: Row(
                         children: [
-                          // Quadrant 1: Urgent & Important (Priority 1)
+                          // ✅ 3. Quadrant 1: Urgent & Important (Priority 1)
                           Expanded(
                             child: QuadrantWidget(
                               title: 'Urgent & Important',
@@ -492,15 +702,16 @@ class _EisenhowerMatrixState extends State<EisenhowerMatrix> {
                                   .map((task) => convertToTaskItem(task))
                                   .toList(),
                               onTaskTap: (taskItem) {
-                                // Handle task tap - toggle completion
+                                // ✅ Open task detail instead of toggle
                                 if (taskItem.task != null) {
-                                  _toggleTaskCompletion(taskItem.task!);
+                                  _showTaskDetail(taskItem.task!);
                                 }
                               },
+                              onToggleCompletion: _toggleTaskCompletion,
                             ),
                           ),
                           SizedBox(width: 8),
-                          // Quadrant 2: Not Urgent & Important (Priority 2)
+                          // ✅ 3. Quadrant 2: Not Urgent & Important (Priority 2)
                           Expanded(
                             child: QuadrantWidget(
                               title: 'Not Urgent & Important',
@@ -509,10 +720,12 @@ class _EisenhowerMatrixState extends State<EisenhowerMatrix> {
                                   .map((task) => convertToTaskItem(task))
                                   .toList(),
                               onTaskTap: (taskItem) {
+                                // ✅ Open task detail instead of toggle
                                 if (taskItem.task != null) {
-                                  _toggleTaskCompletion(taskItem.task!);
+                                  _showTaskDetail(taskItem.task!);
                                 }
                               },
+                              onToggleCompletion: _toggleTaskCompletion,
                             ),
                           ),
                         ],
@@ -522,7 +735,7 @@ class _EisenhowerMatrixState extends State<EisenhowerMatrix> {
                     Expanded(
                       child: Row(
                         children: [
-                          // Quadrant 3: Urgent & Unimportant (Priority 3)
+                          // ✅ 3. Quadrant 3: Urgent & Not Important (Priority 3)
                           Expanded(
                             child: QuadrantWidget(
                               title: 'Urgent & Not Important',
@@ -531,14 +744,16 @@ class _EisenhowerMatrixState extends State<EisenhowerMatrix> {
                                   .map((task) => convertToTaskItem(task))
                                   .toList(),
                               onTaskTap: (taskItem) {
+                                // ✅ Open task detail instead of toggle
                                 if (taskItem.task != null) {
-                                  _toggleTaskCompletion(taskItem.task!);
+                                  _showTaskDetail(taskItem.task!);
                                 }
                               },
+                              onToggleCompletion: _toggleTaskCompletion,
                             ),
                           ),
                           SizedBox(width: 8),
-                          // Quadrant 4: Not Urgent & Unimportant (Priority 4)
+                          // ✅ 3. Quadrant 4: Not Urgent & Not Important (Priority 4)
                           Expanded(
                             child: QuadrantWidget(
                               title: 'Not Urgent & Not Important',
@@ -547,10 +762,12 @@ class _EisenhowerMatrixState extends State<EisenhowerMatrix> {
                                   .map((task) => convertToTaskItem(task))
                                   .toList(),
                               onTaskTap: (taskItem) {
+                                // ✅ Open task detail instead of toggle
                                 if (taskItem.task != null) {
-                                  _toggleTaskCompletion(taskItem.task!);
+                                  _showTaskDetail(taskItem.task!);
                                 }
                               },
+                              onToggleCompletion: _toggleTaskCompletion,
                             ),
                           ),
                         ],
@@ -561,21 +778,30 @@ class _EisenhowerMatrixState extends State<EisenhowerMatrix> {
               ));
   }
 
-  void _toggleTaskCompletion(Task task) {
-    // Toggle task completion
-    Task updatedTask = Task(
-      id: task.id,
-      title: task.title,
-      description: task.description,
-      categoryId: task.categoryId,
-      date: task.date,
-      dueDate: task.dueDate,
-      priority: task.priority,
-      isCompleted: !(task.isCompleted ?? false),
-    );
+  Future<void> _toggleTaskCompletion(Task task) async {
+    if (task.id == null) return;
 
-    // Update task via controller (you'll need to implement updateTask method)
-    // taskController.updateTask(updatedTask);
+    try {
+      // Toggle completion status
+      Task updatedTask = Task(
+        id: task.id,
+        title: task.title,
+        description: task.description,
+        categoryId: task.categoryId,
+        date: task.date,
+        dueDate: task.dueDate,
+        priority: task.priority,
+        isCompleted: !(task.isCompleted ?? false),
+      );
+
+      // Update via controller (make sure this method exists in your TaskController)
+      await taskController.updateTask(updatedTask);
+
+      // Reload matrix after update
+      await _loadMatrixTasks();
+    } catch (e) {
+      print("Error toggling task completion: $e");
+    }
   }
 }
 
@@ -584,6 +810,7 @@ class QuadrantWidget extends StatelessWidget {
   final Color color;
   final List<TaskItem> tasks;
   final Function(TaskItem)? onTaskTap;
+  final Function(Task)? onToggleCompletion;
 
   const QuadrantWidget({
     Key? key,
@@ -591,6 +818,7 @@ class QuadrantWidget extends StatelessWidget {
     required this.color,
     required this.tasks,
     this.onTaskTap,
+    this.onToggleCompletion,
   }) : super(key: key);
 
   @override
@@ -687,6 +915,10 @@ class QuadrantWidget extends StatelessWidget {
                         onTap: onTaskTap != null
                             ? () => onTaskTap!(tasks[index])
                             : null,
+                        onToggleCompletion: onToggleCompletion != null &&
+                                tasks[index].task != null
+                            ? () => onToggleCompletion!(tasks[index].task!)
+                            : null,
                       );
                     },
                   ),
@@ -715,37 +947,116 @@ class TaskItem {
   });
 }
 
+// class TaskItemWidget extends StatelessWidget {
+//   final TaskItem task;
+//   final VoidCallback? onTap;
+
+//   const TaskItemWidget({
+//     Key? key,
+//     required this.task,
+//     this.onTap,
+//   }) : super(key: key);
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return GestureDetector(
+//       onTap: onTap,
+//       child: Container(
+//         margin: EdgeInsets.only(bottom: 8),
+//         padding: EdgeInsets.all(0),
+//         // decoration: BoxDecoration(
+//         //   color: Colors.grey[50],
+//         //   borderRadius: BorderRadius.circular(8),
+//         //   // border: Border.all(
+//         //   //   color: task.isCompleted
+//         //   //       ? Colors.green.withOpacity(0.3)
+//         //   //       : Colors.transparent,
+//         //   //   width: 1,
+//         //   // ),
+//         // ),
+//         child: Row(
+//           children: [
+//             // Checkbox or Icon
+//             Container(
+//               width: 20,
+//               height: 20,
+//               decoration: BoxDecoration(
+//                 color: task.isCompleted ? Colors.grey : Colors.transparent,
+//                 border: Border.all(
+//                   color: task.isCompleted ? Colors.transparent : Colors.grey,
+//                   width: 1,
+//                 ),
+//                 borderRadius: BorderRadius.circular(4),
+//               ),
+//               child: task.isCompleted
+//                   ? Icon(Icons.check, color: Colors.white, size: 14)
+//                   : null,
+//             ),
+//             SizedBox(width: 8),
+//             // Task Icon
+//             // Icon(
+//             //   task.icon,
+//             //   size: 16,
+//             //   color: task.iconColor ?? Colors.grey[600],
+//             // ),
+//             SizedBox(width: 8),
+//             // Task Text
+//             Expanded(
+//               child: Column(
+//                 crossAxisAlignment: CrossAxisAlignment.start,
+//                 children: [
+//                   Text(
+//                     task.title,
+//                     style: TextStyle(
+//                       fontSize: 11,
+//                       color: Colors.black87,
+//                       decoration: task.isCompleted
+//                           ? TextDecoration.lineThrough
+//                           : TextDecoration.none,
+//                     ),
+//                     maxLines: 2,
+//                     overflow: TextOverflow.ellipsis,
+//                   ),
+//                   if (task.subtitle != null)
+//                     Text(
+//                       task.subtitle!,
+//                       style: TextStyle(
+//                         fontSize: 9,
+//                         color: Colors.grey[600],
+//                       ),
+//                     ),
+//                 ],
+//               ),
+//             ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+// }
 class TaskItemWidget extends StatelessWidget {
   final TaskItem task;
   final VoidCallback? onTap;
+  final VoidCallback? onToggleCompletion; // ✅ New callback for checkbox
 
   const TaskItemWidget({
     Key? key,
     required this.task,
     this.onTap,
+    this.onToggleCompletion, // ✅ Add this parameter
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: EdgeInsets.only(bottom: 8),
-        padding: EdgeInsets.all(0),
-        // decoration: BoxDecoration(
-        //   color: Colors.grey[50],
-        //   borderRadius: BorderRadius.circular(8),
-        //   // border: Border.all(
-        //   //   color: task.isCompleted
-        //   //       ? Colors.green.withOpacity(0.3)
-        //   //       : Colors.transparent,
-        //   //   width: 1,
-        //   // ),
-        // ),
-        child: Row(
-          children: [
-            // Checkbox or Icon
-            Container(
+    return Container(
+      margin: EdgeInsets.only(bottom: 8),
+      padding: EdgeInsets.all(0),
+      child: Row(
+        children: [
+          // ✅ Checkbox - has its own tap handler
+          GestureDetector(
+            onTap: onToggleCompletion, // ✅ Separate tap for checkbox
+            child: Container(
               width: 20,
               height: 20,
               decoration: BoxDecoration(
@@ -760,16 +1071,13 @@ class TaskItemWidget extends StatelessWidget {
                   ? Icon(Icons.check, color: Colors.white, size: 14)
                   : null,
             ),
-            SizedBox(width: 8),
-            // Task Icon
-            // Icon(
-            //   task.icon,
-            //   size: 16,
-            //   color: task.iconColor ?? Colors.grey[600],
-            // ),
-            SizedBox(width: 8),
-            // Task Text
-            Expanded(
+          ),
+          SizedBox(width: 8),
+          SizedBox(width: 8),
+          // ✅ Task Text - taps here open detail sheet
+          Expanded(
+            child: GestureDetector(
+              onTap: onTap, // ✅ Tap on text opens detail
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -796,8 +1104,8 @@ class TaskItemWidget extends StatelessWidget {
                 ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

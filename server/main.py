@@ -5,7 +5,7 @@ from fastapi.responses import JSONResponse
 from app.api.endpoints import tasks, users, categories, chat, report, notification
 from app.api.middleware.middleware import AuthMiddleware, logging_middleware, logger
 from app.core.security import get_user_by_token
-from app.db.database import Base, engine
+from app.db.database import AsyncSessionLocal, Base, engine
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 from app.db.database import init_models
@@ -30,7 +30,7 @@ logging.basicConfig(level=logging.INFO)
 if not SECRET_KEY:
     raise ValueError("❌ SECRET_KEY not found in .env file!")
 app = FastAPI()
-start_scheduler()
+start_scheduler(AsyncSessionLocal)
 
 # 🔹 1. AuthMiddleware - ĐẶT TRƯỚC TIÊN (sẽ chạy SAU CÙNG)
 app.add_middleware(AuthMiddleware)

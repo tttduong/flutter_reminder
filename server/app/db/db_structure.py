@@ -47,7 +47,7 @@ class Task(Base):
 
     owner = relationship("User", back_populates="tasks")
     category = relationship("Category", back_populates="tasks")
-
+    notifications = relationship("Notification", back_populates="task", cascade="all, delete-orphan")
 
 
 
@@ -126,13 +126,14 @@ class Notification(Base):
     user_id = Column(Integer, nullable=False)
     title = Column(Text, nullable=False)
     body = Column(Text, nullable=False)
-
+    task_id = Column(Integer, ForeignKey("task.id", ondelete="CASCADE"), nullable=True)
+    notification_type = Column(String, nullable=True)  # 'start_date', 'due_date', 'custom'
     is_read = Column(Boolean, default=False)
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
 
     send_at = Column(TIMESTAMP(timezone=True), nullable=True)
     sent = Column(Boolean, default=False)
 
+    
 
-
-
+    task = relationship("Task", back_populates="notifications")

@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_to_do_app/api.dart';
 import 'package:flutter_to_do_app/data/services/local_store_services.dart';
@@ -98,7 +99,7 @@ class AuthService {
 
       if (res.statusCode == 200) {
         print("✅ Login successful!");
-
+        await _registerFCMTokenAfterLogin();
         // Debug: Kiểm tra cookies sau login
         final cookies = await ApiService.cookieJar
             .loadForRequest(Uri.parse("${ApiService.baseUrl}/api/v1/tasks/"));
@@ -144,6 +145,31 @@ class AuthService {
     }
 
     return null;
+  }
+
+  // ✅ Helper method để đăng ký FCM token
+  static Future<void> _registerFCMTokenAfterLogin() async {
+    try {
+      FirebaseMessaging messaging = FirebaseMessaging.instance;
+      String? token = await messaging.getToken();
+
+      if (token != null) {
+        print('🚀 Registering FCM token after login...');
+
+        final response = await ApiService.dio.post(
+          '${ApiService.baseUrl}/api/v1/register-fcm-token',
+          data: {"fcm_token": token},
+        );
+
+        if (response.statusCode == 200) {
+          print('✅ FCM token registered successfully');
+        }
+      } else {
+        print('⚠️ No FCM token available');
+      }
+    } catch (e) {
+      print('❌ Error registering FCM token: $e');
+    }
   }
   // static Future<User?> getUser({
   //   // required BuildContext context,
