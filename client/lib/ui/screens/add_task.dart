@@ -192,14 +192,14 @@ class _AddTaskPageState extends State<AddTaskPage> {
                     const SizedBox(width: 14),
 
                     // Reminders Button
-                    _buildActionChip(
-                      icon: Icons.alarm,
-                      label: 'Reminders',
-                      isSelected: _hasReminder,
-                      onTap: () {
-                        // Implement reminders
-                      },
-                    ),
+                    // _buildActionChip(
+                    //   icon: Icons.alarm,
+                    //   label: 'Reminders',
+                    //   isSelected: _hasReminder,
+                    //   onTap: () {
+                    //     // Implement reminders
+                    //   },
+                    // ),
                   ],
                 ),
               ),

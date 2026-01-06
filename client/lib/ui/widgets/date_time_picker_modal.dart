@@ -1566,14 +1566,14 @@ class _DateTimePickerModalState extends State<DateTimePickerModal> {
                         ],
                       ),
                     ),
-                    SizedBox(height: 16),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        'The reminder has expired.',
-                        style: TextStyle(color: Colors.red, fontSize: 12),
-                      ),
-                    ),
+                    // SizedBox(height: 16),
+                    // Align(
+                    //   alignment: Alignment.centerLeft,
+                    //   child: Text(
+                    //     'The reminder has expired.',
+                    //     style: TextStyle(color: Colors.red, fontSize: 12),
+                    //   ),
+                    // ),
                     SizedBox(height: 16),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,

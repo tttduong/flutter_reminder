@@ -17,7 +17,7 @@ class LLMService:
         if self.session:
             await self.session.close()
 
-    # PHƯƠNG THỨC CŨ (giữ lại để tương thích)
+    # PHƯƠNG THỨC CŨ (no prompt)
     async def generate_response(self, message: str, model: str) -> Dict[str, Any]:
         """Generate response from a single message"""
         messages = [{"role": "user", "content": message}]
