@@ -1,5 +1,11 @@
 // import 'dart:convert';
 
+import 'dart:ui';
+
+import 'package:flutter_to_do_app/controller/category_controller.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
+
 class Task {
   int? id;
   int? userId;
@@ -16,6 +22,7 @@ class Task {
   int? priority;
   DateTime? completedAt;
   DateTime? reminderTime;
+  Color? categoryColor;
 
   Task({
     this.id,
@@ -33,10 +40,24 @@ class Task {
     this.priority,
     this.completedAt,
     this.reminderTime,
+    this.categoryColor,
   });
 
-  /// Chuyển đổi từ JSON sang `Task` object
+  //  Chuyển đổi từ JSON sang `Task` object
   factory Task.fromJson(Map<String, dynamic> json) {
+    Color? categoryColor;
+    if (json['category_id'] != null) {
+      try {
+        final category = Get.find<CategoryController>()
+            .categoryList
+            .firstWhereOrNull((c) => c.id == json['category_id']);
+        categoryColor = category?.color;
+      } catch (e) {
+        // CategoryController chưa được khởi tạo
+        categoryColor = null;
+      }
+    }
+
     return Task(
       id: json['id'],
       userId: json['user_id'],
@@ -70,8 +91,33 @@ class Task {
       priority: json['priority'],
 
       isDeleted: json['is_deleted'] ?? false,
+      categoryColor: categoryColor,
     );
   }
+  // factory Task.fromJson(Map<String, dynamic> json) {
+  //   // Lấy category color nếu có category_id
+  //   Color? categoryColor;
+  //   if (json['category_id'] != null) {
+  //     try {
+  //       final category = Get.find<CategoryController>()
+  //           .categoryList
+  //           .firstWhereOrNull((c) => c.id == json['category_id']);
+  //       categoryColor = category?.color;
+  //     } catch (e) {
+  //       // CategoryController chưa được khởi tạo
+  //       categoryColor = null;
+  //     }
+  //   }
+
+  //   return Task(
+  //     id: json['id'],
+  //     userId: json['user_id'],
+  //     categoryId: json['category_id'],
+  //     title: json['title'],
+  //     // ... các field khác
+  //     categoryColor: categoryColor, // ✅ Gán màu từ category
+  //   );
+  // }
 
   // set is_deleted(bool is_deleted) {
   //   return is_deleted = 'true';

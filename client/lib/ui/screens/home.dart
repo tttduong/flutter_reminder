@@ -580,8 +580,8 @@ class _HomePageState extends State<HomePage> {
                 Expanded(
                   child: Text(
                     title,
-                    maxLines: 1,
-                    overflow: TextOverflow.clip,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                     softWrap: false,
                     style: TextStyle(
                       fontSize: 18,
@@ -590,7 +590,7 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                 ),
-                const Spacer(),
+                // const Spacer(),
                 IconButton(
                   icon: const Icon(Icons.add, size: 22),
                   color: AppColors.black,

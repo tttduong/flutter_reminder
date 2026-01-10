@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_to_do_app/consts.dart';
+import 'package:flutter_to_do_app/controller/category_controller.dart';
 import 'package:flutter_to_do_app/controller/task_controller.dart';
 import 'package:flutter_to_do_app/data/models/task.dart';
 import 'package:flutter_to_do_app/ui/screens/bottom_navbar_screen.dart';
+import 'package:flutter_to_do_app/ui/widgets/chat_floating_button.dart';
 import 'package:flutter_to_do_app/ui/widgets/task_tile.dart';
 
 // class EisenhowerMatrix extends StatefulWidget {
@@ -619,6 +622,13 @@ class _EisenhowerMatrixState extends State<EisenhowerMatrix> {
 
   // Convert Task to TaskItem for display
   TaskItem convertToTaskItem(Task task) {
+    // ✅ Tìm category từ categoryId
+    final category = task.categoryId != null
+        ? Get.find<CategoryController>()
+            .categoryList
+            .firstWhereOrNull((c) => c.id == task.categoryId)
+        : null;
+
     return TaskItem(
       title: task.title,
       subtitle: task.dueDate != null
@@ -627,7 +637,8 @@ class _EisenhowerMatrixState extends State<EisenhowerMatrix> {
       isCompleted: task.isCompleted ?? false,
       icon: _getTaskIcon(task),
       iconColor: _getTaskIconColor(task),
-      task: task, // Pass the original task object
+      task: task,
+      categoryColor: category?.color, // ✅ Lấy color từ category đã tìm được
     );
   }
 
@@ -660,122 +671,106 @@ class _EisenhowerMatrixState extends State<EisenhowerMatrix> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        backgroundColor: Colors.grey[100],
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          leadingWidth: 0,
-          automaticallyImplyLeading: false,
-          title: Text(
-            'Eisenhower Matrix',
-            style: const TextStyle(
-              color: Colors.black,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          actions: [
-            IconButton(
-              icon: Icon(Icons.refresh),
-              onPressed: () {
-                _loadMatrixTasks(); // Use matrix-specific reload
-              },
-            ),
-          ],
-        ),
-        body: isLoading
-            ? Center(
-                child: CircularProgressIndicator(),
-              )
-            : Padding(
-                padding: EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    Expanded(
-                      child: Row(
-                        children: [
-                          // ✅ 3. Quadrant 1: Urgent & Important (Priority 1)
-                          Expanded(
-                            child: QuadrantWidget(
-                              title: 'Urgent & Important',
-                              color: Colors.red,
-                              tasks: getTasksByPriority(1)
-                                  .map((task) => convertToTaskItem(task))
-                                  .toList(),
-                              onTaskTap: (taskItem) {
-                                // ✅ Open task detail instead of toggle
-                                if (taskItem.task != null) {
-                                  _showTaskDetail(taskItem.task!);
-                                }
-                              },
-                              onToggleCompletion: _toggleTaskCompletion,
-                            ),
+      backgroundColor: AppColors.background,
+      body: isLoading
+          ? Center(
+              child: CircularProgressIndicator(),
+            )
+          : Padding(
+              padding: EdgeInsets.all(10.0),
+              child: Column(
+                children: [
+                  Expanded(
+                    child: Row(
+                      children: [
+                        // ✅ 3. Quadrant 1: Urgent & Important (Priority 1)
+                        Expanded(
+                          child: QuadrantWidget(
+                            title: 'Urgent & Important',
+                            color: Colors.red,
+                            tasks: getTasksByPriority(1)
+                                .map((task) => convertToTaskItem(task))
+                                .toList(),
+                            onTaskTap: (taskItem) {
+                              // ✅ Open task detail instead of toggle
+                              if (taskItem.task != null) {
+                                _showTaskDetail(taskItem.task!);
+                              }
+                            },
+                            onToggleCompletion: _toggleTaskCompletion,
                           ),
-                          SizedBox(width: 8),
-                          // ✅ 3. Quadrant 2: Not Urgent & Important (Priority 2)
-                          Expanded(
-                            child: QuadrantWidget(
-                              title: 'Not Urgent & Important',
-                              color: Colors.orange,
-                              tasks: getTasksByPriority(2)
-                                  .map((task) => convertToTaskItem(task))
-                                  .toList(),
-                              onTaskTap: (taskItem) {
-                                // ✅ Open task detail instead of toggle
-                                if (taskItem.task != null) {
-                                  _showTaskDetail(taskItem.task!);
-                                }
-                              },
-                              onToggleCompletion: _toggleTaskCompletion,
-                            ),
+                        ),
+                        SizedBox(width: 8),
+                        // ✅ 3. Quadrant 2: Not Urgent & Important (Priority 2)
+                        Expanded(
+                          child: QuadrantWidget(
+                            title: 'Not Urgent & Important',
+                            color: Colors.orange,
+                            tasks: getTasksByPriority(2)
+                                .map((task) => convertToTaskItem(task))
+                                .toList(),
+                            onTaskTap: (taskItem) {
+                              // ✅ Open task detail instead of toggle
+                              if (taskItem.task != null) {
+                                _showTaskDetail(taskItem.task!);
+                              }
+                            },
+                            onToggleCompletion: _toggleTaskCompletion,
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                    SizedBox(height: 8),
-                    Expanded(
-                      child: Row(
-                        children: [
-                          // ✅ 3. Quadrant 3: Urgent & Not Important (Priority 3)
-                          Expanded(
-                            child: QuadrantWidget(
-                              title: 'Urgent & Not Important',
-                              color: Colors.blue,
-                              tasks: getTasksByPriority(3)
-                                  .map((task) => convertToTaskItem(task))
-                                  .toList(),
-                              onTaskTap: (taskItem) {
-                                // ✅ Open task detail instead of toggle
-                                if (taskItem.task != null) {
-                                  _showTaskDetail(taskItem.task!);
-                                }
-                              },
-                              onToggleCompletion: _toggleTaskCompletion,
-                            ),
+                  ),
+                  SizedBox(height: 8),
+                  Expanded(
+                    child: Row(
+                      children: [
+                        // ✅ 3. Quadrant 3: Urgent & Not Important (Priority 3)
+                        Expanded(
+                          child: QuadrantWidget(
+                            title: 'Urgent & Not Important',
+                            color: Colors.blue,
+                            tasks: getTasksByPriority(3)
+                                .map((task) => convertToTaskItem(task))
+                                .toList(),
+                            onTaskTap: (taskItem) {
+                              // ✅ Open task detail instead of toggle
+                              if (taskItem.task != null) {
+                                _showTaskDetail(taskItem.task!);
+                              }
+                            },
+                            onToggleCompletion: _toggleTaskCompletion,
                           ),
-                          SizedBox(width: 8),
-                          // ✅ 3. Quadrant 4: Not Urgent & Not Important (Priority 4)
-                          Expanded(
-                            child: QuadrantWidget(
-                              title: 'Not Urgent & Not Important',
-                              color: Colors.green,
-                              tasks: getTasksByPriority(4)
-                                  .map((task) => convertToTaskItem(task))
-                                  .toList(),
-                              onTaskTap: (taskItem) {
-                                // ✅ Open task detail instead of toggle
-                                if (taskItem.task != null) {
-                                  _showTaskDetail(taskItem.task!);
-                                }
-                              },
-                              onToggleCompletion: _toggleTaskCompletion,
-                            ),
+                        ),
+                        SizedBox(width: 8),
+                        // ✅ 3. Quadrant 4: Not Urgent & Not Important (Priority 4)
+                        Expanded(
+                          child: QuadrantWidget(
+                            title: 'Not Urgent & Not Important',
+                            color: Colors.green,
+                            tasks: getTasksByPriority(4)
+                                .map((task) => convertToTaskItem(task))
+                                .toList(),
+                            onTaskTap: (taskItem) {
+                              // ✅ Open task detail instead of toggle
+                              if (taskItem.task != null) {
+                                _showTaskDetail(taskItem.task!);
+                              }
+                            },
+                            onToggleCompletion: _toggleTaskCompletion,
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ));
+                  ),
+                ],
+              ),
+            ),
+      floatingActionButton: const ChatFloatingButton(
+        showBadge: true,
+        unreadCount: 3,
+      ),
+    );
   }
 
   Future<void> _toggleTaskCompletion(Task task) async {
@@ -840,28 +835,29 @@ class QuadrantWidget extends StatelessWidget {
         children: [
           // Header
           Container(
-            padding: EdgeInsets.all(12),
+            padding: EdgeInsets.all(8),
             child: Row(
               children: [
                 Container(
-                  width: 20,
-                  height: 20,
+                  width: 16,
+                  height: 16,
                   decoration: BoxDecoration(
                     color: color,
-                    borderRadius: BorderRadius.circular(4),
+                    borderRadius: BorderRadius.circular(15),
                   ),
                 ),
+
                 SizedBox(width: 4),
                 Expanded(
                   child: Text(
                     title,
-                    style: TextStyle(
-                      fontSize: 12,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 11,
                       fontWeight: FontWeight.w600,
                       color: Colors.black87,
                     ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 // Show task count
@@ -907,7 +903,7 @@ class QuadrantWidget extends StatelessWidget {
                     ),
                   )
                 : ListView.builder(
-                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    padding: EdgeInsets.fromLTRB(8, 0, 8, 20),
                     itemCount: tasks.length,
                     itemBuilder: (context, index) {
                       return TaskItemWidget(
@@ -936,6 +932,7 @@ class TaskItem {
   final IconData icon;
   final Color? iconColor;
   final Task? task; // Add reference to original Task object
+  final Color? categoryColor;
 
   TaskItem({
     required this.title,
@@ -944,96 +941,10 @@ class TaskItem {
     required this.icon,
     this.iconColor,
     this.task,
+    this.categoryColor,
   });
 }
 
-// class TaskItemWidget extends StatelessWidget {
-//   final TaskItem task;
-//   final VoidCallback? onTap;
-
-//   const TaskItemWidget({
-//     Key? key,
-//     required this.task,
-//     this.onTap,
-//   }) : super(key: key);
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return GestureDetector(
-//       onTap: onTap,
-//       child: Container(
-//         margin: EdgeInsets.only(bottom: 8),
-//         padding: EdgeInsets.all(0),
-//         // decoration: BoxDecoration(
-//         //   color: Colors.grey[50],
-//         //   borderRadius: BorderRadius.circular(8),
-//         //   // border: Border.all(
-//         //   //   color: task.isCompleted
-//         //   //       ? Colors.green.withOpacity(0.3)
-//         //   //       : Colors.transparent,
-//         //   //   width: 1,
-//         //   // ),
-//         // ),
-//         child: Row(
-//           children: [
-//             // Checkbox or Icon
-//             Container(
-//               width: 20,
-//               height: 20,
-//               decoration: BoxDecoration(
-//                 color: task.isCompleted ? Colors.grey : Colors.transparent,
-//                 border: Border.all(
-//                   color: task.isCompleted ? Colors.transparent : Colors.grey,
-//                   width: 1,
-//                 ),
-//                 borderRadius: BorderRadius.circular(4),
-//               ),
-//               child: task.isCompleted
-//                   ? Icon(Icons.check, color: Colors.white, size: 14)
-//                   : null,
-//             ),
-//             SizedBox(width: 8),
-//             // Task Icon
-//             // Icon(
-//             //   task.icon,
-//             //   size: 16,
-//             //   color: task.iconColor ?? Colors.grey[600],
-//             // ),
-//             SizedBox(width: 8),
-//             // Task Text
-//             Expanded(
-//               child: Column(
-//                 crossAxisAlignment: CrossAxisAlignment.start,
-//                 children: [
-//                   Text(
-//                     task.title,
-//                     style: TextStyle(
-//                       fontSize: 11,
-//                       color: Colors.black87,
-//                       decoration: task.isCompleted
-//                           ? TextDecoration.lineThrough
-//                           : TextDecoration.none,
-//                     ),
-//                     maxLines: 2,
-//                     overflow: TextOverflow.ellipsis,
-//                   ),
-//                   if (task.subtitle != null)
-//                     Text(
-//                       task.subtitle!,
-//                       style: TextStyle(
-//                         fontSize: 9,
-//                         color: Colors.grey[600],
-//                       ),
-//                     ),
-//                 ],
-//               ),
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }
 class TaskItemWidget extends StatelessWidget {
   final TaskItem task;
   final VoidCallback? onTap;
@@ -1049,31 +960,44 @@ class TaskItemWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      // color: Colors.red,
       margin: EdgeInsets.only(bottom: 8),
       padding: EdgeInsets.all(0),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // ✅ Checkbox - has its own tap handler
           GestureDetector(
-            onTap: onToggleCompletion, // ✅ Separate tap for checkbox
+            onTap: onToggleCompletion,
             child: Container(
-              width: 20,
-              height: 20,
+              width: 16,
+              height: 16,
               decoration: BoxDecoration(
-                color: task.isCompleted ? Colors.grey : Colors.transparent,
+                color: task.isCompleted
+                    ? (task.categoryColor ?? Colors.grey)
+                    : Colors.transparent,
                 border: Border.all(
-                  color: task.isCompleted ? Colors.transparent : Colors.grey,
-                  width: 1,
+                  color:
+                      task.categoryColor ?? Colors.grey, // ✅ Dùng categoryColor
+                  width: task.isCompleted
+                      ? 1
+                      : 1, // ✅ Border dày hơn khi completed
                 ),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: task.isCompleted
-                  ? Icon(Icons.check, color: Colors.white, size: 14)
+                  ? Icon(
+                      Icons.check,
+                      // color: task.categoryColor ??
+                      //     Colors.grey, // ✅ Dùng categoryColor
+                      color: AppColors.white,
+                      size: 14,
+                    )
                   : null,
             ),
           ),
-          SizedBox(width: 8),
-          SizedBox(width: 8),
+          // SizedBox(width: 8),
+          SizedBox(width: 4),
           // ✅ Task Text - taps here open detail sheet
           Expanded(
             child: GestureDetector(

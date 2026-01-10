@@ -52,7 +52,7 @@ class Navbar extends StatelessWidget {
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.calendar_today),
-              label: "Calendar",
+              label: "Schedule",
             ),
             BottomNavigationBarItem(
               icon: SizedBox.shrink(), // giữ chỗ cho nút giữa

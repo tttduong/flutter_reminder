@@ -2363,6 +2363,9 @@ import 'package:flutter_to_do_app/controller/category_controller.dart';
 import 'package:flutter_to_do_app/controller/task_controller.dart';
 import 'package:flutter_to_do_app/data/models/task.dart';
 import 'package:flutter_to_do_app/ui/screens/detail_task.dart';
+import 'package:flutter_to_do_app/ui/screens/eisenhower_matrix.dart';
+import 'package:flutter_to_do_app/ui/widgets/chat_floating_button.dart';
+import 'package:flutter_to_do_app/ui/widgets/schedule_appbar.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -2411,6 +2414,7 @@ class _CalendarTasksState extends State<CalendarTasks> {
   final Map<int, TaskPosition> _originalPositions = {};
   final Map<int, TaskPosition> _currentPositions = {};
   bool _hasUnsavedChanges = false;
+  ScheduleViewMode _viewMode = ScheduleViewMode.calendar;
 
   List<Task> _getMultiDayTasks() {
     return _taskController.taskList.where((task) {
@@ -2583,71 +2587,36 @@ class _CalendarTasksState extends State<CalendarTasks> {
 
     return Scaffold(
       backgroundColor: Colors.transparent,
+      appBar: ScheduleAppBar(
+        selectedDate: _selectedDate,
+        hasUnsavedChanges: _hasUnsavedChanges,
+        currentMode: _viewMode,
+        onCancel: _cancelAllChanges,
+        onSave: _saveAllChanges,
+        onModeSelected: (mode) {
+          setState(() {
+            _viewMode = mode;
+          });
+        },
+      ),
       body: Column(
         children: [
-          _buildAppBar(),
-          _buildMiniCalendar(),
-          _buildMultiDayBanner(),
-          _buildFullDayBanner(),
-          Expanded(
-            child: _buildWeeklyCalendar(),
-          ),
+          if (_viewMode == ScheduleViewMode.calendar) ...[
+            _buildMiniCalendar(),
+            _buildMultiDayBanner(),
+            _buildFullDayBanner(),
+            Expanded(
+              child: _buildWeeklyCalendar(),
+            ),
+          ] else
+            Expanded(
+              child: EisenhowerMatrix(),
+            ),
         ],
       ),
-    );
-  }
-
-  PreferredSizeWidget _buildAppBar() {
-    return AppBar(
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      automaticallyImplyLeading: false,
-      title: Row(
-        children: [
-          // 🆕 LEFT - Cancel (only show when has changes)
-          if (_hasUnsavedChanges)
-            TextButton(
-              onPressed: _cancelAllChanges,
-              child: const Text(
-                'Cancel',
-                style: TextStyle(
-                  color: Colors.red,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            )
-          else
-            const SizedBox(width: 70),
-
-          // CENTER - Month Year
-          Expanded(
-            child: Center(
-              child: Text(
-                DateFormat('MMMM yyyy').format(_selectedDate),
-                style: GoogleFonts.inter(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black,
-                ),
-              ),
-            ),
-          ),
-
-          // 🆕 RIGHT - Save (only show when has changes)
-          if (_hasUnsavedChanges)
-            TextButton(
-              onPressed: _saveAllChanges,
-              child: const Text(
-                'Save',
-                style: TextStyle(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            )
-          else
-            const SizedBox(width: 70),
-        ],
+      floatingActionButton: const ChatFloatingButton(
+        showBadge: true,
+        unreadCount: 3,
       ),
     );
   }
@@ -3173,6 +3142,80 @@ class _CalendarTasksState extends State<CalendarTasks> {
     );
   }
 
+  // Widget _buildFullDayBanner() {
+  //   return Obx(() {
+  //     final fullDayTasks =
+  //         _taskController.getFullDayTasksForDate(_selectedDate);
+  //     if (fullDayTasks.isEmpty) {
+  //       return const SizedBox.shrink();
+  //     }
+
+  //     final isExpanded = _taskController.isFullDayExpanded.value;
+
+  //     return Container(
+  //       // margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+  //       child: Column(
+  //         crossAxisAlignment: CrossAxisAlignment.start,
+  //         children: [
+  //           InkWell(
+  //             borderRadius: BorderRadius.circular(12),
+  //             onTap: () {
+  //               _taskController.isFullDayExpanded.toggle();
+  //             },
+  //             child: Padding(
+  //               padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+  //               child: Row(
+  //                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //                 children: [
+  //                   Row(
+  //                     children: [
+  //                       // Icon(
+  //                       //   Icons.event_available,
+  //                       //   size: 20,
+  //                       //   color: Colors.blue.shade700,
+  //                       // ),
+  //                       // const SizedBox(width: 8),
+  //                       Text(
+  //                         'All Day Events (${fullDayTasks.length})',
+  //                         style: TextStyle(
+  //                           fontSize: 14,
+  //                           fontWeight: FontWeight.w600,
+  //                           color: AppColors.primary,
+  //                         ),
+  //                       ),
+  //                     ],
+  //                   ),
+  //                   AnimatedRotation(
+  //                     duration: const Duration(milliseconds: 200),
+  //                     turns: isExpanded ? 0.5 : 0.0,
+  //                     child: Icon(
+  //                       Icons.keyboard_arrow_down_rounded,
+  //                       color: AppColors.primary,
+  //                       size: 22,
+  //                     ),
+  //                   ),
+  //                 ],
+  //               ),
+  //             ),
+  //           ),
+  //           if (isExpanded) const Divider(height: 1),
+  //           if (isExpanded)
+  //             ListView.separated(
+  //               shrinkWrap: true,
+  //               physics: const NeverScrollableScrollPhysics(),
+  //               padding: const EdgeInsets.all(8),
+  //               itemCount: fullDayTasks.length,
+  //               separatorBuilder: (context, index) => const SizedBox(height: 6),
+  //               itemBuilder: (context, index) {
+  //                 return _buildFullDayTaskCard(fullDayTasks[index]);
+  //               },
+  //             ),
+  //         ],
+  //       ),
+  //     );
+  //   });
+  // }
+
   Widget _buildFullDayBanner() {
     return Obx(() {
       final fullDayTasks =
@@ -3184,7 +3227,9 @@ class _CalendarTasksState extends State<CalendarTasks> {
       final isExpanded = _taskController.isFullDayExpanded.value;
 
       return Container(
-        // margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: AppColors.secondary.withOpacity(0.1),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -3200,18 +3245,12 @@ class _CalendarTasksState extends State<CalendarTasks> {
                   children: [
                     Row(
                       children: [
-                        // Icon(
-                        //   Icons.event_available,
-                        //   size: 20,
-                        //   color: Colors.blue.shade700,
-                        // ),
-                        // const SizedBox(width: 8),
                         Text(
                           'All Day Events (${fullDayTasks.length})',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
-                            color: Colors.blue.shade700,
+                            color: AppColors.primary,
                           ),
                         ),
                       ],
@@ -3221,7 +3260,7 @@ class _CalendarTasksState extends State<CalendarTasks> {
                       turns: isExpanded ? 0.5 : 0.0,
                       child: Icon(
                         Icons.keyboard_arrow_down_rounded,
-                        color: Colors.blue.shade700,
+                        color: AppColors.primary,
                         size: 22,
                       ),
                     ),
@@ -3231,15 +3270,21 @@ class _CalendarTasksState extends State<CalendarTasks> {
             ),
             if (isExpanded) const Divider(height: 1),
             if (isExpanded)
-              ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(8),
-                itemCount: fullDayTasks.length,
-                separatorBuilder: (context, index) => const SizedBox(height: 6),
-                itemBuilder: (context, index) {
-                  return _buildFullDayTaskCard(fullDayTasks[index]);
-                },
+              ConstrainedBox(
+                constraints: const BoxConstraints(
+                  maxHeight: 180, // ✅ Giới hạn chiều cao tối đa
+                ),
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  physics: const ClampingScrollPhysics(), // ✅ Cho phép scroll
+                  padding: const EdgeInsets.all(8),
+                  itemCount: fullDayTasks.length,
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(height: 6),
+                  itemBuilder: (context, index) {
+                    return _buildFullDayTaskCard(fullDayTasks[index]);
+                  },
+                ),
               ),
           ],
         ),
@@ -3276,9 +3321,10 @@ class _CalendarTasksState extends State<CalendarTasks> {
                   task.isCompleted == 1
                       ? Icons.check_circle
                       : Icons.circle_outlined,
-                  color: task.isCompleted == 1
-                      ? _getPriorityColor(task.priority)
-                      : _getPriorityColor(task.priority).withOpacity(0.4),
+                  // color: task.isCompleted == 1
+                  //     ? _getPriorityColor(task.priority)
+                  //     : _getPriorityColor(task.priority).withOpacity(0.4),
+                  color: task.categoryColor,
                   size: 24,
                 ),
               ),

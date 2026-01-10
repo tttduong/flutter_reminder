@@ -3,6 +3,7 @@ import 'package:flutter_to_do_app/data/models/category.dart';
 import 'package:flutter_to_do_app/data/models/task.dart';
 import 'package:flutter_to_do_app/ui/screens/bottom_navbar_screen.dart';
 import 'package:flutter_to_do_app/ui/screens/detail_task.dart';
+import 'package:flutter_to_do_app/ui/widgets/chat_floating_button.dart';
 import 'package:flutter_to_do_app/ui/widgets/gradient_bg.dart';
 import 'package:get/get.dart';
 import 'package:flutter_to_do_app/consts.dart';
@@ -84,6 +85,10 @@ class _AllTasksPageState extends State<CategoryTasksPage> {
             ),
           ),
         ],
+      ),
+      floatingActionButton: const ChatFloatingButton(
+        showBadge: true,
+        unreadCount: 3,
       ),
     );
   }

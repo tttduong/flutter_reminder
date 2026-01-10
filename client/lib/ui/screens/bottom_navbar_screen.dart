@@ -497,35 +497,6 @@ class BottomNavBarScreenState extends State<BottomNavBarScreen> {
           ),
         ),
 
-        // ✅ Drawer overlay full screen (chỉ hiển thị khi mở)
-        // if (_isDrawerVisible)
-        //   Positioned.fill(
-        //     child: GestureDetector(
-        //       onTap: _closeDrawer, // chạm ra ngoài để đóng
-        //       child: Container(
-        //         color: Colors.black.withOpacity(0.4), // nền mờ
-        //         child: Align(
-        //           alignment: Alignment.centerLeft,
-        //           child: FractionallySizedBox(
-        //             widthFactor: 0.85, // hoặc 1.0 nếu muốn full chiều ngang
-        //             heightFactor: 1.0,
-        //             child: Container(
-        //               color: Colors.white,
-        //               child: CustomSidebar(
-        //                 categoryController: _categoryController,
-        //                 onCategoryTap: (cat) {
-        //                   _closeDrawer();
-        //                   _handleCategoryTap(cat);
-        //                 },
-        //                 onAddCategoryTap: _handleAddCategoryTap,
-        //               ),
-        //             ),
-        //           ),
-        //         ),
-        //       ),
-        //     ),
-        //   ),
-        // ✅ Drawer overlay với animation mượt (Drawer + Nền tách riêng)
         // ✅ Drawer overlay mượt thực sự (nền fade, drawer trượt)
         IgnorePointer(
           ignoring: !_isDrawerVisible, // ngăn chạm khi ẩn
