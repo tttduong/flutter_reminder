@@ -6,7 +6,7 @@ class MyChatMessage {
     required this.conversationId,
     required this.user,
     required this.createdAt,
-    this.isMarkdown = false,
+    this.isMarkdown = true,
     this.text = '',
     this.medias,
     this.quickReplies,

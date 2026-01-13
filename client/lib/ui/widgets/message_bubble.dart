@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_to_do_app/consts.dart';
 import 'package:flutter_to_do_app/ui/widgets/my_chat_message.dart';
 import 'package:flutter_to_do_app/ui/widgets/schedule_card.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 
 class MessageBubble extends StatelessWidget {
   final MyChatMessage message;
@@ -41,10 +42,31 @@ class MessageBubble extends StatelessWidget {
     );
   }
 
+  // Widget _buildContent() {
+  //   final scheduleDraft = message.customProperties?["schedule_draft"];
+
+  //   // Kiểm tra có schedule draft hợp lệ không
+  //   if (scheduleDraft != null && _hasValidSchedule(scheduleDraft)) {
+  //     return ScheduleCard(
+  //       messageText: message.text,
+  //       isCurrentUser: isCurrentUser,
+  //       scheduleDraft: scheduleDraft,
+  //       conversationId: message.conversationId,
+  //     );
+  //   }
+
+  //   // Text thông thường
+  //   return Text(
+  //     message.text,
+  //     style: TextStyle(
+  //       color: isCurrentUser ? Colors.white : Colors.black,
+  //     ),
+  //   );
+  // }
   Widget _buildContent() {
     final scheduleDraft = message.customProperties?["schedule_draft"];
 
-    // Kiểm tra có schedule draft hợp lệ không
+    // 1️⃣ Schedule card (ưu tiên cao nhất)
     if (scheduleDraft != null && _hasValidSchedule(scheduleDraft)) {
       return ScheduleCard(
         messageText: message.text,
@@ -54,11 +76,59 @@ class MessageBubble extends StatelessWidget {
       );
     }
 
-    // Text thông thường
+    // 2️⃣ Markdown message
+    if (message.isMarkdown) {
+      return _buildMarkdown();
+    }
+
+    // 3️⃣ Plain text
     return Text(
       message.text,
       style: TextStyle(
         color: isCurrentUser ? Colors.white : Colors.black,
+        fontSize: 15,
+      ),
+    );
+  }
+
+  Widget _buildMarkdown() {
+    return MarkdownBody(
+      data: message.text,
+      selectable: true,
+      styleSheet: MarkdownStyleSheet(
+        p: TextStyle(
+          fontSize: 15,
+          color: isCurrentUser ? Colors.white : Colors.black87,
+          height: 1.45,
+        ),
+        strong: TextStyle(
+          fontWeight: FontWeight.w700,
+          color: isCurrentUser ? Colors.white : Colors.black,
+        ),
+        em: TextStyle(
+          fontStyle: FontStyle.italic,
+        ),
+        code: TextStyle(
+          fontFamily: 'monospace',
+          fontSize: 14,
+          backgroundColor:
+              isCurrentUser ? Colors.white.withOpacity(0.15) : Colors.black12,
+        ),
+        codeblockDecoration: BoxDecoration(
+          color: isCurrentUser
+              ? Colors.black.withOpacity(0.25)
+              : Colors.grey.shade200,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        listBullet: TextStyle(
+          color: isCurrentUser ? Colors.white : Colors.black,
+        ),
+        blockquoteDecoration: BoxDecoration(
+          color: isCurrentUser
+              ? Colors.white.withOpacity(0.08)
+              : Colors.grey.shade300,
+          borderRadius: BorderRadius.circular(6),
+        ),
       ),
     );
   }
