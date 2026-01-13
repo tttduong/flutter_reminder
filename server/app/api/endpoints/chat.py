@@ -211,7 +211,7 @@ async def get_messages(
     )
     messages = result.scalars().all()
     return messages
-@router.post("/conversations", response_model=ConversationResponse)
+@router.post("/conversations/", response_model=ConversationResponse)
 async def create_conversation(
     session: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),

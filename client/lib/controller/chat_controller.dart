@@ -78,10 +78,39 @@ class ChatPageController extends GetxController {
   }
 
   /// Tạo conversation mới
-  void startNewConversation() {
-    convController.resetToNewConversation();
-    messages.clear();
-    _conversationHistory.clear();
+  // void startNewConversation() {
+  //   convController.resetToNewConversation();
+  //   messages.clear();
+  //   _conversationHistory.clear();
+  // }
+
+  Future<void> startNewConversation() async {
+    try {
+      isLoading.value = true;
+
+      // 1️⃣ Gọi API tạo conversation
+      final conversation =
+          await ConversationService.createConversation("New Chat");
+
+      // 2️⃣ Add vào list
+      convController.conversations.insert(0, conversation);
+
+      // 3️⃣ Set current conversation
+      convController.setConversation(
+        conversation.id.toString(),
+        false,
+      );
+
+      // 4️⃣ Clear messages cũ
+      // messages.clear();
+      convController.resetToNewConversation();
+      messages.clear();
+      _conversationHistory.clear();
+    } catch (e) {
+      print("❌ Create conversation error: $e");
+    } finally {
+      isLoading.value = false;
+    }
   }
 
   /// Gửi message
