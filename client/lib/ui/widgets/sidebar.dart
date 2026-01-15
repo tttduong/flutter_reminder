@@ -388,6 +388,7 @@ import 'package:flutter_to_do_app/data/services/auth_services.dart';
 import 'package:flutter_to_do_app/ui/screens/category_tasks.dart';
 import 'package:flutter_to_do_app/ui/screens/login_page.dart';
 import 'package:flutter_to_do_app/ui/screens/screens.dart';
+import 'package:flutter_to_do_app/ui/screens/welcome_page.dart';
 import 'package:flutter_to_do_app/ui/widgets/add_list_button.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
@@ -714,12 +715,14 @@ class _CustomSidebarState extends State<CustomSidebar> {
       bool removeSuccess = await LocalStoreServices.removeFromLocal(context);
       if (removeSuccess) {
         userProvider.setUserNull();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Logged out successfully"),
-            backgroundColor: Colors.green,
-          ),
-        );
+        Get.offAll(() => const WelcomePage());
+
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   const SnackBar(
+        //     content: Text("Logged out successfully"),
+        //     backgroundColor: Colors.green,
+        //   ),
+        // );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
