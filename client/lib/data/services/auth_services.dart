@@ -101,19 +101,19 @@ class AuthService {
         print("✅ Login successful!");
         await _registerFCMTokenAfterLogin();
         // Debug: Kiểm tra cookies sau login
-        final cookies = await ApiService.cookieJar
-            .loadForRequest(Uri.parse("${ApiService.baseUrl}/api/v1/tasks/"));
+        // final cookiesq = await ApiService.cookieJar
+        //     .loadForReuest(Uri.parse("${ApiService.baseUrl}/api/v1/tasks/"));
 
-        print("🍪 Cookies saved after login:");
-        for (var cookie in cookies) {
-          print("  - ${cookie.name}: ${cookie.value}");
-          print("    Domain: ${cookie.domain}");
-          print("    Path: ${cookie.path}");
-          print("    Expires: ${cookie.expires}");
-        }
+        // print("🍪 Cookies saved after login:");
+        // for (var cookie in cookies) {
+        //   print("  - ${cookie.name}: ${cookie.value}");
+        //   print("    Domain: ${cookie.domain}");
+        //   print("    Path: ${cookie.path}");
+        //   print("    Expires: ${cookie.expires}");
+        // }
 
         final data = res.data;
-        print("📦 Full login response: $data");
+        // print("📦 Full login response: $data");
 
         final loginModel = LoginModel(
           user: data['user'] != null ? User.fromJson(data['user']) : null,
@@ -122,7 +122,7 @@ class AuthService {
               : null,
         );
 
-        // ✅ Lưu user vào UserProvider
+        // Lưu user vào UserProvider
         if (loginModel.user != null) {
           final userProvider = Provider.of<UserProvider>(
             context,
@@ -132,15 +132,15 @@ class AuthService {
 
           // ✅ Lưu vào local storage
           await LocalStoreServices.saveUser(loginModel.user!);
-          print("✅ User saved: ${loginModel.user!.username}");
+          print("User saved: ${loginModel.user!.username}");
         }
 
         return loginModel;
       } else {
-        print("Đăng nhập thất bại: ${res.data}");
+        print("Login fail: ${res.data}");
       }
     } catch (e) {
-      Utils.showSnackBar(context, e.toString());
+      // Utils.showSnackBar(context, e.toString());
       print("❌ Login error: $e");
     }
 

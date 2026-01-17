@@ -107,6 +107,17 @@ class _VerificationPageState extends State<VerificationPage> {
                   ),
                 ),
               ),
+              SizedBox(
+                height: 30,
+              ),
+              Text(
+                'Email Verification is comming soon, click \'Register\' to continue.',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: Colors.black54,
+                ),
+              ),
             ],
           ),
         ),

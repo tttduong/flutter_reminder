@@ -5,6 +5,7 @@ import 'package:flutter_to_do_app/ui/screens/bottom_navbar_screen.dart';
 import 'package:flutter_to_do_app/ui/screens/home.dart';
 import 'package:flutter_to_do_app/ui/screens/register_page.dart';
 import 'package:flutter_to_do_app/ui/utils/utils.dart';
+import 'package:flutter_to_do_app/ui/widgets/auth_button.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
@@ -148,17 +149,43 @@ class _LoginPageState extends State<LoginPage> {
               const SizedBox(height: 8),
               Align(
                 alignment: Alignment.centerRight,
-                child: GestureDetector(
-                  onTap: () {},
-                  child: const Text(
-                    'Forgot Password?',
-                    style: TextStyle(
-                      // color: Color(0xFF6366F1),
-                      color: Colors.black,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13,
+                child:
+                    // GestureDetector(
+                    //   onTap: () {},
+                    //   child: const Text(
+                    //     'Forgot Password?',
+                    //     style: TextStyle(
+                    //       // color: Color(0xFF6366F1),
+                    //       color: Colors.black,
+                    //       fontWeight: FontWeight.w600,
+                    //       fontSize: 13,
+                    //     ),
+                    //   ),
+                    // ),
+                    Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    GestureDetector(
+                      onTap: () {},
+                      child: const Text(
+                        'Forgot Password?',
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
+                      ),
                     ),
-                  ),
+                    const SizedBox(width: 4),
+                    Text(
+                      '(Soon)',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.black54,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 12),
@@ -202,7 +229,8 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       );
                     } else {
-                      Utils.showSnackBar(context, "Login failed!");
+                      Utils.showSnackBar(
+                          context, "Username or Password incorrect!");
                     }
                   },
 
@@ -231,37 +259,50 @@ class _LoginPageState extends State<LoginPage> {
               ),
               const SizedBox(height: 20),
 
-              Container(
-                width: double.infinity,
-                height: 56,
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.black26),
-                  borderRadius: BorderRadius.circular(28),
+              // Container(
+              //   width: double.infinity,
+              //   height: 56,
+              //   decoration: BoxDecoration(
+              //     border: Border.all(color: Colors.black26),
+              //     borderRadius: BorderRadius.circular(28),
+              //   ),
+              // child: TextButton(
+              //   onPressed: () {},
+              //   style: TextButton.styleFrom(
+              //     shape: RoundedRectangleBorder(
+              //       borderRadius: BorderRadius.circular(28),
+              //     ),
+              //   ),
+              //   child: Row(
+              //     mainAxisAlignment: MainAxisAlignment.center,
+              //     children: const [
+              //       Icon(Icons.g_mobiledata, size: 30, color: Colors.red),
+              //       SizedBox(width: 8),
+              //       Text(
+              //         'Continue with Google',
+              //         style: TextStyle(
+              //           color: Colors.black87,
+              //           fontSize: 16,
+              //           fontWeight: FontWeight.w500,
+              //         ),
+              //       ),
+              //     ],
+              //   ),
+              // ),
+
+              // ),
+              AuthButton(
+                // context,
+                iconWidget: const Icon(
+                  Icons.g_mobiledata,
+                  size: 30,
+                  color: Colors.red,
                 ),
-                child: TextButton(
-                  onPressed: () {},
-                  style: TextButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(28),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
-                      Icon(Icons.g_mobiledata, size: 24, color: Colors.black87),
-                      SizedBox(width: 8),
-                      Text(
-                        'Continue with Google',
-                        style: TextStyle(
-                          color: Colors.black87,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                isFuture: true,
+                text: 'Continue with Google',
+                onPressed: () {},
               ),
+
               const SizedBox(height: 42),
               Center(
                 child: Row(
