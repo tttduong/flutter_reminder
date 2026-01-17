@@ -37,17 +37,66 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       // Search bar (optional)
       title: showSearchBar ? _buildSearchBar() : null,
 
+      // actions: [
+      //   IconButton(
+      //     icon: const Icon(Icons.notifications, color: AppColors.primary),
+      //     onPressed: onNotificationTap ?? () {},
+      //   ),
+      //   IconButton(
+      //     icon: const Icon(Icons.more_vert, color: AppColors.primary),
+      //     onPressed: onMoreTap ?? () {},
+      //   ),
+      //   const SizedBox(width: 8),
+      // ],
       actions: [
-        IconButton(
-          icon: const Icon(Icons.notifications, color: AppColors.primary),
-          onPressed: onNotificationTap ?? () {},
+        Stack(
+          clipBehavior: Clip.none,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.notifications, color: AppColors.primary),
+              onPressed: onNotificationTap ?? () {},
+            ),
+            _soonBadge(),
+          ],
         ),
-        IconButton(
-          icon: const Icon(Icons.more_vert, color: AppColors.primary),
-          onPressed: onMoreTap ?? () {},
+        Stack(
+          clipBehavior: Clip.none,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.more_vert, color: AppColors.primary),
+              onPressed: onMoreTap ?? () {},
+            ),
+            _soonBadge(),
+          ],
         ),
         const SizedBox(width: 8),
       ],
+    );
+  }
+
+  Widget _soonBadge() {
+    return Positioned(
+      top: 2,
+      right: 2,
+      child: Transform.rotate(
+        angle: 0.6, // chéo nhẹ
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          decoration: BoxDecoration(
+            color: Colors.orange,
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: const Text(
+            'SOON',
+            style: TextStyle(
+              fontSize: 8,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ),
+      ),
     );
   }
 

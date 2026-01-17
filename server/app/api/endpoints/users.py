@@ -91,7 +91,7 @@ async def register(user_create: UserCreate, db: Session = Depends(get_db)):
     await db.flush()  # 👈 Lấy ID user mới ngay sau khi add
 
     # ✅ Tạo category mặc định 
-    inbox_category = Category(title="My Notes", color = "#000000", icon = "58040", owner_id=new_user.id, is_default = True)
+    inbox_category = Category(title="My Notes", color = "#6C63FF", icon = "58040", owner_id=new_user.id, is_default = True)
     db.add(inbox_category)
 
     await db.commit()

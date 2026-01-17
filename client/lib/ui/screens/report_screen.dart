@@ -4,6 +4,7 @@ import 'dart:math' as math;
 
 import 'package:flutter_to_do_app/data/models/completed_state.dart';
 import 'package:flutter_to_do_app/data/services/report_service.dart';
+import 'package:flutter_to_do_app/ui/widgets/chat_floating_button.dart';
 import 'package:flutter_to_do_app/ui/widgets/gradient_bg.dart';
 
 class ReportScreen extends StatefulWidget {
@@ -49,55 +50,60 @@ class _ReportScreenState extends State<ReportScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        // backgroundColor: const Color(0xFFF5F5F5),
-        appBar: AppBar(
-          title: const Text('Report',
-              style: TextStyle(fontWeight: FontWeight.bold)),
-          backgroundColor: Colors.transparent,
-          foregroundColor: Colors.black87,
-          elevation: 0,
-        ),
-        body: Stack(children: [
-          const GradientBackground(), // nền
-          SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Time Filter
-                // _buildTimeFilterTabs(),
-                // const SizedBox(height: 20),
+      // backgroundColor: const Color(0xFFF5F5F5),
+      appBar: AppBar(
+        title:
+            const Text('Report', style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.transparent,
+        foregroundColor: Colors.black87,
+        elevation: 0,
+      ),
+      body: Stack(children: [
+        const GradientBackground(), // nền
+        SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Time Filter
+              // _buildTimeFilterTabs(),
+              // const SizedBox(height: 20),
 
-                // Overview Cards
-                _buildOverviewCards(),
-                const SizedBox(height: 24),
+              // Overview Cards
+              _buildOverviewCards(),
+              const SizedBox(height: 24),
 
-                // Completion Chart
-                _buildCompletionChart(),
-                const SizedBox(height: 24),
+              // Completion Chart
+              _buildCompletionChart(),
+              const SizedBox(height: 24),
 
-                // Calendar Heatmap
-                _buildCalendarHeatmap(monthStats),
-                const SizedBox(height: 24),
+              // Calendar Heatmap
+              _buildCalendarHeatmap(monthStats),
+              const SizedBox(height: 24),
 
-                // Category Statistics
-                _buildCategoryStats(),
-                const SizedBox(height: 24),
+              // Category Statistics
+              _buildCategoryStats(),
+              const SizedBox(height: 24),
 
-                // // Goals & Achievements
-                // _buildGoalsSection(),
-                // const SizedBox(height: 24),
+              // // Goals & Achievements
+              // _buildGoalsSection(),
+              // const SizedBox(height: 24),
 
-                // // Trends Comparison
-                // _buildTrendsSection(),
-                // const SizedBox(height: 24),
+              // // Trends Comparison
+              // _buildTrendsSection(),
+              // const SizedBox(height: 24),
 
-                // // Badges/Achievements
-                // _buildBadgesSection(),
-              ],
-            ),
+              // // Badges/Achievements
+              // _buildBadgesSection(),
+            ],
           ),
-        ]));
+        ),
+      ]),
+      floatingActionButton: const ChatFloatingButton(
+        showBadge: true,
+        unreadCount: 3,
+      ),
+    );
   }
 
   // Widget _buildTimeFilterTabs() {

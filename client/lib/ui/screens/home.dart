@@ -322,37 +322,37 @@ class _HomePageState extends State<HomePage> {
                       const SizedBox(height: 10),
 
                       // Feature Cards
-                      SizedBox(
-                        height: 90,
-                        child: ListView(
-                          scrollDirection: Axis.horizontal,
-                          children: [
-                            _buildGradientCard(
-                                "Chatbot", Icons.chat_bubble_outline,
-                                onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (_) => const ChatPage(
-                                          conversationId: null,
-                                        )),
-                              );
-                            }),
-                            _buildGradientCard(
-                                "Report", Icons.bar_chart_outlined, onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (_) => const ReportScreen()),
-                              );
-                            }),
-                            _buildGradientCard(
-                                "Habit", Icons.check_circle_outline),
-                          ],
-                        ),
-                      ),
+                      // SizedBox(
+                      //   height: 90,
+                      //   child: ListView(
+                      //     scrollDirection: Axis.horizontal,
+                      //     children: [
+                      //       _buildGradientCard(
+                      //           "Chatbot", Icons.chat_bubble_outline,
+                      //           onTap: () {
+                      //         Navigator.push(
+                      //           context,
+                      //           MaterialPageRoute(
+                      //               builder: (_) => const ChatPage(
+                      //                     conversationId: null,
+                      //                   )),
+                      //         );
+                      //       }),
+                      //       _buildGradientCard(
+                      //           "Report", Icons.bar_chart_outlined, onTap: () {
+                      //         Navigator.push(
+                      //           context,
+                      //           MaterialPageRoute(
+                      //               builder: (_) => const ReportScreen()),
+                      //         );
+                      //       }),
+                      //       _buildGradientCard(
+                      //           "Habit", Icons.check_circle_outline),
+                      //     ],
+                      //   ),
+                      // ),
 
-                      const SizedBox(height: 20),
+                      // const SizedBox(height: 20),
 
                       // Today Section Header
                       Row(
@@ -369,49 +369,23 @@ class _HomePageState extends State<HomePage> {
                         ],
                       ),
 
-                      const SizedBox(height: 16),
+                      // const SizedBox(height: 16),
 
                       // // Task Lists
+                      // Task Lists
                       Obx(() {
                         final categories = _categoryController.categoryList;
                         final tasks = _taskController.taskList;
                         final now = DateTime.now();
 
-                        // final categoriesWithIncompleteTasksToday =
-                        //     categories.where((category) {
-                        //   final createdToday = category.createdAt != null &&
-                        //       category.createdAt!.year == now.year &&
-                        //       category.createdAt!.month == now.month &&
-                        //       category.createdAt!.day == now.day;
-
-                        //   final hasIncompleteTaskToday = tasks.any((task) =>
-                        //       task.categoryId == category.id &&
-                        //       !task.isCompleted &&
-                        //       task.date != null &&
-                        //       task.date!.year == now.year &&
-                        //       task.date!.month == now.month &&
-                        //       task.date!.day == now.day);
-
-                        //   return createdToday || hasIncompleteTaskToday;
-                        // }).toList();
-                        // 🔍 DEBUG: In ra tất cả categories
-                        print("=" * 50);
-                        print(
-                            "🔍 DEBUG: Total categories: ${categories.length}");
-                        for (var category in categories) {
-                          print("📁 Category: ${category.title}");
-                          print("   - ID: ${category.id}");
-                          print("   - Created at: ${category.createdAt}");
-                          print(
-                              "   - Is today? ${category.createdAt != null && category.createdAt!.year == now.year && category.createdAt!.month == now.month && category.createdAt!.day == now.day}");
-                        }
-                        final categoriesWithIncompleteTasksToday =
-                            categories.where((category) {
+                        // Lọc categories để hiển thị
+                        final categoriesToShow = categories.where((category) {
                           final createdAtLocal = category.createdAt?.toLocal();
                           final createdToday = createdAtLocal != null &&
                               createdAtLocal.year == now.year &&
                               createdAtLocal.month == now.month &&
                               createdAtLocal.day == now.day;
+
                           // Nếu category được tạo hôm nay, luôn hiển thị
                           if (createdToday) return true;
 
@@ -426,41 +400,23 @@ class _HomePageState extends State<HomePage> {
 
                           return hasIncompleteTaskToday;
                         }).toList();
-                        print(
-                            "✅ Categories to show: ${categoriesWithIncompleteTasksToday.length}");
-                        print("=" * 50);
-                        if (categoriesWithIncompleteTasksToday.isEmpty) {
-                          return Center(
-                            child: Padding(
-                              padding: const EdgeInsets.all(40),
-                              child: Column(
-                                children: [
-                                  Icon(
-                                    Icons.check_circle_outline,
-                                    size: 64,
-                                    color: Colors.grey[400],
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    'No tasks for today',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.grey[600],
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  _buildNewListButton(),
-                                  SizedBox(height: 40),
-                                ],
-                              ),
-                            ),
-                          );
-                        }
+
+                        // Lấy tất cả tasks chưa hoàn thành của hôm nay
+                        final tasksToday = tasks
+                            .where((task) =>
+                                !task.isCompleted &&
+                                task.date != null &&
+                                task.date!.year == now.year &&
+                                task.date!.month == now.month &&
+                                task.date!.day == now.day)
+                            .toList();
+
+                        final hasTaskToday = tasksToday.isNotEmpty;
 
                         return Column(
                           children: [
-                            for (final category
-                                in categoriesWithIncompleteTasksToday)
+                            // Hiển thị tất cả categories
+                            for (final category in categoriesToShow)
                               Padding(
                                 padding: const EdgeInsets.only(bottom: 24),
                                 child: _buildTaskSection(
@@ -472,6 +428,7 @@ class _HomePageState extends State<HomePage> {
                                         task.date!.year == now.year &&
                                         task.date!.month == now.month &&
                                         task.date!.day == now.day;
+
                                     return task.categoryId == category.id &&
                                         !task.isCompleted &&
                                         isSameDay;
@@ -479,8 +436,51 @@ class _HomePageState extends State<HomePage> {
                                   category,
                                 ),
                               ),
-                            _buildNewListButton(),
-                            SizedBox(height: 40),
+
+                            // Chỉ hiển thị "No tasks for today" khi KHÔNG có task nào
+                            if (!hasTaskToday)
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 16),
+                                child: Center(
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(40),
+                                    child: Column(
+                                      children: [
+                                        // Icon(
+                                        //   Icons.check_circle_outline,
+                                        //   size: 64,
+                                        //   color: Colors.grey[400],
+                                        // ),
+                                        Opacity(
+                                          opacity: 1,
+                                          child: Image.asset(
+                                            'images/tasklist.png',
+                                            width: 150,
+                                          ),
+                                        ),
+
+                                        const SizedBox(height: 16),
+                                        Text(
+                                          'No tasks for today',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            color: Colors.grey[600],
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                        _buildNewListButton(),
+                                        const SizedBox(height: 40),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+
+                            // Nếu có task, vẫn hiện nút tạo mới ở cuối
+                            if (hasTaskToday) ...[
+                              _buildNewListButton(),
+                              const SizedBox(height: 40),
+                            ],
                           ],
                         );
                       }),
@@ -772,112 +772,6 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
-//   Widget _buildTaskSection(
-//     String title,
-//     IconData icon,
-//     Color color,
-//     List tasks,
-//     Category category,
-//   ) {
-//     return Container(
-//       // decoration: BoxDecoration(
-//       //   color: Colors.white,
-//       //   borderRadius: BorderRadius.circular(16),
-//       //   boxShadow: [
-//       //     BoxShadow(
-//       //       color: Colors.black.withOpacity(0.05),
-//       //       blurRadius: 10,
-//       //       offset: const Offset(0, 2),
-//       //     ),
-//       //   ],
-//       // ),
-//       child: Column(
-//         crossAxisAlignment: CrossAxisAlignment.start,
-//         children: [
-//           Padding(
-//             padding: const EdgeInsets.all(2),
-//             child: Row(
-//               children: [
-//                 // Container(
-//                 //   padding: const EdgeInsets.all(8),
-//                 //   decoration: BoxDecoration(
-//                 //     color: color.withOpacity(0.1),
-//                 //     borderRadius: BorderRadius.circular(8),
-//                 //   ),
-//                 //   child: Icon(icon, color: color, size: 20),
-//                 // ),
-//                 Icon(icon, color: color, size: 20),
-//                 const SizedBox(width: 12),
-//                 Text(
-//                   title,
-//                   style: TextStyle(
-//                     fontSize: 18,
-//                     fontWeight: FontWeight.w600,
-//                     color: AppColors.primary,
-//                   ),
-//                 ),
-//                 const Spacer(), // Đẩy IconButton sang phải
-//                 IconButton(
-//                   icon: const Icon(Icons.add, size: 22),
-//                   color: AppColors.black,
-//                   padding: EdgeInsets.zero,
-//                   onPressed: () {
-//                     Get.to(
-//                       () => AddTaskPage(initialCategoryId: category.id),
-//                       preventDuplicates: false,
-//                     );
-//                   },
-//                 ),
-//               ],
-//             ),
-//           ),
-//           // const Divider(height: 0.25),
-//           ListView.builder(
-//             shrinkWrap: true,
-//             physics: const NeverScrollableScrollPhysics(),
-//             itemCount: tasks.length,
-//             itemBuilder: (context, index) {
-//               final task = tasks[index];
-//               return Padding(
-//                 padding: const EdgeInsets.fromLTRB(16, 4, 4, 4),
-//                 child: Row(
-//                   crossAxisAlignment:
-//                       CrossAxisAlignment.start, // ⬅ canh theo top
-//                   children: [
-//                     Padding(
-//                       padding:
-//                           const EdgeInsets.only(top: 2), // chỉnh nhẹ để cân
-//                       child: Icon(
-//                         task.isCompleted
-//                             ? Icons.check_circle
-//                             : Icons.radio_button_unchecked,
-//                         color:
-//                             task.isCompleted ? Colors.green : AppColors.primary,
-//                         size: 22,
-//                       ),
-//                     ),
-//                     const SizedBox(width: 12),
-//                     Expanded(
-//                       child: Text(
-//                         task.title,
-//                         style: TextStyle(
-//                           fontSize: 16,
-//                           decoration: task.isCompleted
-//                               ? TextDecoration.lineThrough
-//                               : null,
-//                         ),
-//                       ),
-//                     ),
-//                   ],
-//                 ),
-//               );
-//             },
-//           )
-//         ],
-//       ),
-//     );
-//   }
-// }
 
   Widget _buildGradientCard(String title, IconData icon,
       {VoidCallback? onTap}) {
@@ -934,114 +828,4 @@ class _HomePageState extends State<HomePage> {
           ),
         ));
   }
-
-// Widget _buildTaskSection(
-//     String title, IconData icon, Color color, List<Task> tasks) {
-//   return Container(
-//     decoration: BoxDecoration(
-//       color: Colors.white,
-//       borderRadius: BorderRadius.circular(16),
-//       boxShadow: [
-//         BoxShadow(
-//           color: Colors.grey.withOpacity(0.1),
-//           blurRadius: 10,
-//           offset: const Offset(0, 2),
-//         ),
-//       ],
-//     ),
-//     child: Padding(
-//       padding: const EdgeInsets.all(20),
-//       child: Column(
-//         children: [
-//           // Section Header
-//           Row(
-//             children: [
-//               Icon(
-//                 icon,
-//                 color: color,
-//               ),
-//               const SizedBox(width: 12),
-//               Expanded(
-//                 child: Text(
-//                   title,
-//                   style: const TextStyle(
-//                     fontSize: 18,
-//                     fontWeight: FontWeight.w600,
-//                     color: Colors.black87,
-//                   ),
-//                 ),
-//               ),
-//               Container(
-//                 width: 24,
-//                 height: 24,
-//                 decoration: BoxDecoration(
-//                   color: Colors.transparent,
-//                   borderRadius: BorderRadius.circular(4),
-//                 ),
-//                 child: const Icon(
-//                   Icons.add,
-//                   size: 26,
-//                   color: Colors.black,
-//                 ),
-//               ),
-//             ],
-//           ),
-//           Divider(
-//             color: Colors.grey[300],
-//             thickness: 0.5,
-//             height: 16,
-//           ),
-//           const SizedBox(height: 8),
-
-//           // Task Items
-//           ...tasks
-//               .map((task) => Padding(
-//                     padding: const EdgeInsets.only(bottom: 0),
-//                     child: Column(
-//                       children: [
-//                         Row(
-//                           children: [
-//                             Container(
-//                               width: 20,
-//                               height: 20,
-//                               decoration: BoxDecoration(
-//                                 border: Border.all(
-//                                     color: Colors.grey[400]!, width: 1.5),
-//                                 borderRadius: BorderRadius.circular(10),
-//                               ),
-//                               child: task.isCompleted
-//                                   ? const Icon(Icons.check,
-//                                       size: 14, color: Colors.green)
-//                                   : null,
-//                             ),
-//                             const SizedBox(width: 16),
-//                             Expanded(
-//                               child: Text(
-//                                 task.title,
-//                                 style: TextStyle(
-//                                   fontSize: 16,
-//                                   color: task.isCompleted
-//                                       ? Colors.grey[500]
-//                                       : Colors.black87,
-//                                   decoration: task.isCompleted
-//                                       ? TextDecoration.lineThrough
-//                                       : null,
-//                                 ),
-//                               ),
-//                             ),
-//                           ],
-//                         ),
-//                         Divider(
-//                           color: Colors.grey[300],
-//                           thickness: 0.5,
-//                           height: 28,
-//                         ),
-//                       ],
-//                     ),
-//                   ))
-//               .toList(),
-//         ],
-//       ),
-//     ),
-//   );
 }

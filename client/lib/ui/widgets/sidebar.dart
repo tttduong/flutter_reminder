@@ -677,35 +677,6 @@ class _CustomSidebarState extends State<CustomSidebar> {
     );
   }
 
-  // Widget _buildCategoryTile(BuildContext context, Category category) {
-  //   return ListTile(
-  //       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-  //       leading: Container(
-  //         width: 32,
-  //         height: 32,
-  //         decoration: BoxDecoration(
-  //           color: category.color.withOpacity(0.2),
-  //           borderRadius: BorderRadius.circular(8),
-  //         ),
-  //         child: Icon(category.icon, color: category.color, size: 18),
-  //       ),
-  //       title: Text(
-  //         category.title,
-  //         style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-  //       ),
-  //       onTap: () {
-  //         // Đóng Drawer trước
-  //         Navigator.of(context).pop();
-
-  //         // Push trang mới ngay sau khi đóng Drawer
-  //         Navigator.of(context).push(
-  //           MaterialPageRoute(
-  //             builder: (_) => CategoryTasksPage(category: category),
-  //           ),
-  //         );
-  //       });
-  // }
-
   Widget _buildAddCategoryButton(BuildContext context) {
     return AddListButton(onAddCategoryTap: widget.onAddCategoryTap);
   }
