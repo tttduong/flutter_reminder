@@ -11,30 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class TaskService {
   static const String baseUrl = "${Constants.URI}/api/v1";
-  // final Dio _dio = Dio(BaseOptions(baseUrl: baseUrl));
-  // Future<bool> updateTaskStatusAPI(int taskId, bool isCompleted) async {
-  //   try {
-  //     final dto = UpdateTaskStatusDto(isCompleted: isCompleted);
-  //     final prefs = await SharedPreferences.getInstance();
-  //     final token = prefs.getString('access_token');
 
-  //     final response = await _dio.patch(
-  //       "/tasks/$taskId",
-  //       data: dto.toJson(),
-  //       options: Options(
-  //         headers: {
-  //           'Authorization': 'Bearer $token', // Adjust format as needed
-  //           'Content-Type': 'application/json',
-  //         },
-  //       ),
-  //     );
-
-  //     return response.statusCode == 200;
-  //   } catch (e) {
-  //     print('Error updating task: $e');
-  //     return false;
-  //   }
-  // }
 // Update a task
   static Future<bool> updateTask(Task updatedTask) async {
     try {

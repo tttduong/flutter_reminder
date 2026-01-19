@@ -2356,12 +2356,13 @@
 //   @override
 //   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 // }
-
+// ===========================================PRESENT VER=================================================================
 import 'package:flutter/material.dart';
 import 'package:flutter_to_do_app/consts.dart';
 import 'package:flutter_to_do_app/controller/category_controller.dart';
 import 'package:flutter_to_do_app/controller/task_controller.dart';
 import 'package:flutter_to_do_app/data/models/task.dart';
+import 'package:flutter_to_do_app/data/models/task_position.dart';
 import 'package:flutter_to_do_app/ui/screens/detail_task.dart';
 import 'package:flutter_to_do_app/ui/screens/eisenhower_matrix.dart';
 import 'package:flutter_to_do_app/ui/widgets/chat_floating_button.dart';
@@ -2371,25 +2372,25 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 // 🆕 Helper class to store task position
-class TaskPosition {
-  final DateTime date;
-  final DateTime dueDate;
+// class TaskPosition {
+//   final DateTime date;
+//   final DateTime dueDate;
 
-  TaskPosition({
-    required this.date,
-    required this.dueDate,
-  });
+//   TaskPosition({
+//     required this.date,
+//     required this.dueDate,
+//   });
 
-  TaskPosition copyWith({
-    DateTime? date,
-    DateTime? dueDate,
-  }) {
-    return TaskPosition(
-      date: date ?? this.date,
-      dueDate: dueDate ?? this.dueDate,
-    );
-  }
-}
+//   TaskPosition copyWith({
+//     DateTime? date,
+//     DateTime? dueDate,
+//   }) {
+//     return TaskPosition(
+//       date: date ?? this.date,
+//       dueDate: dueDate ?? this.dueDate,
+//     );
+//   }
+// }
 
 class CalendarTasks extends StatefulWidget {
   const CalendarTasks({Key? key}) : super(key: key);
@@ -3498,3 +3499,49 @@ class _GridPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
+
+// import 'package:flutter/material.dart';
+// import 'package:flutter_to_do_app/controller/calendar_controller.dart';
+// import 'package:flutter_to_do_app/ui/screens/eisenhower_matrix.dart';
+// import 'package:flutter_to_do_app/ui/widgets/calendar_header.dart';
+// import 'package:flutter_to_do_app/ui/widgets/chat_floating_button.dart';
+// import 'package:flutter_to_do_app/ui/widgets/full_day_banner.dart';
+// import 'package:flutter_to_do_app/ui/widgets/mini_calendar.dart';
+// import 'package:flutter_to_do_app/ui/widgets/multi_day_banner.dart';
+// import 'package:flutter_to_do_app/ui/widgets/schedule_appbar.dart';
+// import 'package:flutter_to_do_app/ui/widgets/weekly_calendar.dart';
+// import 'package:get/get.dart';
+
+// class CalendarTasks extends StatelessWidget {
+//   const CalendarTasks({Key? key}) : super(key: key);
+
+//   @override
+//   Widget build(BuildContext context) {
+//     final controller = Get.put(CalendarController());
+
+//     return Scaffold(
+//       backgroundColor: Colors.transparent,
+//       appBar: CalendarHeader(controller: controller),
+//       body: Obx(() {
+//         if (controller.viewMode.value == ScheduleViewMode.calendar) {
+//           return Column(
+//             children: [
+//               MiniCalendar(controller: controller),
+//               MultiDayBanner(controller: controller),
+//               FullDayBanner(controller: controller),
+//               Expanded(
+//                 child: WeeklyCalendar(controller: controller),
+//               ),
+//             ],
+//           );
+//         } else {
+//           return EisenhowerMatrix();
+//         }
+//       }),
+//       floatingActionButton: const ChatFloatingButton(
+//         showBadge: true,
+//         unreadCount: 3,
+//       ),
+//     );
+//   }
+// }

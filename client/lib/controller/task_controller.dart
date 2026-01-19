@@ -90,7 +90,7 @@ class TaskController extends GetxController {
   }
 
 //Trong task_controller.dart ----đang dùng
-  void toggleTaskCompletion(Task task) async {
+  Future<void> toggleTaskCompletion(Task task) async {
     final taskId = task.id;
     final newStatus = !task.isCompleted;
 
