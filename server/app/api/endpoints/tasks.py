@@ -70,6 +70,30 @@ async def get_tasks_by_date(
         stmt = stmt.where(cast(Task.date, Date) == cast(Task.due_date, Date))
     result = await db.execute(stmt)
     return result.scalars().all()
+
+
+@router.get("/tasks/date-range/", response_model=List[TaskResponse])
+async def get_tasks_by_date_range(
+    start_date: date = Query(...),
+    end_date: date = Query(...),
+    include_multiday: bool = Query(True),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Lấy tất cả tasks có trong khoảng thời gian từ start_date đến end_date
+    """
+    stmt = select(Task).where(
+        Task.owner_id == current_user.id,
+        cast(Task.date, Date) <= end_date,
+        cast(Task.due_date, Date) >= start_date
+    )
+    
+    if not include_multiday:
+        stmt = stmt.where(cast(Task.date, Date) == cast(Task.due_date, Date))
+    
+    result = await db.execute(stmt)
+    return result.scalars().all()
 @router.get("/tasks/single-day/", response_model=List[TaskResponse])
 async def get_single_day_tasks(
     date: date = Query(...),

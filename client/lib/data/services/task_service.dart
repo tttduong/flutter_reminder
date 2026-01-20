@@ -223,6 +223,32 @@ class TaskService {
     }
   }
 
+  static Future<List<Task>> getTasksForDateRange(
+      DateTime startDate, DateTime endDate) async {
+    try {
+      String formattedStartDate = DateFormat('yyyy-MM-dd').format(startDate);
+      String formattedEndDate = DateFormat('yyyy-MM-dd').format(endDate);
+
+      final response = await ApiService.dio.get(
+        '$baseUrl/tasks/date-range/',
+        queryParameters: {
+          'start_date': formattedStartDate,
+          'end_date': formattedEndDate,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        List<dynamic> jsonData = response.data;
+        return jsonData.map((item) => Task.fromJson(item)).toList();
+      } else {
+        throw Exception(
+            'Failed to load tasks for date range (${response.statusCode})');
+      }
+    } catch (e) {
+      throw Exception('Error fetching tasks for date range: $e');
+    }
+  }
+
 //delete tasks
   // static Future<void> deleteTask(int taskId) async {
   //   final url = Uri.parse('$baseUrl/tasks/${taskId}/');

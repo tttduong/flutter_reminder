@@ -2371,27 +2371,6 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
-// 🆕 Helper class to store task position
-// class TaskPosition {
-//   final DateTime date;
-//   final DateTime dueDate;
-
-//   TaskPosition({
-//     required this.date,
-//     required this.dueDate,
-//   });
-
-//   TaskPosition copyWith({
-//     DateTime? date,
-//     DateTime? dueDate,
-//   }) {
-//     return TaskPosition(
-//       date: date ?? this.date,
-//       dueDate: dueDate ?? this.dueDate,
-//     );
-//   }
-// }
-
 class CalendarTasks extends StatefulWidget {
   const CalendarTasks({Key? key}) : super(key: key);
 
@@ -2466,12 +2445,44 @@ class _CalendarTasksState extends State<CalendarTasks> {
     ];
   }
 
+  // Future<void> _loadTasksForDisplayedDays() async {
+  //   _taskController.isLoading.value = true;
+  //   await _taskController.getTasksByDate(_selectedDate);
+  //   await _taskController.getFullDayTasks(_selectedDate);
+  //   _taskController.isLoading.value = false;
+  // }
+
   Future<void> _loadTasksForDisplayedDays() async {
     _taskController.isLoading.value = true;
-    await _taskController.getTasksByDate(_selectedDate);
+
+    // Load tasks cho cả 3 ngày
+    await _taskController.getTasksForDateRange(
+      _displayedDays.first, // Ngày trước
+      _displayedDays.last, // Ngày sau
+    );
+
     await _taskController.getFullDayTasks(_selectedDate);
     _taskController.isLoading.value = false;
   }
+
+  // Future<void> _loadTasksForDisplayedDays() async {
+  //   _taskController.isLoading.value = true;
+
+  //   // Load tasks cho 2 ngày trước và sau (không load lại ngày giữa vì đã load rồi)
+  //   final dayBefore = _displayedDays[0];
+  //   final dayAfter = _displayedDays[2];
+
+  //   await Future.wait([
+  //     _taskController.getTasksByDate(dayBefore),
+  //     _taskController.getFullDayTasks(dayBefore),
+  //     _taskController.getTasksByDate(_selectedDate),
+  //     _taskController.getFullDayTasks(_selectedDate),
+  //     _taskController.getTasksByDate(dayAfter),
+  //     _taskController.getFullDayTasks(dayAfter),
+  //   ]);
+
+  //   _taskController.isLoading.value = false;
+  // }
 
   // 🆕 Save original position when drag starts
   void _saveOriginalPosition(Task task) {
@@ -3143,80 +3154,6 @@ class _CalendarTasksState extends State<CalendarTasks> {
     );
   }
 
-  // Widget _buildFullDayBanner() {
-  //   return Obx(() {
-  //     final fullDayTasks =
-  //         _taskController.getFullDayTasksForDate(_selectedDate);
-  //     if (fullDayTasks.isEmpty) {
-  //       return const SizedBox.shrink();
-  //     }
-
-  //     final isExpanded = _taskController.isFullDayExpanded.value;
-
-  //     return Container(
-  //       // margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-  //       child: Column(
-  //         crossAxisAlignment: CrossAxisAlignment.start,
-  //         children: [
-  //           InkWell(
-  //             borderRadius: BorderRadius.circular(12),
-  //             onTap: () {
-  //               _taskController.isFullDayExpanded.toggle();
-  //             },
-  //             child: Padding(
-  //               padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-  //               child: Row(
-  //                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  //                 children: [
-  //                   Row(
-  //                     children: [
-  //                       // Icon(
-  //                       //   Icons.event_available,
-  //                       //   size: 20,
-  //                       //   color: Colors.blue.shade700,
-  //                       // ),
-  //                       // const SizedBox(width: 8),
-  //                       Text(
-  //                         'All Day Events (${fullDayTasks.length})',
-  //                         style: TextStyle(
-  //                           fontSize: 14,
-  //                           fontWeight: FontWeight.w600,
-  //                           color: AppColors.primary,
-  //                         ),
-  //                       ),
-  //                     ],
-  //                   ),
-  //                   AnimatedRotation(
-  //                     duration: const Duration(milliseconds: 200),
-  //                     turns: isExpanded ? 0.5 : 0.0,
-  //                     child: Icon(
-  //                       Icons.keyboard_arrow_down_rounded,
-  //                       color: AppColors.primary,
-  //                       size: 22,
-  //                     ),
-  //                   ),
-  //                 ],
-  //               ),
-  //             ),
-  //           ),
-  //           if (isExpanded) const Divider(height: 1),
-  //           if (isExpanded)
-  //             ListView.separated(
-  //               shrinkWrap: true,
-  //               physics: const NeverScrollableScrollPhysics(),
-  //               padding: const EdgeInsets.all(8),
-  //               itemCount: fullDayTasks.length,
-  //               separatorBuilder: (context, index) => const SizedBox(height: 6),
-  //               itemBuilder: (context, index) {
-  //                 return _buildFullDayTaskCard(fullDayTasks[index]);
-  //               },
-  //             ),
-  //         ],
-  //       ),
-  //     );
-  //   });
-  // }
-
   Widget _buildFullDayBanner() {
     return Obx(() {
       final fullDayTasks =
@@ -3398,80 +3335,18 @@ class _CalendarTasksState extends State<CalendarTasks> {
   }
 }
 
-// class _GridPainter extends CustomPainter {
-//   final double hourHeight;
-//   _GridPainter({required this.hourHeight});
-
-//   @override
-//   void paint(Canvas canvas, Size size) {
-//     final paint = Paint()
-//       ..color = Colors.grey[300]!
-//       ..strokeWidth = 0.5;
-
-//     for (double y = 0; y < size.height; y += hourHeight) {
-//       canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-//     }
-//   }
-
-//   @override
-//   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-// }
 class _GridPainter extends CustomPainter {
   final double hourHeight;
   _GridPainter({required this.hourHeight});
 
-  // @override
-  // void paint(Canvas canvas, Size size) {
-  //   final paint = Paint()
-  //     ..color = Colors.grey[400]!
-  //     ..strokeWidth = 0.5;
-
-  //   // Horizontal lines (theo giờ)
-  //   for (double y = 0; y < size.height; y += hourHeight) {
-  //     canvas.drawLine(
-  //       Offset(0, y),
-  //       Offset(size.width, y),
-  //       paint,
-  //     );
-  //   }
-
-  //   // Vertical lines (chia 3 cột)
-  //   final double colWidth = size.width / 2;
-
-  //   // canvas.drawLine(
-  //   //   Offset(colWidth, 0),
-  //   //   Offset(colWidth, size.height),
-  //   //   paint,
-  //   // );
-
-  //   canvas.drawLine(
-  //     Offset(colWidth * 2, 0),
-  //     Offset(colWidth * 2, size.height),
-  //     paint,
-  //   );
-  // }
   @override
   void paint(Canvas canvas, Size size) {
     final linePaint = Paint()
       ..color = Colors.grey[400]!
       ..strokeWidth = 0.5;
 
-    // final bgPaint = Paint()
-    //   ..color = Colors.transparent.withOpacity(0.12); // 👈 nền sáng hơn
-
     // ===== Chia cột =====
     final double colWidth = size.width / 2;
-
-    // ===== Vẽ nền cột GIỮA =====
-    // canvas.drawRect(
-    //   Rect.fromLTWH(
-    //     colWidth, // bắt đầu từ cột thứ 2
-    //     0,
-    //     colWidth,
-    //     size.height,
-    //   ),
-    //   bgPaint,
-    // );
 
     // ===== Horizontal lines (theo giờ) =====
     for (double y = 0; y < size.height; y += hourHeight) {
@@ -3481,13 +3356,6 @@ class _GridPainter extends CustomPainter {
         linePaint,
       );
     }
-
-    // ===== Vertical lines =====
-    // canvas.drawLine(
-    //   Offset(colWidth, 0),
-    //   Offset(colWidth, size.height),
-    //   linePaint,
-    // );
 
     canvas.drawLine(
       Offset(colWidth * 2, 0),

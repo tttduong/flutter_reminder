@@ -212,6 +212,21 @@ class TaskController extends GetxController {
     }
   }
 
+  Future<void> getTasksForDateRange(
+      DateTime startDate, DateTime endDate) async {
+    try {
+      isLoading.value = true;
+      List<Task> tasks =
+          await TaskService.getTasksForDateRange(startDate, endDate);
+      taskList.value = tasks;
+    } catch (e) {
+      print('Error in controller: $e');
+      Get.snackbar('Lỗi', 'Không thể tải tasks: $e');
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
   Future<void> refreshTasks([int? categoryId]) async {
     if (categoryId != null) {
       await getTasksByCategory(categoryId);
