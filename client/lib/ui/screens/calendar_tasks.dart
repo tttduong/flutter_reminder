@@ -2465,25 +2465,6 @@ class _CalendarTasksState extends State<CalendarTasks> {
     _taskController.isLoading.value = false;
   }
 
-  // Future<void> _loadTasksForDisplayedDays() async {
-  //   _taskController.isLoading.value = true;
-
-  //   // Load tasks cho 2 ngày trước và sau (không load lại ngày giữa vì đã load rồi)
-  //   final dayBefore = _displayedDays[0];
-  //   final dayAfter = _displayedDays[2];
-
-  //   await Future.wait([
-  //     _taskController.getTasksByDate(dayBefore),
-  //     _taskController.getFullDayTasks(dayBefore),
-  //     _taskController.getTasksByDate(_selectedDate),
-  //     _taskController.getFullDayTasks(_selectedDate),
-  //     _taskController.getTasksByDate(dayAfter),
-  //     _taskController.getFullDayTasks(dayAfter),
-  //   ]);
-
-  //   _taskController.isLoading.value = false;
-  // }
-
   // 🆕 Save original position when drag starts
   void _saveOriginalPosition(Task task) {
     if (!_originalPositions.containsKey(task.id)) {
@@ -2633,6 +2614,69 @@ class _CalendarTasksState extends State<CalendarTasks> {
     );
   }
 
+  // Widget _buildMiniCalendar() {
+  //   final weekdayNames =
+  //       _displayedDays.map((date) => DateFormat('E').format(date)).toList();
+
+  //   return Container(
+  //     color: Colors.transparent,
+  //     padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 6),
+  //     child: Row(
+  //       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+  //       children: weekdayNames.asMap().entries.map((entry) {
+  //         final index = entry.key;
+  //         final day = entry.value;
+  //         final date = _displayedDays[index];
+  //         final isSelected = index == 1;
+
+  //         return GestureDetector(
+  //             onTap: () async {
+  //               setState(() {
+  //                 _selectedDate = date;
+  //                 _updateDisplayedDays();
+  //               });
+  //               await _loadTasksForDisplayedDays();
+  //             },
+  //             child: Padding(
+  //               padding: const EdgeInsets.only(left: 30),
+  //               child: Column(
+  //                 children: [
+  //                   Text(
+  //                     day,
+  //                     style: GoogleFonts.inter(
+  //                       fontSize: 12,
+  //                       color: Colors.grey[600],
+  //                     ),
+  //                   ),
+  //                   const SizedBox(height: 8),
+  //                   Container(
+  //                     width: 40,
+  //                     height: 40,
+  //                     decoration: BoxDecoration(
+  //                       color: isSelected
+  //                           ? const Color(0xFF4285F4)
+  //                           : Colors.transparent,
+  //                       shape: BoxShape.circle,
+  //                     ),
+  //                     child: Center(
+  //                       child: Text(
+  //                         date.day.toString(),
+  //                         style: GoogleFonts.inter(
+  //                           fontSize: 16,
+  //                           fontWeight:
+  //                               isSelected ? FontWeight.w600 : FontWeight.w400,
+  //                           color: isSelected ? Colors.white : Colors.black,
+  //                         ),
+  //                       ),
+  //                     ),
+  //                   ),
+  //                 ],
+  //               ),
+  //             ));
+  //       }).toList(),
+  //     ),
+  //   );
+  // }
   Widget _buildMiniCalendar() {
     final weekdayNames =
         _displayedDays.map((date) => DateFormat('E').format(date)).toList();
@@ -2649,47 +2693,53 @@ class _CalendarTasksState extends State<CalendarTasks> {
           final isSelected = index == 1;
 
           return GestureDetector(
-              onTap: () async {
-                setState(() {
-                  _selectedDate = date;
-                  _updateDisplayedDays();
-                });
-                await _loadTasksForDisplayedDays();
-              },
-              child: Padding(
-                padding: const EdgeInsets.only(left: 30),
-                child: Column(
-                  children: [
-                    Text(
-                      day,
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        color: Colors.grey[600],
+              onTap: _hasUnsavedChanges
+                  ? null // Disable khi đang có thay đổi chưa lưu
+                  : () async {
+                      setState(() {
+                        _selectedDate = date;
+                        _updateDisplayedDays();
+                      });
+                      await _loadTasksForDisplayedDays();
+                    },
+              child: Opacity(
+                opacity: _hasUnsavedChanges ? 0.5 : 1.0, // Làm mờ khi disable
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 30),
+                  child: Column(
+                    children: [
+                      Text(
+                        day,
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? const Color(0xFF4285F4)
-                            : Colors.transparent,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Center(
-                        child: Text(
-                          date.day.toString(),
-                          style: GoogleFonts.inter(
-                            fontSize: 16,
-                            fontWeight:
-                                isSelected ? FontWeight.w600 : FontWeight.w400,
-                            color: isSelected ? Colors.white : Colors.black,
+                      const SizedBox(height: 8),
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? const Color(0xFF4285F4)
+                              : Colors.transparent,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(
+                          child: Text(
+                            date.day.toString(),
+                            style: GoogleFonts.inter(
+                              fontSize: 16,
+                              fontWeight: isSelected
+                                  ? FontWeight.w600
+                                  : FontWeight.w400,
+                              color: isSelected ? Colors.white : Colors.black,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ));
         }).toList(),
@@ -2892,10 +2942,15 @@ class _CalendarTasksState extends State<CalendarTasks> {
     const double minHeight = 70.0;
     final height = (duration * hourHeight).clamp(minHeight, double.infinity);
 
-    final color = pastelColor(category?.color ?? Colors.red[200]!);
+    final baseColor = category?.color ?? Colors.red[200]!;
+    final normalColor = pastelColor(baseColor);
+    final completedColor = extraPastelColor(baseColor);
+    final draggedColor = pastelColor(baseColor);
 
-    // 🆕 Check if this task has unsaved changes
     final hasChanges = _currentPositions.containsKey(task.id);
+    final isCompleted = task.isCompleted;
+
+    final taskColor = isCompleted ? completedColor : normalColor;
 
     return Positioned(
       top: top,
@@ -2903,7 +2958,6 @@ class _CalendarTasksState extends State<CalendarTasks> {
       right: 4,
       child: LongPressDraggable<Task>(
         data: task,
-        // 🆕 Save original position when drag starts
         onDragStarted: () {
           _saveOriginalPosition(task);
         },
@@ -2915,8 +2969,10 @@ class _CalendarTasksState extends State<CalendarTasks> {
             width: 120,
             height: height,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.8),
+              color: draggedColor,
               borderRadius: BorderRadius.circular(8),
+              border:
+                  Border.all(color: Colors.white, width: 1), // Thêm viền trắng
             ),
           ),
         ),
@@ -2925,6 +2981,8 @@ class _CalendarTasksState extends State<CalendarTasks> {
           decoration: BoxDecoration(
             color: Colors.grey[300],
             borderRadius: BorderRadius.circular(8),
+            border:
+                Border.all(color: Colors.white, width: 1), // Thêm viền trắng
           ),
         ),
         child: GestureDetector(
@@ -2941,12 +2999,14 @@ class _CalendarTasksState extends State<CalendarTasks> {
           child: Container(
             height: height,
             decoration: BoxDecoration(
-              // 🆕 Highlight changed tasks
-              color: hasChanges ? color.withOpacity(0.7) : color,
+              color: hasChanges ? draggedColor : taskColor,
               borderRadius: BorderRadius.circular(8),
+              // Kết hợp viền trắng với viền primary khi hasChanges
               border: hasChanges
                   ? Border.all(color: AppColors.primary, width: 2)
-                  : null,
+                  : Border.all(
+                      color: Colors.white.withOpacity(0.5),
+                      width: 1), // Viền trắng mỏng
             ),
             padding: const EdgeInsets.all(8),
             child: Column(
@@ -2956,13 +3016,19 @@ class _CalendarTasksState extends State<CalendarTasks> {
                   children: [
                     Expanded(
                       child: Text(
-                        task.title ?? '',
-                        style: const TextStyle(fontSize: 11),
+                        task.title,
+                        style: TextStyle(
+                          fontSize: 11,
+                          decoration:
+                              isCompleted ? TextDecoration.lineThrough : null,
+                          decorationColor: Colors.grey[600],
+                          decorationThickness: 2,
+                          color: isCompleted ? Colors.grey[600] : Colors.black,
+                        ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    // 🆕 Indicator for changed tasks
                     if (hasChanges)
                       Container(
                         width: 8,
@@ -2977,7 +3043,12 @@ class _CalendarTasksState extends State<CalendarTasks> {
                 Text(
                   '${DateFormat('HH:mm').format(task.date!)}'
                   '${task.dueDate != null ? '-${DateFormat('HH:mm').format(task.dueDate!)}' : ''}',
-                  style: const TextStyle(fontSize: 10),
+                  style: TextStyle(
+                    fontSize: 10,
+                    decoration: isCompleted ? TextDecoration.lineThrough : null,
+                    decorationColor: Colors.grey[600],
+                    color: isCompleted ? Colors.grey[600] : Colors.black,
+                  ),
                 ),
               ],
             ),
@@ -2987,10 +3058,12 @@ class _CalendarTasksState extends State<CalendarTasks> {
     );
   }
 
+  // Màu nhạt cho task bình thường (trộn 40% trắng)
   Color pastelColor(Color color) {
     return Color.lerp(color, Colors.white, 0.4)!;
   }
 
+  // Màu nhạt hơn cho task hoàn thành (trộn 70% trắng)
   Color extraPastelColor(Color color) {
     return Color.lerp(color, Colors.white, 0.7)!;
   }
