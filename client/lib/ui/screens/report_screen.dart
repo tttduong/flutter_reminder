@@ -52,6 +52,7 @@ class _ReportScreenState extends State<ReportScreen> {
     return Scaffold(
       // backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title:
             const Text('Report', style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.transparent,

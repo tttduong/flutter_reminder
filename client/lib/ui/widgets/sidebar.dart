@@ -576,6 +576,41 @@ class _CustomSidebarState extends State<CustomSidebar> {
       },
 
       // 👇 Nhấn giữ → mở tuỳ chọn
+      // onLongPress: () {
+      //   showModalBottomSheet(
+      //     context: context,
+      //     shape: const RoundedRectangleBorder(
+      //       borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      //     ),
+      //     builder: (_) {
+      //       return SafeArea(
+      //         child: Column(
+      //           mainAxisSize: MainAxisSize.min,
+      //           children: [
+      //             ListTile(
+      //               leading: const Icon(Icons.edit, color: Colors.blue),
+      //               title: const Text('Edit'),
+      //               onTap: () {
+      //                 Navigator.pop(context);
+      //                 // 👉 Thực hiện hành động edit (tùy bạn định nghĩa)
+      //                 // _showEditCategoryDialog(context, category);
+      //               },
+      //             ),
+      //             ListTile(
+      //               leading: const Icon(Icons.delete, color: Colors.red),
+      //               title: const Text('Delete'),
+      //               onTap: () async {
+      //                 Navigator.pop(context);
+      //                 _showDeleteConfirmation(context, category);
+      //               },
+      //             ),
+      //           ],
+      //         ),
+      //       );
+      //     },
+      //   );
+      // },
+
       onLongPress: () {
         showModalBottomSheet(
           context: context,
@@ -587,14 +622,42 @@ class _CustomSidebarState extends State<CustomSidebar> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  ListTile(
-                    leading: const Icon(Icons.edit, color: Colors.blue),
-                    title: const Text('Edit'),
-                    onTap: () {
-                      Navigator.pop(context);
-                      // 👉 Thực hiện hành động edit (tùy bạn định nghĩa)
-                      // _showEditCategoryDialog(context, category);
-                    },
+                  Stack(
+                    children: [
+                      ListTile(
+                        leading: const Icon(Icons.edit, color: Colors.blue),
+                        title: const Text('Edit'),
+                        onTap: () {
+                          Navigator.pop(context);
+                          // 👉 Thực hiện hành động edit (tùy bạn định nghĩa)
+                          // _showEditCategoryDialog(context, category);
+                        },
+                      ),
+                      Positioned(
+                        top: 20,
+                        right: 20,
+                        child: Transform.rotate(
+                          angle: 0.6,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.orange,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Text(
+                              'SOON',
+                              style: TextStyle(
+                                fontSize: 8,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   ListTile(
                     leading: const Icon(Icons.delete, color: Colors.red),

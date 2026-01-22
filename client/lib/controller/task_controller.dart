@@ -47,21 +47,6 @@ class TaskController extends GetxController {
     }
   }
 
-  // 🔹 Lấy task theo category (dành cho màn hình CategoryTask)
-  // Future<void> getTasksByCategory(int? categoryId) async {
-  //   if (categoryId == null) return;
-  //   try {
-  //     isLoading.value = true;
-  //     selectedCategoryId = categoryId;
-  //     final tasks = await TaskService.getTasksByCategoryId(categoryId);
-  //     taskList.assignAll(tasks);
-  //     print("✅ Loaded category tasks: ${taskList.length}");
-  //   } catch (e) {
-  //     print("❌ Failed to load category tasks: $e");
-  //   } finally {
-  //     isLoading.value = false;
-  //   }
-  // }
   Future<void> getTasksByCategory(int? categoryId) async {
     if (categoryId == null) return;
     try {

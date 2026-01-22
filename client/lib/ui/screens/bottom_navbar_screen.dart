@@ -318,6 +318,7 @@ import 'package:flutter_to_do_app/ui/screens/add_task.dart';
 import 'package:flutter_to_do_app/ui/screens/eisenhower_matrix.dart';
 import 'package:flutter_to_do_app/ui/screens/report_screen.dart';
 import 'package:flutter_to_do_app/ui/screens/screens.dart';
+import 'package:flutter_to_do_app/ui/screens/settings.dart';
 import 'package:flutter_to_do_app/ui/screens/welcome_page.dart';
 import 'package:flutter_to_do_app/ui/widgets/navbar.dart';
 import 'package:flutter_to_do_app/ui/widgets/gradient_bg.dart';
@@ -448,7 +449,8 @@ class BottomNavBarScreenState extends State<BottomNavBarScreen> {
         return ReportScreen();
       case 4:
         // return const UpdateProfileScreen();
-        return const WelcomePage();
+        // return const WelcomePage();
+        return SettingsScreen();
       default:
         // return const SignInPage();
         return const WelcomePage();
