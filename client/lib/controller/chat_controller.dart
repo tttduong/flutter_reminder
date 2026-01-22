@@ -77,53 +77,65 @@ class ChatPageController extends GetxController {
     await loadMessages();
   }
 
-  /// Tạo conversation mới
-  // void startNewConversation() {
-  //   convController.resetToNewConversation();
-  //   messages.clear();
-  //   _conversationHistory.clear();
+  // Future<void> startNewConversation() async {
+  //   try {
+  //     isLoading.value = true;
+
+  //     // 1️⃣ Gọi API tạo conversation
+  //     final conversation =
+  //         await ConversationService.createConversation("New Chat");
+
+  //     // 2️⃣ Add vào list
+  //     convController.conversations.insert(0, conversation);
+
+  //     // 3️⃣ Set current conversation
+  //     convController.setConversation(
+  //       conversation.id.toString(),
+  //       false,
+  //     );
+
+  //     // 4️⃣ Clear messages cũ
+  //     // messages.clear();
+  //     convController.resetToNewConversation();
+  //     messages.clear();
+  //     _conversationHistory.clear();
+  //   } catch (e) {
+  //     print("❌ Create conversation error: $e");
+  //   } finally {
+  //     isLoading.value = false;
+  //   }
   // }
-
   Future<void> startNewConversation() async {
-    try {
-      isLoading.value = true;
+    // ❌ Không gọi API
+    // ❌ Không tạo conversation trong DB
 
-      // 1️⃣ Gọi API tạo conversation
-      final conversation =
-          await ConversationService.createConversation("New Chat");
+    // 1️⃣ Reset về draft mode
+    convController.resetToNewConversation();
+    // resetToNewConversation nên làm:
+    // - conversationId = null
+    // - isDraftMode = true
 
-      // 2️⃣ Add vào list
-      convController.conversations.insert(0, conversation);
+    // 2️⃣ Clear messages & history
+    messages.clear();
+    _conversationHistory.clear();
 
-      // 3️⃣ Set current conversation
-      convController.setConversation(
-        conversation.id.toString(),
-        false,
-      );
+    // 3️⃣ Reset mode nếu có
+    selectedMode.value = "chat";
 
-      // 4️⃣ Clear messages cũ
-      // messages.clear();
-      convController.resetToNewConversation();
-      messages.clear();
-      _conversationHistory.clear();
-    } catch (e) {
-      print("❌ Create conversation error: $e");
-    } finally {
-      isLoading.value = false;
-    }
+    print("📝 New conversation (Draft mode)");
   }
 
   /// Gửi message
   Future<void> sendMessage(String text) async {
     if (text.trim().isEmpty) return;
 
-    // Tạo conversation mới nếu cần
-    if (isNewConversation && conversationId == null) {
-      await _createNewConversation(text);
+    // ✅ CHỈ tạo conversation nếu chưa có ID
+    if (conversationId == null) {
+      await _createNewConversationViaAPI(text);
     }
 
     if (conversationId == null) {
-      print("❌ No conversation ID");
+      print("❌ No conversation ID after creation");
       return;
     }
 
@@ -160,13 +172,46 @@ class ChatPageController extends GetxController {
     } catch (e) {
       print("❌ Error sending message: $e");
       messages.insert(
-          0,
-          MyChatMessage(
-            conversationId: conversationId!,
-            text: "Error: ${e.toString()}",
-            user: gptChatUser,
-            createdAt: DateTime.now(),
-          ));
+        0,
+        MyChatMessage(
+          conversationId: conversationId!,
+          text: "Error: ${e.toString()}",
+          user: gptChatUser,
+          createdAt: DateTime.now(),
+        ),
+      );
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> _createNewConversationViaAPI(String firstMessage) async {
+    try {
+      isLoading.value = true;
+
+      final conversation = await ConversationService.createConversation(
+        firstMessage.length > 30
+            ? '${firstMessage.substring(0, 30)}...'
+            : firstMessage,
+      );
+
+      convController.conversations.insert(0, conversation);
+
+      // ✅ Set conversation + tắt draft mode
+      convController.setConversation(
+        conversation.id.toString(),
+        false, // isDraftMode = false
+      );
+
+      print("✅ Created conversation via API: ${conversation.id}");
+    } catch (e) {
+      print("❌ Create conversation error: $e");
+      Get.snackbar(
+        'Error',
+        'Failed to create conversation',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      rethrow;
     } finally {
       isLoading.value = false;
     }
@@ -178,24 +223,6 @@ class ChatPageController extends GetxController {
   }
 
   // ===== Private Methods =====
-
-  Future<void> _createNewConversation(String firstMessage) async {
-    final newConvId = uuid.v4();
-    final newConv = Conversation(
-      id: newConvId,
-      title: firstMessage.length > 30
-          ? '${firstMessage.substring(0, 30)}...'
-          : firstMessage,
-      lastMessage: firstMessage,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    );
-
-    convController.conversations.insert(0, newConv);
-    convController.setConversation(newConvId, false);
-    print("✅ Created conversation: $newConvId");
-  }
-
   void _handleScheduleResponse(Map<String, dynamic> data) {
     final reply = data['response'] ?? "No response";
     final scheduleDraft = data["extra"]?["schedule_draft"];
@@ -267,23 +294,3 @@ class ChatPageController extends GetxController {
         .toList();
   }
 }
-// import 'package:flutter_to_do_app/data/services/chat_service.dart';
-// import 'package:get/get.dart';
-// import 'package:flutter_to_do_app/data/models/conversation.dart';
-
-// class ChatController extends GetxController {
-//   var conversations = <Conversation>[].obs;
-//   var isLoading = false.obs;
-
-//   Future<void> fetchConversations() async {
-//     try {
-//       isLoading.value = true;
-//       final data = await ChatService.getAllConversations();
-//       conversations.assignAll(data);
-//     } catch (e) {
-//       print("Error fetching conversations: $e");
-//     } finally {
-//       isLoading.value = false;
-//     }
-//   }
-// }

@@ -8,6 +8,7 @@ class ConversationController extends GetxController {
 
   var currentConversationId = Rxn<String>(); // Nullable String
   var isNewConversation = true.obs;
+  var isDraftMode = true.obs;
   Future<void> fetchConversations() async {
     try {
       isLoading.value = true;
@@ -28,9 +29,13 @@ class ConversationController extends GetxController {
   }
 
   // ✅ Helper method để reset về new conversation
+  // void resetToNewConversation() {
+  //   currentConversationId.value = null;
+  //   isNewConversation.value = true;
+  //   print("🆕 Reset to new conversation");
+  // }
   void resetToNewConversation() {
     currentConversationId.value = null;
-    isNewConversation.value = true;
-    print("🆕 Reset to new conversation");
+    isDraftMode.value = true;
   }
 }

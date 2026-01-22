@@ -4,10 +4,22 @@ import 'package:flutter_to_do_app/consts.dart';
 import 'package:flutter_to_do_app/controller/chat_controller.dart';
 import 'package:get/get.dart';
 
-class ChatDrawer extends StatelessWidget {
+class ChatDrawer extends StatefulWidget {
   final ChatPageController controller;
 
   const ChatDrawer({super.key, required this.controller});
+
+  @override
+  State<ChatDrawer> createState() => _ChatDrawerState();
+}
+
+class _ChatDrawerState extends State<ChatDrawer> {
+  @override
+  void initState() {
+    super.initState();
+    // ✅ Load conversations khi drawer được khởi tạo
+    widget.controller.convController.fetchConversations();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,33 +45,62 @@ class ChatDrawer extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(10, 12, 10, 0),
       child: Column(
         children: [
-          // Search field
-          TextField(
-            decoration: InputDecoration(
-              hintStyle: TextStyle(
-                color: AppColors.primary.withOpacity(0.6),
-                fontSize: 14,
+          // Search field with SOON badge
+          Stack(
+            children: [
+              TextField(
+                decoration: InputDecoration(
+                  hintStyle: TextStyle(
+                    color: AppColors.primary.withOpacity(0.6),
+                    fontSize: 14,
+                  ),
+                  prefixIcon: Icon(
+                    Icons.search,
+                    color: AppColors.primary.withOpacity(0.7),
+                    size: 20,
+                  ),
+                  filled: true,
+                  fillColor: AppColors.secondary.withOpacity(0.2),
+                  contentPadding: const EdgeInsets.symmetric(
+                    vertical: 0,
+                    horizontal: 16,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(25),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+                style: const TextStyle(
+                  color: AppColors.primary,
+                  fontSize: 14,
+                ),
+                enabled: false, // Disable vì chưa có chức năng
               ),
-              prefixIcon: Icon(
-                Icons.search,
-                color: AppColors.primary.withOpacity(0.7),
-                size: 20,
+              Positioned(
+                top: 2,
+                right: 2,
+                child: Transform.rotate(
+                  angle: 0.6,
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.orange,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Text(
+                      'SOON',
+                      style: TextStyle(
+                        fontSize: 8,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                ),
               ),
-              filled: true,
-              fillColor: AppColors.secondary.withOpacity(0.2),
-              contentPadding: const EdgeInsets.symmetric(
-                vertical: 0,
-                horizontal: 16,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(25),
-                borderSide: BorderSide.none,
-              ),
-            ),
-            style: const TextStyle(
-              color: AppColors.primary,
-              fontSize: 14,
-            ),
+            ],
           ),
 
           // New conversation button
@@ -67,7 +108,7 @@ class ChatDrawer extends StatelessWidget {
             width: double.infinity,
             child: TextButton.icon(
               onPressed: () {
-                controller.startNewConversation();
+                widget.controller.startNewConversation();
                 Navigator.pop(context); // Close drawer
               },
               icon: const Icon(
@@ -97,13 +138,13 @@ class ChatDrawer extends StatelessWidget {
 
   Widget _buildConversationList() {
     return Obx(() {
-      if (controller.convController.isLoading.value) {
+      if (widget.controller.convController.isLoading.value) {
         return const Center(
           child: CircularProgressIndicator(),
         );
       }
 
-      final conversations = controller.conversations;
+      final conversations = widget.controller.conversations;
 
       if (conversations.isEmpty) {
         return Center(
@@ -122,7 +163,8 @@ class ChatDrawer extends StatelessWidget {
         itemCount: conversations.length,
         itemBuilder: (context, index) {
           final convo = conversations[index];
-          final isSelected = convo.id.toString() == controller.conversationId;
+          final isSelected =
+              convo.id.toString() == widget.controller.conversationId;
 
           return ListTile(
             contentPadding: const EdgeInsets.symmetric(
@@ -155,7 +197,7 @@ class ChatDrawer extends StatelessWidget {
                 : null,
             onTap: () async {
               Navigator.pop(context); // Close drawer
-              await controller.switchConversation(convo.id);
+              await widget.controller.switchConversation(convo.id);
             },
           );
         },

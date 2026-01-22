@@ -30,7 +30,7 @@ class ChatFloatingButton extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                       builder: (_) => const ChatPage(
-                            conversationId: "5",
+                            conversationId: null,
                           )),
                 );
               },
