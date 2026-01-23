@@ -42,27 +42,6 @@ class MessageBubble extends StatelessWidget {
     );
   }
 
-  // Widget _buildContent() {
-  //   final scheduleDraft = message.customProperties?["schedule_draft"];
-
-  //   // Kiểm tra có schedule draft hợp lệ không
-  //   if (scheduleDraft != null && _hasValidSchedule(scheduleDraft)) {
-  //     return ScheduleCard(
-  //       messageText: message.text,
-  //       isCurrentUser: isCurrentUser,
-  //       scheduleDraft: scheduleDraft,
-  //       conversationId: message.conversationId,
-  //     );
-  //   }
-
-  //   // Text thông thường
-  //   return Text(
-  //     message.text,
-  //     style: TextStyle(
-  //       color: isCurrentUser ? Colors.white : Colors.black,
-  //     ),
-  //   );
-  // }
   Widget _buildContent() {
     final scheduleDraft = message.customProperties?["schedule_draft"];
 
@@ -136,15 +115,16 @@ class MessageBubble extends StatelessWidget {
   bool _hasValidSchedule(dynamic scheduleDraft) {
     if (scheduleDraft is! Map<String, dynamic>) return false;
 
-    // Format có schedule_title + days
+    // 1️⃣ Format có schedule_title + days (days PHẢI có phần tử)
     if (scheduleDraft.containsKey('schedule_title') &&
         scheduleDraft.containsKey('days') &&
         scheduleDraft['days'] is List &&
+        (scheduleDraft['days'] as List).isNotEmpty &&
         (scheduleDraft['schedule_title']?.toString().isNotEmpty ?? false)) {
       return true;
     }
 
-    // Format date-based
+    // 2️⃣ Format date-based (giữ nguyên)
     final entries = scheduleDraft.entries
         .where((e) => e.value is List && (e.value as List).isNotEmpty)
         .toList();

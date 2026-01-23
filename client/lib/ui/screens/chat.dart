@@ -154,10 +154,23 @@ class _ChatPageState extends State<ChatPage> {
           ),
 
           // Input field
-          ChatInputField(
-            onSend: controller.sendMessage,
-            onModeSelect: () => _showModeSelector(context),
-          ),
+          // ChatInputField(
+          //   onSend: controller.sendMessage,
+          //   onModeSelect: () => _showModeSelector(context),
+          // ),
+          // Trong ChatPage widget
+          Obx(() => ChatInputField(
+                onSend: controller.sendMessage,
+                onModeSelect: () {
+                  showModalBottomSheet(
+                    context: context,
+                    builder: (_) =>
+                        ModeSelectorBottomSheet(controller: controller),
+                  );
+                },
+                currentMode:
+                    controller.selectedMode.value, // Truyền mode hiện tại
+              ))
         ],
       ),
     );

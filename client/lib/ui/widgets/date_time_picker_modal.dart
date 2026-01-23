@@ -1174,21 +1174,6 @@ class _DateTimePickerModalState extends State<DateTimePickerModal> {
   }
 
   Widget _buildReminderOption(String option, StateSetter setDialogState) {
-    // return RadioListTile<String>(
-    //   contentPadding: EdgeInsets.symmetric(horizontal: 0),
-    //   title: Text(option),
-    //   value: option,
-    //   groupValue: selectedReminderOption,
-    //   onChanged: (value) {
-    //     setDialogState(() {
-    //       selectedReminderOption = value;
-    //     });
-    //     setState(() {
-    //       selectedReminderOption = value;
-    //     });
-    //   },
-    //   activeColor: AppColors.primary,
-    // );
     return RadioListTile<String>(
       contentPadding: EdgeInsets.symmetric(horizontal: 0),
       title: Text(option),
@@ -1355,38 +1340,94 @@ class _DateTimePickerModalState extends State<DateTimePickerModal> {
                             ),
                           ),
                         ),
+                        // Expanded(
+                        //   child: GestureDetector(
+                        //     onTap: () {
+                        //       setCustomDialogState(() {
+                        //         customSelectedTab = 'Week';
+                        //       });
+                        //     },
+                        //     child: Container(
+                        //       padding: EdgeInsets.symmetric(vertical: 8),
+                        //       decoration: BoxDecoration(
+                        //         border: Border(
+                        //           bottom: BorderSide(
+                        //             color: customSelectedTab == 'Week'
+                        //                 ? AppColors.primary
+                        //                 : Colors.transparent,
+                        //             width: 2,
+                        //           ),
+                        //         ),
+                        //       ),
+                        //       child: Text(
+                        //         'Week',
+                        //         textAlign: TextAlign.center,
+                        //         style: TextStyle(
+                        //           color: customSelectedTab == 'Week'
+                        //               ? AppColors.primary
+                        //               : Colors.grey,
+                        //           fontWeight: customSelectedTab == 'Week'
+                        //               ? FontWeight.bold
+                        //               : FontWeight.normal,
+                        //         ),
+                        //       ),
+                        //     ),
+                        //   ),
+                        // ),
                         Expanded(
-                          child: GestureDetector(
-                            onTap: () {
-                              setCustomDialogState(() {
-                                customSelectedTab = 'Week';
-                              });
-                            },
-                            child: Container(
-                              padding: EdgeInsets.symmetric(vertical: 8),
-                              decoration: BoxDecoration(
-                                border: Border(
-                                  bottom: BorderSide(
-                                    color: customSelectedTab == 'Week'
-                                        ? AppColors.primary
-                                        : Colors.transparent,
-                                    width: 2,
+                          child: Stack(
+                            children: [
+                              GestureDetector(
+                                onTap: null, // Disable tap
+                                // child: Opacity(
+                                // opacity: 0.5, // Làm mờ để thể hiện disabled
+                                child: Container(
+                                  width: double.infinity,
+                                  padding: EdgeInsets.symmetric(vertical: 8),
+                                  decoration: BoxDecoration(
+                                    border: Border(
+                                      bottom: BorderSide(
+                                        color: Colors.transparent,
+                                        width: 2,
+                                      ),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    'Week',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: Colors.grey,
+                                      fontWeight: FontWeight.normal,
+                                    ),
+                                  ),
+                                ),
+                                // ),
+                              ),
+                              Positioned(
+                                top: 0,
+                                right: 8,
+                                child: Transform.rotate(
+                                  angle: 0.6,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: Colors.orange,
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: const Text(
+                                      'SOON',
+                                      style: TextStyle(
+                                        fontSize: 8,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),
-                              child: Text(
-                                'Week',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: customSelectedTab == 'Week'
-                                      ? AppColors.primary
-                                      : Colors.grey,
-                                  fontWeight: customSelectedTab == 'Week'
-                                      ? FontWeight.bold
-                                      : FontWeight.normal,
-                                ),
-                              ),
-                            ),
+                            ],
                           ),
                         ),
                       ],
@@ -1780,12 +1821,48 @@ class _DateTimePickerModalState extends State<DateTimePickerModal> {
                   ),
                   onTap: _showReminderDialog,
                 ),
-                ListTile(
-                  leading: Icon(Icons.repeat, color: AppColors.primary),
-                  title: Text('Repeat',
-                      style: TextStyle(color: AppColors.primary)),
-                  trailing: Text('None', style: TextStyle(color: Colors.grey)),
-                  onTap: () {},
+                // ListTile(
+                //   leading: Icon(Icons.repeat, color: AppColors.primary),
+                //   title: Text('Repeat',
+                //       style: TextStyle(color: AppColors.primary)),
+                //   trailing: Text('None', style: TextStyle(color: Colors.grey)),
+                //   onTap: () {},
+                // ),
+                Stack(
+                  children: [
+                    ListTile(
+                      leading: Icon(Icons.repeat, color: AppColors.primary),
+                      title: Text('Repeat',
+                          style: TextStyle(color: AppColors.primary)),
+                      trailing:
+                          Text('None', style: TextStyle(color: Colors.grey)),
+                      onTap: () {},
+                    ),
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Transform.rotate(
+                        angle: 0.6,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.orange,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Text(
+                            'SOON',
+                            style: TextStyle(
+                              fontSize: 8,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 20),
                 Center(

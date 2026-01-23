@@ -28,7 +28,7 @@ class ScheduleCard extends StatelessWidget {
           messageText,
           style: TextStyle(
             color: isCurrentUser ? Colors.white : Colors.black,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.normal,
           ),
         ),
         const SizedBox(height: 8),

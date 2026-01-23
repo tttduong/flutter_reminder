@@ -5,11 +5,13 @@ import 'package:flutter_to_do_app/consts.dart';
 class ChatInputField extends StatefulWidget {
   final Function(String) onSend;
   final VoidCallback onModeSelect;
+  final String currentMode;
 
   const ChatInputField({
     super.key,
     required this.onSend,
     required this.onModeSelect,
+    required this.currentMode,
   });
 
   @override
@@ -41,6 +43,8 @@ class _ChatInputFieldState extends State<ChatInputField> {
 
   @override
   Widget build(BuildContext context) {
+    final isGeneratePlanMode = widget.currentMode == "generate_plan";
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -57,14 +61,16 @@ class _ChatInputFieldState extends State<ChatInputField> {
             child: Container(
               width: 40,
               height: 40,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppColors.primary,
+                color: isGeneratePlanMode
+                    ? AppColors.primary.withOpacity(0.9)
+                    : AppColors.primary,
               ),
-              child: const Icon(
-                Icons.add,
+              child: Icon(
+                isGeneratePlanMode ? Icons.calendar_today : Icons.add,
                 color: Colors.white,
-                size: 24,
+                size: isGeneratePlanMode ? 20 : 24,
               ),
             ),
           ),
@@ -78,22 +84,47 @@ class _ChatInputFieldState extends State<ChatInputField> {
               textInputAction: TextInputAction.send,
               onSubmitted: (_) => _handleSend(),
               decoration: InputDecoration(
-                hintText: 'Aa',
-                hintStyle: TextStyle(color: Colors.grey[400]),
+                prefixIcon: isGeneratePlanMode
+                    ? Icon(
+                        Icons.event_note,
+                        color: AppColors.primary,
+                        size: 20,
+                      )
+                    : null,
+                hintText: isGeneratePlanMode ? 'Describe your plan...' : 'Aa',
+                hintStyle: TextStyle(
+                  color: Colors.grey[400],
+                  fontSize: isGeneratePlanMode ? 14 : 16,
+                ),
+                filled: true,
+                fillColor: Colors.white,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(20),
-                  borderSide: BorderSide(color: Colors.grey[300]!),
+                  borderSide: BorderSide(
+                    color: isGeneratePlanMode
+                        ? AppColors.primary
+                        : Colors.grey[300]!,
+                    width: 1.0,
+                  ),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(20),
-                  borderSide: BorderSide(color: Colors.grey[300]!),
+                  borderSide: BorderSide(
+                    color: isGeneratePlanMode
+                        ? AppColors.primary
+                        : Colors.grey[300]!,
+                    width: 1.0,
+                  ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(20),
-                  borderSide: const BorderSide(color: AppColors.primary),
+                  borderSide: BorderSide(
+                    color: AppColors.primary,
+                    width: isGeneratePlanMode ? 2.0 : 1.5,
+                  ),
                 ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: isGeneratePlanMode ? 12 : 16,
                   vertical: 12,
                 ),
               ),
@@ -107,9 +138,11 @@ class _ChatInputFieldState extends State<ChatInputField> {
             child: Container(
               width: 40,
               height: 40,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppColors.primary,
+                color: isGeneratePlanMode
+                    ? AppColors.primary.withOpacity(0.9)
+                    : AppColors.primary,
               ),
               child: const Icon(
                 Icons.arrow_upward,
