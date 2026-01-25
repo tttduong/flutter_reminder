@@ -53,36 +53,10 @@ app.add_middleware(
     SessionMiddleware,
     secret_key=SECRET_KEY,
     session_cookie="sessionid",
-    max_age=1209600, # 14 days
+    max_age=1209600, # seconds = 14 days
     same_site="lax",
     https_only=False,
 )
-
-# # 🔹 1. SessionMiddleware - ĐẶT TRƯỚC TIÊN
-# app.add_middleware(
-#     SessionMiddleware,
-#     secret_key= SECRET_KEY,
-#     session_cookie="sessionid",
-#     max_age=1209600,  # 14 days
-#     same_site="lax",  # ⭐ "lax" cho HTTP, "none" cho HTTPS
-#     https_only=False,  # False vì đang dùng HTTP
-# )
-
-# # 🔹 2. CORSMiddleware
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=[
-#         "http://localhost:52322",
-#         "http://127.0.0.1:52322",
-#         "http://10.121.205.30:52322"  # IP của máy tính
-#     ],
-#     allow_credentials=True,  # ⭐ BẮT BUỘC để gửi cookie
-#     allow_methods=["*"],
-#     allow_headers=["*"],
-# )
-
-# # 🔹 3. AuthMiddleware - cuối cùng
-# app.add_middleware(AuthMiddleware)
 
 app.include_router(tasks.router, prefix="/api/v1", tags=["Tasks"])
 app.include_router(users.router, prefix="/api/v1", tags=["Users"])

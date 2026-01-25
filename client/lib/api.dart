@@ -8,8 +8,8 @@ import 'package:flutter_to_do_app/data/models/task_intent_response.dart';
 import 'package:path_provider/path_provider.dart';
 
 class ApiService {
-  static var baseUrl = "http://10.244.81.30:8000";
-  // static var baseUrl = "http://192.168.1.11:8000";
+  // static var baseUrl = "http://10.244.81.30:8000";
+  static var baseUrl = "http://192.168.1.11:8000";
 
   // static late Dio dio;
   // static late PersistCookieJar cookieJar;

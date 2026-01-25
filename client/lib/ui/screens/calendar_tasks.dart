@@ -2942,7 +2942,7 @@ class _CalendarTasksState extends State<CalendarTasks> {
     const double minHeight = 70.0;
     final height = (duration * hourHeight).clamp(minHeight, double.infinity);
 
-    final baseColor = category?.color ?? Colors.red[200]!;
+    final baseColor = category?.color ?? pastelColor(AppColors.primary)!;
     final normalColor = pastelColor(baseColor);
     final completedColor = extraPastelColor(baseColor);
     final draggedColor = pastelColor(baseColor);
@@ -3185,7 +3185,7 @@ class _CalendarTasksState extends State<CalendarTasks> {
             Row(
               children: [
                 Text(
-                  'Ngày $currentDay/$totalDays',
+                  'Day $currentDay/$totalDays',
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
@@ -3193,34 +3193,34 @@ class _CalendarTasksState extends State<CalendarTasks> {
                   ),
                 ),
                 Text(
-                  ' • Còn $remainingDays ngày',
+                  ' • $remainingDays days left',
                   style: TextStyle(
                     fontSize: 11,
                     color: Colors.grey.shade600,
                   ),
                 ),
-                const Spacer(),
-                Text(
-                  '${(progress * 100).toInt()}%',
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    color: baseColor.withOpacity(0.8),
-                  ),
-                ),
+                // const Spacer(),
+                // Text(
+                //   '${(progress * 100).toInt()}%',
+                //   style: TextStyle(
+                //     fontSize: 10,
+                //     fontWeight: FontWeight.w600,
+                //     color: baseColor.withOpacity(0.8),
+                //   ),
+                // ),
               ],
             ),
-            const SizedBox(height: 4),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(2),
-              child: LinearProgressIndicator(
-                value: progress,
-                backgroundColor: Colors.grey.shade200,
-                valueColor:
-                    AlwaysStoppedAnimation<Color>(baseColor.withOpacity(0.8)),
-                minHeight: 3,
-              ),
-            ),
+            // const SizedBox(height: 4),
+            // ClipRRect(
+            //   borderRadius: BorderRadius.circular(2),
+            //   child: LinearProgressIndicator(
+            //     value: progress,
+            //     backgroundColor: Colors.grey.shade200,
+            //     valueColor:
+            //         AlwaysStoppedAnimation<Color>(baseColor.withOpacity(0.8)),
+            //     minHeight: 3,
+            //   ),
+            // ),
           ],
         ),
       ),

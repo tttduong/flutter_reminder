@@ -58,7 +58,7 @@ class UserProvider extends ChangeNotifier {
     }
   }
 
-  // ✅ METHOD MỚI: Load user từ API
+  // Load user từ API
   Future<bool> loadCurrentUser() async {
     print("\n🔍 ===== loadCurrentUser START =====");
 
@@ -120,7 +120,7 @@ class UserProvider extends ChangeNotifier {
     }
   }
 
-  // ✅ METHOD MỚI: Load user từ local storage
+  // Load user từ local storage
   Future<void> loadUserFromLocal() async {
     print("\n🔍 ===== loadUserFromLocal START =====");
 
@@ -142,7 +142,7 @@ class UserProvider extends ChangeNotifier {
     }
   }
 
-  // ✅ METHOD MỚI: Clear user + local storage
+  // Clear user + local storage
   Future<void> clearUser() async {
     print("🗑️ clearUser called");
     _user = null;

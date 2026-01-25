@@ -26,7 +26,7 @@ class MyInputField extends StatelessWidget {
             Container(
               height: 52,
               margin: EdgeInsets.only(top: 8.0),
-              padding: EdgeInsets.only(left: 14),
+              padding: EdgeInsets.only(left: 14, right: 14),
               decoration: BoxDecoration(
                 color: Colors.white,
                 border: Border.all(color: Colors.grey, width: 1.0),

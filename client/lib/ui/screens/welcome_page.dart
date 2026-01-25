@@ -53,6 +53,11 @@ class WelcomePage extends StatelessWidget {
               AuthButton(
                 // context,
                 // icon: 'assets/google_icon.png',
+                iconWidget: const Icon(
+                  Icons.g_mobiledata,
+                  size: 30,
+                  color: Colors.red,
+                ),
                 isFuture: true,
                 text: 'Continue with Google',
                 onPressed: () {},

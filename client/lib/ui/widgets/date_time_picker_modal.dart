@@ -1810,6 +1810,37 @@ class _DateTimePickerModalState extends State<DateTimePickerModal> {
                     }
                   },
                 ),
+                // ✅ THÊM ListTile End Time mới
+                ListTile(
+                  leading:
+                      Icon(Icons.access_time_filled, color: AppColors.primary),
+                  title: Text('End Time',
+                      style: TextStyle(color: AppColors.primary)),
+                  trailing: Text(
+                    tempIsAllDay || tempEndTime == null
+                        ? 'None'
+                        : _formatTimeOfDay(tempEndTime!),
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                  onTap: tempIsAllDay
+                      ? null
+                      : () async {
+                          TimeOfDay? picked = await showTimePicker(
+                            context: context,
+                            initialTime: tempEndTime ??
+                                TimeOfDay(
+                                  hour: (tempStartTime?.hour ??
+                                          TimeOfDay.now().hour) +
+                                      1,
+                                  minute: tempStartTime?.minute ??
+                                      TimeOfDay.now().minute,
+                                ),
+                          );
+                          if (picked != null) {
+                            setState(() => tempEndTime = picked);
+                          }
+                        },
+                ),
                 ListTile(
                   leading:
                       Icon(Icons.notifications_none, color: AppColors.primary),

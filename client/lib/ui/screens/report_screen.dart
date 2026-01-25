@@ -738,20 +738,19 @@ class _ReportScreenState extends State<ReportScreen> {
               )),
           const SizedBox(height: 20),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start, // ✅ Căn trên cùng
             children: [
-              Expanded(
-                flex: 2,
-                child: SizedBox(
-                  height: 150,
-                  width: 150,
-                  child: CustomPaint(
-                    painter: PieChartPainter(categories),
-                  ),
+              // ✅ Biểu đồ tròn - Không dùng Expanded
+              SizedBox(
+                height: 150,
+                width: 150,
+                child: CustomPaint(
+                  painter: PieChartPainter(categories),
                 ),
               ),
-              const SizedBox(width: 20),
+              const SizedBox(width: 16), // ✅ Giảm khoảng cách
+              // ✅ Legend - Expanded để chiếm hết không gian còn lại
               Expanded(
-                flex: 1,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: categories
@@ -771,8 +770,11 @@ class _ReportScreenState extends State<ReportScreen> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start, // ✅ Căn trên cho text dài
         children: [
+          // ✅ Icon vuông với margin top để align với text
           Container(
+            margin: const EdgeInsets.only(top: 4), // ✅ Căn giữa với dòng đầu
             width: 12,
             height: 12,
             decoration: BoxDecoration(
@@ -781,14 +783,24 @@ class _ReportScreenState extends State<ReportScreen> {
             ),
           ),
           const SizedBox(width: 8),
+          // ✅ Label - Expanded để wrap text khi dài
           Expanded(
-            child: Text(label, style: const TextStyle(fontSize: 12)),
+            child: Text(
+              label,
+              style: const TextStyle(fontSize: 12),
+              maxLines: 2, // ✅ Cho phép tối đa 2 dòng
+              overflow: TextOverflow.ellipsis, // ✅ Thêm ... nếu quá dài
+            ),
           ),
-          Text(percentage,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-              )),
+          const SizedBox(width: 8), // ✅ Khoảng cách giữa label và percentage
+          // ✅ Percentage - Cố định bên phải
+          Text(
+            percentage,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ],
       ),
     );

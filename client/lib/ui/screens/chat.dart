@@ -220,7 +220,7 @@ class _ChatPageState extends State<ChatPage> {
       backgroundColor: AppColors.background,
       title: Obx(() => Text(
             controller.convController.isDraftMode.value
-                ? "New Chat" // ✅ Draft mode
+                ? "Lumiere" // ✅ Draft mode
                 : "Lumiere", // ✅ Conversation mode
             style: const TextStyle(
               color: AppColors.primary,

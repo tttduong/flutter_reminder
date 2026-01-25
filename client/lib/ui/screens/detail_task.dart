@@ -258,7 +258,7 @@ class _TaskDetailBottomSheetState extends State<TaskDetailBottomSheet> {
                               ],
                             ),
                           ),
-                          const SizedBox(height: 16),
+                          // const SizedBox(height: 16),
 
                           // Category Dropdown
                           Container(
@@ -332,7 +332,7 @@ class _TaskDetailBottomSheetState extends State<TaskDetailBottomSheet> {
                                   TextStyle(color: Colors.grey, fontSize: 18),
                               border: InputBorder.none,
                               contentPadding: EdgeInsets.symmetric(
-                                  horizontal: 2, vertical: 12),
+                                  horizontal: 12, vertical: 12),
                             ),
                             maxLines: null,
                           ),
@@ -348,7 +348,7 @@ class _TaskDetailBottomSheetState extends State<TaskDetailBottomSheet> {
                                   TextStyle(color: Colors.grey, fontSize: 14),
                               border: InputBorder.none,
                               contentPadding: EdgeInsets.symmetric(
-                                  horizontal: 2, vertical: 6),
+                                  horizontal: 12, vertical: 12),
                             ),
                             maxLines: null,
                             minLines: 3,

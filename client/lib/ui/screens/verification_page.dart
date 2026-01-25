@@ -23,7 +23,7 @@ class _VerificationPageState extends State<VerificationPage> {
           padding: EdgeInsets.zero,
         ),
       ),
-      body: SafeArea(
+      body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
           child: Column(
