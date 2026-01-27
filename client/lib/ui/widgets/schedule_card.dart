@@ -204,7 +204,7 @@ class ScheduleCard extends StatelessWidget {
             "Category '$categoryName' created with ${result['tasks_count'] ?? 'multiple'} tasks!",
             style: const TextStyle(color: Colors.white),
           ),
-          backgroundColor: Colors.green,
+          backgroundColor: Colors.black.withOpacity(0.8),
           duration: const Duration(seconds: 3),
         ),
       );

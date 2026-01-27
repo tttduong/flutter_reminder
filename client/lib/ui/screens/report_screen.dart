@@ -73,17 +73,15 @@ class _ReportScreenState extends State<ReportScreen> {
               // Overview Cards
               _buildOverviewCards(),
               const SizedBox(height: 24),
-
+              // Category Statistics
+              _buildCategoryStats(),
+              const SizedBox(height: 24),
               // Completion Chart
               _buildCompletionChart(),
               const SizedBox(height: 24),
 
               // Calendar Heatmap
               _buildCalendarHeatmap(monthStats),
-              const SizedBox(height: 24),
-
-              // Category Statistics
-              _buildCategoryStats(),
               const SizedBox(height: 24),
 
               // // Goals & Achievements

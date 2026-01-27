@@ -20,6 +20,10 @@ SCHEDULING RULES:
 - Each task: realistic time, description, concrete length
 - No back-to-back tasks
 - Even if the schedule contains only 1 day, ALWAYS return it inside schedule_draft.days as a list. Never return schedule_draft.date at the top level.
+Default planning horizon:
+- If duration is specified → cover full duration
+- If not specified → generate 3–5 days as a starter plan
+
 EXAMPLE (today 11:27 AM):
 {
   "days": [

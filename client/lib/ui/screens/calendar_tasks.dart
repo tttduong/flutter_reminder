@@ -3322,20 +3322,22 @@ class _CalendarTasksState extends State<CalendarTasks> {
         child: Row(
           children: [
             InkWell(
-              onTap: () {
-                _toggleTaskCompletion(task);
+              onTap: () async {
+                await _toggleTaskCompletion(task);
+
+                // Reload lại tasks từ database
+                await _loadTasksForDisplayedDays();
               },
               borderRadius: BorderRadius.circular(4),
               child: Container(
                 padding: const EdgeInsets.all(4),
                 child: Icon(
-                  task.isCompleted == 1
+                  task.isCompleted == true
                       ? Icons.check_circle
                       : Icons.circle_outlined,
-                  // color: task.isCompleted == 1
-                  //     ? _getPriorityColor(task.priority)
-                  //     : _getPriorityColor(task.priority).withOpacity(0.4),
-                  color: task.categoryColor,
+                  color: task.isCompleted == true
+                      ? task.categoryColor?.withOpacity(0.5)
+                      : task.categoryColor,
                   size: 24,
                 ),
               ),
@@ -3350,8 +3352,10 @@ class _CalendarTasksState extends State<CalendarTasks> {
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: Colors.grey.shade800,
-                      decoration: task.isCompleted == 1
+                      color: task.isCompleted == true
+                          ? Colors.grey.shade400
+                          : Colors.grey.shade800,
+                      decoration: task.isCompleted == true
                           ? TextDecoration.lineThrough
                           : null,
                     ),
@@ -3364,7 +3368,12 @@ class _CalendarTasksState extends State<CalendarTasks> {
                       task.description!,
                       style: TextStyle(
                         fontSize: 13,
-                        color: Colors.grey.shade600,
+                        color: task.isCompleted == true
+                            ? Colors.grey.shade400
+                            : Colors.grey.shade600,
+                        decoration: task.isCompleted == true
+                            ? TextDecoration.lineThrough
+                            : null,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,

@@ -127,6 +127,14 @@ class ChatPageController extends GetxController {
 
   /// Gửi message
   Future<void> sendMessage(String text) async {
+    const int MAX_HISTORY = 8;
+
+    final historyToSend = _conversationHistory.length > MAX_HISTORY
+        ? _conversationHistory.sublist(
+            _conversationHistory.length - MAX_HISTORY,
+          )
+        : List<Map<String, String>>.from(_conversationHistory);
+
     if (text.trim().isEmpty) return;
 
     // ✅ CHỈ tạo conversation nếu chưa có ID
@@ -164,7 +172,8 @@ class ChatPageController extends GetxController {
         responseData = await ApiService.sendChat(
           conversationId: conversationId!,
           message: text,
-          conversationHistory: _conversationHistory,
+          // conversationHistory: _conversationHistory,
+          conversationHistory: historyToSend,
           model: "gpt-4o-mini",
         );
         _handleNormalResponse(responseData);

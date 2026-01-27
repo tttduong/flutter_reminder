@@ -320,13 +320,21 @@ async def handle_small_talk_chat(
     messages.append({"role": "system", "content": build_default_system_prompt()})
     messages.append({"role": "system", "content": SMALL_TALK_SYSTEM_PROMPT})
     # Lấy lịch sử tin nhắn từ DB
+    # db_messages = (await session.scalars(
+    #     select(Message)
+    #     .where(Message.conversation_id == conversation.id)
+    #     .order_by(Message.created_at)
+    # )).all()
     db_messages = (await session.scalars(
-        select(Message)
-        .where(Message.conversation_id == conversation.id)
-        .order_by(Message.created_at)
+    select(Message)
+    .where(Message.conversation_id == conversation.id)
+    .order_by(Message.created_at.desc())
+    .limit(8)
     )).all()
-    for msg in db_messages:
+    for msg in reversed(db_messages):
         messages.append({"role": msg.role, "content": msg.content})
+    # for msg in db_messages:
+    #     messages.append({"role": msg.role, "content": msg.content})
 
     # Thêm tin nhắn user mới
     user_message = Message(
@@ -447,7 +455,7 @@ async def chat_schedule(
     )
     session.add(user_message)
     await session.flush()
-
+ 
     # 2️⃣ Build messages cho LLM
     messages = [
         {"role": "system", "content": f"You are Lumiere assistant. Current time: {current_datetime_iso}. Use this for all reasoning."},
@@ -458,6 +466,7 @@ async def chat_schedule(
         },
         {"role": "user", "content": req.message}
     ]
+
 
     # 3️⃣ Gọi LLM
     result = await llm.generate_response_with_messages(
