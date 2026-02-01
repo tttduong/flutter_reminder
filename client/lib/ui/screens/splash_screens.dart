@@ -19,7 +19,6 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
-    // navigateToLogin();
     // navigateToHomePage();
     super.initState();
     _checkAuthAndNavigate();

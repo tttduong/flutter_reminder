@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_to_do_app/consts.dart';
 import 'package:flutter_to_do_app/ui/screens/splash_screens.dart';
 import 'package:get/get.dart';
 
@@ -9,8 +10,10 @@ class TaskManagerApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      navigatorKey: globalKey,
+      // navigatorKey: globalKey,
+      scaffoldMessengerKey: snackbarKey,
       debugShowCheckedModeBanner: false,
+      // opaqueRoute: Get.isOpaqueRouteDefault,
       title: "Task Manager",
       theme: ThemeData(
         primarySwatch: Colors.green,

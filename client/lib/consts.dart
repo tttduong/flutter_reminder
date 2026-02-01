@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 const FOREFRONT_API_KEY = "";
+final GlobalKey<ScaffoldMessengerState> snackbarKey =
+    GlobalKey<ScaffoldMessengerState>();
 
 class AppColors {
   static const Color primary = Color(0xFF575DFB);

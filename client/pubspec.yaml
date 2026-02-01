@@ -17,7 +17,7 @@ dependencies:
   flutter_web_plugins:
     sdk: flutter
   get_storage: 
-  get: 
+  get: ^4.6.6
   intl:
   google_fonts:
   date_picker_timeline: 
