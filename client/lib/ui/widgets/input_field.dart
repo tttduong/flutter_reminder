@@ -17,8 +17,7 @@ class MyInputField extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (title
-                .isNotEmpty) // Kiểm tra nếu title không rỗng thì mới hiển thị
+            if (title.isNotEmpty)
               Text(
                 title,
                 // style: titleStyle,

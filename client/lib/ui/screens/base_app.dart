@@ -73,45 +73,6 @@ class _BaseAppScreenState extends State<BaseAppScreen> {
     print("More options tapped");
   }
 
-  // @override
-  // Widget build(BuildContext context) {
-  //   return Scaffold(
-  //     extendBodyBehindAppBar: true,
-  //     backgroundColor: Colors.transparent,
-  //     extendBody: true,
-  //     // appBar: widget.appBar,
-  //     // appBar: widget.showAppBar
-  //     //     ? CustomAppBar(
-  //     //         showSearchBar: widget.showSearchBar,
-  //     //         searchHint: widget.searchHint,
-  //     //         onSearchChanged: _handleSearchChanged,
-  //     //         onNotificationTap: _handleNotificationTap,
-  //     //         onMoreTap: _handleMoreTap,
-  //     //       )
-  //     //     : null,
-  //     drawer: widget.showDrawer
-  //         ? CustomSidebar(
-  //             categoryController: _categoryController,
-  //             onCategoryTap: _handleCategoryTap,
-  //             onAddCategoryTap: _handleAddCategoryTap,
-  //           )
-  //         : null,
-  //     // onDrawerChanged: widget.onDrawerChanged,
-  //     onDrawerChanged: (isOpened) {
-  //       print("🔥 BaseAppScreen onDrawerChanged: $isOpened");
-  //       widget.onDrawerChanged?.call(isOpened); // 👈 Propagate callback
-  //     },
-  //     // body: widget.body,
-  //     body: Stack(
-  //       children: [
-  //         const GradientBackground(), // 🌈 gradient nền
-  //         SafeArea(child: widget.body),
-  //       ],
-  //     ),
-  //     // floatingActionButton: widget.floatingActionButton,
-  //     // bottomNavigationBar: widget.bottomNavigationBar,
-  //   );
-  // }
   @override
   Widget build(BuildContext context) {
     return Scaffold(

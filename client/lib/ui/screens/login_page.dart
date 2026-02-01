@@ -149,20 +149,7 @@ class _LoginPageState extends State<LoginPage> {
               const SizedBox(height: 8),
               Align(
                 alignment: Alignment.centerRight,
-                child:
-                    // GestureDetector(
-                    //   onTap: () {},
-                    //   child: const Text(
-                    //     'Forgot Password?',
-                    //     style: TextStyle(
-                    //       // color: Color(0xFF6366F1),
-                    //       color: Colors.black,
-                    //       fontWeight: FontWeight.w600,
-                    //       fontSize: 13,
-                    //     ),
-                    //   ),
-                    // ),
-                    Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     GestureDetector(
@@ -259,38 +246,6 @@ class _LoginPageState extends State<LoginPage> {
               ),
               const SizedBox(height: 20),
 
-              // Container(
-              //   width: double.infinity,
-              //   height: 56,
-              //   decoration: BoxDecoration(
-              //     border: Border.all(color: Colors.black26),
-              //     borderRadius: BorderRadius.circular(28),
-              //   ),
-              // child: TextButton(
-              //   onPressed: () {},
-              //   style: TextButton.styleFrom(
-              //     shape: RoundedRectangleBorder(
-              //       borderRadius: BorderRadius.circular(28),
-              //     ),
-              //   ),
-              //   child: Row(
-              //     mainAxisAlignment: MainAxisAlignment.center,
-              //     children: const [
-              //       Icon(Icons.g_mobiledata, size: 30, color: Colors.red),
-              //       SizedBox(width: 8),
-              //       Text(
-              //         'Continue with Google',
-              //         style: TextStyle(
-              //           color: Colors.black87,
-              //           fontSize: 16,
-              //           fontWeight: FontWeight.w500,
-              //         ),
-              //       ),
-              //     ],
-              //   ),
-              // ),
-
-              // ),
               AuthButton(
                 // context,
                 iconWidget: const Icon(

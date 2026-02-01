@@ -78,14 +78,19 @@ plugins {
 
 android {
     namespace 'com.example.flutter_to_do_app'
-    compileSdk 35
-
+    compileSdk 36
+    ndkVersion "27.3.13750724"
     defaultConfig {
         applicationId "com.example.flutter_to_do_app"
-        minSdk 21
-        targetSdk 35
+        minSdkVersion flutter.minSdkVersion
+        targetSdk 36
         versionCode 1
         versionName "1.0.0"
+        externalNativeBuild {
+            cmake {
+                arguments "-DANDROID_STL=none"
+            }
+        }
     }
 
     compileOptions {

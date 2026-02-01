@@ -84,14 +84,6 @@ class MultiDayTaskCard extends StatelessWidget {
             const SizedBox(height: 6),
             Row(
               children: [
-                // Text(
-                //   'Ngày $currentDay/$totalDays',
-                //   style: TextStyle(
-                //     fontSize: 11,
-                //     fontWeight: FontWeight.w500,
-                //     color: Colors.grey.shade700,
-                //   ),
-                // ),
                 Text(
                   ' $remainingDays days left',
                   style: TextStyle(
@@ -99,29 +91,9 @@ class MultiDayTaskCard extends StatelessWidget {
                     color: Colors.grey.shade600,
                   ),
                 ),
-                // const Spacer(),
-                // Text(
-                //   '${(progress * 100).toInt()}%',
-                //   style: TextStyle(
-                //     fontSize: 10,
-                //     fontWeight: FontWeight.w600,
-                //     color: baseColor.withOpacity(0.8),
-                //   ),
-                // ),
               ],
             ),
             const SizedBox(height: 4),
-            // ClipRRect(
-            //   borderRadius: BorderRadius.circular(2),
-            //   child: LinearProgressIndicator(
-            //     value: progress,
-            //     backgroundColor: Colors.grey.shade200,
-            //     valueColor: AlwaysStoppedAnimation<Color>(
-            //       baseColor.withOpacity(0.8),
-            //     ),
-            //     minHeight: 3,
-            //   ),
-            // ),
           ],
         ),
       ),

@@ -112,46 +112,6 @@ class WelcomePage extends StatelessWidget {
     );
   }
 
-  // Widget _buildButton(BuildContext context,
-  //     {String? icon,
-  //     required String text,
-  //     Widget? iconWidget,
-  //     required VoidCallback onPressed}) {
-  //   return Container(
-  //     width: double.infinity,
-  //     height: 56,
-  //     decoration: BoxDecoration(
-  //       border: Border.all(color: Colors.black26),
-  //       borderRadius: BorderRadius.circular(28),
-  //     ),
-  //     child: TextButton(
-  //       onPressed: onPressed,
-  //       style: TextButton.styleFrom(
-  //         shape: RoundedRectangleBorder(
-  //           borderRadius: BorderRadius.circular(28),
-  //         ),
-  //       ),
-  //       child: Row(
-  //         mainAxisAlignment: MainAxisAlignment.center,
-  //         children: [
-  //           if (icon != null)
-  //             Image.asset(icon, height: 20, width: 20)
-  //           else if (iconWidget != null)
-  //             iconWidget,
-  //           const SizedBox(width: 12),
-  //           Text(
-  //             text,
-  //             style: const TextStyle(
-  //               color: Colors.black87,
-  //               fontSize: 16,
-  //               fontWeight: FontWeight.w500,
-  //             ),
-  //           ),
-  //         ],
-  //       ),
-  //     ),
-  //   );
-  // }
   Widget buildButton(
     BuildContext context, {
     String? icon,

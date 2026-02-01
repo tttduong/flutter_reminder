@@ -14,13 +14,6 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-  // final _usernameController = TextEditingController();
-  // final _emailController = TextEditingController();
-  // final _passwordController = TextEditingController();
-  // final _confirmPasswordController = TextEditingController();
-  // bool _isPasswordVisible = false;
-  // bool _isConfirmPasswordVisible = false;
-
   final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -217,69 +210,6 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
-  // Widget _buildTextField({
-  //   required String label,
-  //   required TextEditingController controller,
-  //   required String hintText,
-  //   required IconData prefixIcon,
-  //   bool isPassword = false,
-  //   bool isPasswordVisible = false,
-  //   VoidCallback? onTogglePassword,
-  // }) {
-  //   return Column(
-  //     crossAxisAlignment: CrossAxisAlignment.start,
-  //     children: [
-  //       Text(
-  //         label,
-  //         style: const TextStyle(
-  //           fontSize: 14,
-  //           fontWeight: FontWeight.w500,
-  //           color: Colors.black87,
-  //         ),
-  //       ),
-  //       const SizedBox(height: 8),
-  //       Container(
-  //         child: TextField(
-  //           controller: controller,
-  //           obscureText: isPassword && !isPasswordVisible,
-  //           decoration: InputDecoration(
-  //             hintText: hintText,
-  //             hintStyle: const TextStyle(color: Colors.black26),
-  //             prefixIcon: Icon(prefixIcon, color: Color(0xFF6366F1)),
-  //             border: OutlineInputBorder(
-  //               borderSide:
-  //                   const BorderSide(color: Color(0xFF6366F1), width: 1.5),
-  //               borderRadius: BorderRadius.circular(28), // 🌸 bo tròn góc
-  //             ),
-  //             enabledBorder: OutlineInputBorder(
-  //               borderSide:
-  //                   const BorderSide(color: Color(0xFF6366F1), width: 1.5),
-  //               borderRadius: BorderRadius.circular(28),
-  //             ),
-  //             focusedBorder: OutlineInputBorder(
-  //               borderSide: const BorderSide(
-  //                   color: Color(0xFF4F46E5), width: 2.0), // Đậm hơn khi focus
-  //               borderRadius: BorderRadius.circular(28),
-  //             ),
-  //             suffixIcon: isPassword
-  //                 ? IconButton(
-  //                     icon: Icon(
-  //                       isPasswordVisible
-  //                           ? Icons.visibility_outlined
-  //                           : Icons.visibility_off_outlined,
-  //                       color: Color(0xFF6366F1),
-  //                     ),
-  //                     onPressed: onTogglePassword,
-  //                   )
-  //                 : null,
-  //             contentPadding:
-  //                 const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-  //           ),
-  //         ),
-  //       ),
-  //     ],
-  //   );
-  // }
   Widget _buildTextField({
     required String label,
     required TextEditingController controller,

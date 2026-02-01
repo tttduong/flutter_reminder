@@ -15,7 +15,6 @@ class MyChatMessage {
     this.status = MessageStatus.none,
     this.replyTo,
     this.scheduleDraft,
-    // this.customProps,
   });
 
   // final Map<String, dynamic>? customProps;

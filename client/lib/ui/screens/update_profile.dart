@@ -4,7 +4,6 @@ import 'package:flutter_to_do_app/ui/widgets/custom_button.dart';
 import 'package:flutter_to_do_app/ui/widgets/custom_password_text_field.dart';
 import 'package:flutter_to_do_app/ui/widgets/custom_text_form_field.dart';
 import 'package:flutter_to_do_app/ui/widgets/screen_background.dart';
-
 import '../../data/models/auth_utility.dart';
 import '../../data/models/login_model.dart';
 import '../../data/models/network_response.dart';
@@ -235,47 +234,4 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
       )),
     );
   }
-
-  // void imagePicked() async {
-  //   showDialog(
-  //       context: context,
-  //       builder: (context) {
-  //         return AlertDialog(
-  //           title: const Text('Pick Image From:'),
-  //           content: Column(
-  //             mainAxisSize: MainAxisSize.min,
-  //             children: [
-  //               ListTile(
-  //                 onTap: () async {
-  //                   pickImage = await ImagePicker()
-  //                       .pickImage(source: ImageSource.camera);
-  //                   if (pickImage != null) {
-  //                     setState(() {});
-  //                     if (mounted) {
-  //                       Navigator.pop(context);
-  //                     }
-  //                   } else {}
-  //                 },
-  //                 leading: const Icon(Icons.camera),
-  //                 title: const Text('Camera'),
-  //               ),
-  //               ListTile(
-  //                 leading: const Icon(Icons.image),
-  //                 onTap: () async {
-  //                   pickImage = await ImagePicker()
-  //                       .pickImage(source: ImageSource.gallery);
-  //                   if (pickImage != null) {
-  //                     setState(() {});
-  //                     if (mounted) {
-  //                       Navigator.pop(context);
-  //                     }
-  //                   } else {}
-  //                 },
-  //                 title: const Text('Gallery'),
-  //               )
-  //             ],
-  //           ),
-  //         );
-  //       });
-  // }
 }

@@ -171,40 +171,7 @@ class AuthService {
       print('❌ Error registering FCM token: $e');
     }
   }
-  // static Future<User?> getUser({
-  //   // required BuildContext context,
-  //   required String token,
-  // }) async {
-  //   try {
-  //     print("📤 Gửi request GET /me với token: $token");
 
-  //     final res = await http.get(
-  //       Uri.parse("${Constants.URI}/api/v1/me"),
-  //       headers: {
-  //         'Content-Type': 'application/json; charset=UTF-8',
-  //         'Authorization': 'Bearer $token',
-  //       },
-  //     );
-
-  //     print("📥 Status code: ${res.statusCode}");
-  //     print("📥 Response body: ${res.body}");
-
-  //     if (res.statusCode != 200) {
-  //       print("⚠️ Không phải 200, trả về null");
-  //       return null;
-  //     }
-
-  //     final userJson = jsonDecode(res.body); // ✅ FIXED!
-  //     print("📦 userJson from BE: $userJson");
-
-  //     return User.fromJson(userJson); // ✅ FIXED!
-  //   } catch (e, stack) {
-  //     print("❌ Exception trong getUser: $e");
-  //     print("🪵 Stacktrace: $stack");
-  //     // Utils.showSnackBar(context, e.toString());
-  //     return null;
-  //   }
-  // }
   static Future<User?> getUser() async {
     try {
       final response = await ApiService.dio.get('/api/v1/me/');

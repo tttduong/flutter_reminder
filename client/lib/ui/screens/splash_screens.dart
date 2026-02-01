@@ -128,42 +128,7 @@ class _SplashScreenState extends State<SplashScreen> {
               WelcomePage()),
       (route) => false,
     );
-    // another way to impliment splash screen;
-    // Future.delayed(const Duration(seconds: 3)).then((_) async {
-    //   final bool loggedIn = await AuthUtility.isUserLoggedIn();
-    //   if (mounted) {
-    //     Navigator.pushAndRemoveUntil(
-    //       context,
-    //       MaterialPageRoute(
-    //           builder: (context) =>
-    //               loggedIn ? const BottomNavBarScreen() : const SignInPage()),
-    //       (route) => false,
-    //     );
-    //   }
-    // });
   }
-
-  // void navigateToLogin() {
-  //   //another way to impliment splash screen;
-  //   // await Future.delayed(Duration(seconds: 4));
-  //   // Navigator.pushAndRemoveUntil(
-  //   //   context,
-  //   //   MaterialPageRoute(builder: (context) => const LoginScreen()),
-  //   //       (route) => false,
-  //   // );
-  //   Future.delayed(const Duration(seconds: 3)).then((_) async {
-  //     final bool loggedIn = await AuthUtility.isUserLoggedIn();
-  //     if (mounted) {
-  //       Navigator.pushAndRemoveUntil(
-  //         context,
-  //         MaterialPageRoute(
-  //             builder: (context) =>
-  //                 loggedIn ? const BottomNavBarScreen() : const SignInPage()),
-  //         (route) => false,
-  //       );
-  //     }
-  //   });
-  // }
 
   @override
   Widget build(BuildContext context) {

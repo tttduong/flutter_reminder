@@ -40,34 +40,6 @@ class ChatFloatingButton extends StatelessWidget {
           child: const Icon(Icons.chat_bubble_outline_rounded,
               color: Colors.white),
         ),
-
-        // Hiển thị badge thông báo nếu có tin nhắn chưa đọc
-        // if (showBadge && unreadCount > 0)
-        //   Positioned(
-        //     right: -2,
-        //     top: -2,
-        // child: Container(
-        //   padding: const EdgeInsets.all(5),
-        //   decoration: const BoxDecoration(
-        //     color: Colors.redAccent,
-        //     shape: BoxShape.circle,
-        //   ),
-        //   constraints: const BoxConstraints(
-        //     minWidth: 22,
-        //     minHeight: 22,
-        //   ),
-        // child: Center(
-        //   child: Text(
-        //     unreadCount > 99 ? '99+' : '$unreadCount',
-        //     style: const TextStyle(
-        //       color: Colors.white,
-        //       fontSize: 11,
-        //       fontWeight: FontWeight.bold,
-        //     ),
-        //   ),
-        // ),
-        // ),
-        // ),
       ],
     );
   }

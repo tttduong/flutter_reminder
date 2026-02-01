@@ -3,7 +3,6 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_to_do_app/data/models/auth_utility.dart';
 import 'package:flutter_to_do_app/ui/screens/register_page.dart';
-import 'package:flutter_to_do_app/ui/screens/signup_screen.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 AppBar userBanner(context, {VoidCallback? onTapped}) {

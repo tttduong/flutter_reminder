@@ -118,7 +118,7 @@ Future<void> registerFCMToken(String token) async {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // ✅ Init ApiService TRƯỚC (để setup cookie jar)
+  // ✅ Init ApiService TRƯỚC (để setup cookie jar)`
   await ApiService.init();
   print('✅ ApiService initialized with cookie support');
 

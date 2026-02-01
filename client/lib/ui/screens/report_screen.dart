@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_to_do_app/data/models/category_state.dart';
 import 'dart:math' as math;
-
 import 'package:flutter_to_do_app/data/models/completed_state.dart';
 import 'package:flutter_to_do_app/data/services/report_service.dart';
 import 'package:flutter_to_do_app/ui/widgets/chat_floating_button.dart';
@@ -105,43 +104,6 @@ class _ReportScreenState extends State<ReportScreen> {
     );
   }
 
-  // Widget _buildTimeFilterTabs() {
-  //   return Container(
-  //     decoration: BoxDecoration(
-  //       color: Colors.grey[200],
-  //       borderRadius: BorderRadius.circular(25),
-  //     ),
-  //     child: Row(
-  //       children: List.generate(timeFilters.length, (index) {
-  //         return Expanded(
-  //           child: GestureDetector(
-  //             onTap: () => setState(() => selectedTimeFilter = index),
-  //             child: Container(
-  //               padding: const EdgeInsets.symmetric(vertical: 12),
-  //               decoration: BoxDecoration(
-  //                 color: selectedTimeFilter == index
-  //                     ? Colors.blue[600]
-  //                     : Colors.transparent,
-  //                 borderRadius: BorderRadius.circular(25),
-  //               ),
-  //               child: Text(
-  //                 timeFilters[index],
-  //                 textAlign: TextAlign.center,
-  //                 style: TextStyle(
-  //                   color: selectedTimeFilter == index
-  //                       ? Colors.white
-  //                       : Colors.grey[700],
-  //                   fontWeight: FontWeight.w600,
-  //                 ),
-  //               ),
-  //             ),
-  //           ),
-  //         );
-  //       }),
-  //     ),
-  //   );
-  // }
-
   Widget _buildOverviewCards() {
     // Lọc today
     final todayStr = DateTime.now().toIso8601String().split('T')[0];
@@ -181,16 +143,6 @@ class _ReportScreenState extends State<ReportScreen> {
             icon: Icons.calendar_view_week,
           ),
         ),
-        // const SizedBox(width: 12),
-        // Expanded(
-        //   child: _buildStatCard(
-        //     title: 'Streak',
-        //     value: '5 days',
-        //     subtitle: '>80% task',
-        //     color: Colors.orange,
-        //     icon: Icons.local_fire_department,
-        //   ),
-        // ),
       ],
     );
   }
@@ -386,85 +338,6 @@ class _ReportScreenState extends State<ReportScreen> {
     );
   }
 
-  // Widget _buildCalendarHeatmap() {
-  //   return Container(
-  //     padding: const EdgeInsets.all(20),
-  //     decoration: BoxDecoration(
-  //       color: Colors.white,
-  //       borderRadius: BorderRadius.circular(12),
-  //       boxShadow: [
-  //         BoxShadow(
-  //           color: Colors.grey.withOpacity(0.1),
-  //           blurRadius: 4,
-  //           offset: const Offset(0, 2),
-  //         ),
-  //       ],
-  //     ),
-  //     child: Column(
-  //       crossAxisAlignment: CrossAxisAlignment.start,
-  //       children: [
-  //         const Text('Daily Task Frequency',
-  //             style: TextStyle(
-  //               fontSize: 16,
-  //               fontWeight: FontWeight.bold,
-  //             )),
-  //         const SizedBox(height: 16),
-  //         // Calendar heatmap simulation
-  //         GridView.builder(
-  //           shrinkWrap: true,
-  //           physics: const NeverScrollableScrollPhysics(),
-  //           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-  //             crossAxisCount: 7,
-  //             childAspectRatio: 1,
-  //             crossAxisSpacing: 4,
-  //             mainAxisSpacing: 4,
-  //           ),
-  //           itemCount: 28,
-  //           itemBuilder: (context, index) {
-  //             final intensity = (index * 17) % 5; // Mock data
-  //             return Container(
-  //               decoration: BoxDecoration(
-  //                 color: _getHeatmapColor(intensity),
-  //                 borderRadius: BorderRadius.circular(4),
-  //               ),
-  //               child: Center(
-  //                 child: Text(
-  //                   '${index + 1}',
-  //                   style: TextStyle(
-  //                     fontSize: 10,
-  //                     color: intensity > 2 ? Colors.white : Colors.black54,
-  //                   ),
-  //                 ),
-  //               ),
-  //             );
-  //           },
-  //         ),
-  //         const SizedBox(height: 12),
-  //         Row(
-  //           children: [
-  //             const Text('Less',
-  //                 style: TextStyle(fontSize: 12, color: Colors.grey)),
-  //             const SizedBox(width: 8),
-  //             ...List.generate(
-  //                 5,
-  //                 (index) => Container(
-  //                       margin: const EdgeInsets.only(right: 4),
-  //                       width: 12,
-  //                       height: 12,
-  //                       decoration: BoxDecoration(
-  //                         color: _getHeatmapColor(index),
-  //                         borderRadius: BorderRadius.circular(2),
-  //                       ),
-  //                     )),
-  //             const SizedBox(width: 8),
-  //             const Text('More',
-  //                 style: TextStyle(fontSize: 12, color: Colors.grey)),
-  //           ],
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
   Widget _buildCalendarHeatmap(List<CompletedStat> monthStats) {
     // Lấy số ngày trong tháng
     final today = DateTime.now();
@@ -572,64 +445,6 @@ class _ReportScreenState extends State<ReportScreen> {
     return colors[safeIndex];
   }
 
-  // Widget _buildCategoryStats() {
-  //   final List<CategoryData> categories = [
-  //     CategoryData('Study', 40, Colors.blue[400]!),
-  //     CategoryData('Work', 35, Colors.green[400]!),
-  //     CategoryData('Personal', 25, Colors.orange[400]!),
-  //   ];
-
-  //   return Container(
-  //     padding: const EdgeInsets.all(20),
-  //     decoration: BoxDecoration(
-  //       color: Colors.white,
-  //       borderRadius: BorderRadius.circular(12),
-  //       boxShadow: [
-  //         BoxShadow(
-  //           color: Colors.grey.withOpacity(0.1),
-  //           blurRadius: 4,
-  //           offset: const Offset(0, 2),
-  //         ),
-  //       ],
-  //     ),
-  //     child: Column(
-  //       crossAxisAlignment: CrossAxisAlignment.start,
-  //       children: [
-  //         const Text('Category Distribution of Completed Tasks',
-  //             style: TextStyle(
-  //               fontSize: 16,
-  //               fontWeight: FontWeight.bold,
-  //             )),
-  //         const SizedBox(height: 20),
-  //         Row(
-  //           children: [
-  //             Expanded(
-  //               flex: 2,
-  //               child: SizedBox(
-  //                 height: 150,
-  //                 width: 150,
-  //                 child: CustomPaint(
-  //                   painter: PieChartPainter(categories),
-  //                 ),
-  //               ),
-  //             ),
-  //             const SizedBox(width: 20),
-  //             Expanded(
-  //               flex: 1,
-  //               child: Column(
-  //                 crossAxisAlignment: CrossAxisAlignment.start,
-  //                 children: categories
-  //                     .map((category) => _buildLegendItem(category.name,
-  //                         category.color, '${category.percentage}%'))
-  //                     .toList(),
-  //               ),
-  //             ),
-  //           ],
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
   Color parseColor(String hexColor) {
     hexColor = hexColor.replaceFirst('#', '');
     if (hexColor.length == 6) {
@@ -671,15 +486,6 @@ class _ReportScreenState extends State<ReportScreen> {
         ]),
       );
     }
-    // final total = categoryStats.fold<int>(0, (sum, e) => sum + e.completed);
-
-    // final List<CategoryData> categories = categoryStats
-    //     .map((e) => CategoryData(
-    //           e.name ?? 'Unknown',
-    //           total > 0 ? ((e.completed / total) * 100).toDouble() : 0.0,
-    //           parseColor(e.color ?? '#000000'),
-    //         ))
-    //     .toList();
 
     final total = categoryStats.fold<int>(0, (sum, e) => sum + e.completed);
 
@@ -768,11 +574,10 @@ class _ReportScreenState extends State<ReportScreen> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start, // ✅ Căn trên cho text dài
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ✅ Icon vuông với margin top để align với text
           Container(
-            margin: const EdgeInsets.only(top: 4), // ✅ Căn giữa với dòng đầu
+            margin: const EdgeInsets.only(top: 4),
             width: 12,
             height: 12,
             decoration: BoxDecoration(
@@ -781,17 +586,15 @@ class _ReportScreenState extends State<ReportScreen> {
             ),
           ),
           const SizedBox(width: 8),
-          // ✅ Label - Expanded để wrap text khi dài
           Expanded(
             child: Text(
               label,
               style: const TextStyle(fontSize: 12),
-              maxLines: 2, // ✅ Cho phép tối đa 2 dòng
-              overflow: TextOverflow.ellipsis, // ✅ Thêm ... nếu quá dài
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
-          const SizedBox(width: 8), // ✅ Khoảng cách giữa label và percentage
-          // ✅ Percentage - Cố định bên phải
+          const SizedBox(width: 8),
           Text(
             percentage,
             style: const TextStyle(
