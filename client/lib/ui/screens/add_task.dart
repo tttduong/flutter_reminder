@@ -532,7 +532,9 @@ class _AddTaskPageState extends State<AddTaskPage> {
         0,
       );
     }
-
+    if (_endTime != null && _selectedDueDate == null) {
+      _selectedDueDate = _selectedStartDate;
+    }
     // Due date (nullable)
     if (_selectedDueDate != null) {
       if (_endTime != null && !_isAllDay) {
